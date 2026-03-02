@@ -26,7 +26,7 @@ O objetivo principal é permitir que usuários conheçam os projetos do ecossist
 ## Integrantes da Equipe
 
 * **Abdallah Ali Borges El-Khatib** - RA: [25018711]
-* **[Gabriel Scolfaro de Azeredo** - RA: [25006194]
+* **Gabriel Scolfaro de Azeredo** - RA: [25006194]
 * **Marcelo Zarpelon** - RA: [25015323]
 * **Miguel Afonso Castro de Almeida** - RA: [25016044]
 * **Pedro Henrique Bonetto da Costa** - RA: [25018203]
