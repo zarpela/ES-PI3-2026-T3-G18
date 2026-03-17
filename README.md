@@ -8,6 +8,9 @@
 
  **Mapa Mental**: [Artefato criado na ferramenta Miro](https://miro.com/app/board/uXjVGww0ESY=/?share_link_id=349184105866).
 
+ **Planilhas**:
+   - **Coleção de Startups**: [Artefato criado no Excel](https://tinyurl.com/388xdxbj).
+
 ---
 
 ## Descrição do Projeto
