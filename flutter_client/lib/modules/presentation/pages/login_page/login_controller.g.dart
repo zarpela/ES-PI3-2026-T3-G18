@@ -8,9 +8,9 @@ part of 'login_controller.dart';
 
 // ignore_for_file: non_constant_identifier_names, unnecessary_brace_in_string_interps, unnecessary_lambdas, prefer_expression_function_bodies, lines_longer_than_80_chars, avoid_as, avoid_annotating_with_dynamic, no_leading_underscores_for_local_identifiers
 
-mixin _$LoginController on _LoginControllerBase, Store {
+mixin _$LoginController on LoginControllerBase, Store {
   late final _$emailAtom = Atom(
-    name: '_LoginControllerBase.email',
+    name: 'LoginControllerBase.email',
     context: context,
   );
 
@@ -28,7 +28,7 @@ mixin _$LoginController on _LoginControllerBase, Store {
   }
 
   late final _$passwordAtom = Atom(
-    name: '_LoginControllerBase.password',
+    name: 'LoginControllerBase.password',
     context: context,
   );
 
@@ -46,7 +46,7 @@ mixin _$LoginController on _LoginControllerBase, Store {
   }
 
   late final _$isLoadingAtom = Atom(
-    name: '_LoginControllerBase.isLoading',
+    name: 'LoginControllerBase.isLoading',
     context: context,
   );
 
@@ -64,7 +64,7 @@ mixin _$LoginController on _LoginControllerBase, Store {
   }
 
   late final _$errorMessageAtom = Atom(
-    name: '_LoginControllerBase.errorMessage',
+    name: 'LoginControllerBase.errorMessage',
     context: context,
   );
 
@@ -82,7 +82,7 @@ mixin _$LoginController on _LoginControllerBase, Store {
   }
 
   late final _$loginAsyncAction = AsyncAction(
-    '_LoginControllerBase.login',
+    'LoginControllerBase.login',
     context: context,
   );
 
@@ -91,32 +91,32 @@ mixin _$LoginController on _LoginControllerBase, Store {
     return _$loginAsyncAction.run(() => super.login());
   }
 
-  late final _$_LoginControllerBaseActionController = ActionController(
-    name: '_LoginControllerBase',
+  late final _$LoginControllerBaseActionController = ActionController(
+    name: 'LoginControllerBase',
     context: context,
   );
 
   @override
   void setEmail(String value) {
-    final _$actionInfo = _$_LoginControllerBaseActionController.startAction(
-      name: '_LoginControllerBase.setEmail',
+    final _$actionInfo = _$LoginControllerBaseActionController.startAction(
+      name: 'LoginControllerBase.setEmail',
     );
     try {
       return super.setEmail(value);
     } finally {
-      _$_LoginControllerBaseActionController.endAction(_$actionInfo);
+      _$LoginControllerBaseActionController.endAction(_$actionInfo);
     }
   }
 
   @override
   void setPassword(String value) {
-    final _$actionInfo = _$_LoginControllerBaseActionController.startAction(
-      name: '_LoginControllerBase.setPassword',
+    final _$actionInfo = _$LoginControllerBaseActionController.startAction(
+      name: 'LoginControllerBase.setPassword',
     );
     try {
       return super.setPassword(value);
     } finally {
-      _$_LoginControllerBaseActionController.endAction(_$actionInfo);
+      _$LoginControllerBaseActionController.endAction(_$actionInfo);
     }
   }
 

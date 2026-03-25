@@ -1,5 +1,6 @@
 // feito por marcelo
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_client/core/app_settings.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:dio/dio.dart';
@@ -9,6 +10,10 @@ class AppModule extends Module {
   @override
   void binds(i) 
   {
+    //instances
+    i.addInstance(FirebaseFirestore.instance);
+
+    // singletons
     i.addSingleton(() => Dio(
       BaseOptions(
         baseUrl: AppSettings.baseUrl,
@@ -17,6 +22,11 @@ class AppModule extends Module {
         receiveTimeout: Duration( milliseconds: AppSettings.timeout),
       )
     ));
+
+    // lazy singletons
+
+    //controllers
+
   }
 
 }
