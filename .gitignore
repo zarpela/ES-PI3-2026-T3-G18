@@ -31,6 +31,8 @@ migrate_working_dir/
 .pub-cache/
 .pub/
 /build/
+/flutter_client/build/
+flutter_client/build/
 /coverage/
 
 # Symbolication related
