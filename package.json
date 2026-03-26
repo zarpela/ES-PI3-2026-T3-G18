@@ -1,0 +1,21 @@
+{
+  "name": "es-pi3-2026-t3-g18",
+  "version": "1.0.0",
+  "description": "**Disciplina:** Projeto Integrador 3 - Engenharia de Software 2026 Semestre 1",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zarpela/ES-PI3-2026-T3-G18.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/zarpela/ES-PI3-2026-T3-G18/issues"
+  },
+  "homepage": "https://github.com/zarpela/ES-PI3-2026-T3-G18#readme"
+}
