@@ -13,6 +13,8 @@
  **Planilhas**:
    - **Coleção de Startups**: [Artefato criado no Excel](https://tinyurl.com/388xdxbj).
 
+**Firebase/Firestone**: https://console.firebase.google.com/u/0/project/projetointegrador3-grupo18/overview?hl=pt-br&fb_gclid=Cj0KCQjw4a3OBhCHARIsAChaqJOj-gQb5Fa7s_CXDZ_Hj5shcfi0tJHbE2HYav1f2hfwtdmkn89oVWcaAlgOEALw_wcB&fb_utm_campaign=Cloud-SS-DR-Firebase-FY26-global-pmax-1713590&fb_utm_content=pmax&fb_utm_medium=display&fb_utm_source=PMAX
+
 ---
 
 ## Descrição do Projeto
