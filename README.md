@@ -13,7 +13,7 @@
  **Planilhas**:
    - **Coleção de Startups**: [Artefato criado no Excel](https://tinyurl.com/388xdxbj).
 
-**Firebase/Firestone**: [Banco de Dados](https://console.firebase.google.com/u/0/project/projetointegrador3-grupo18/overview?hl=pt-br&fb_gclid=Cj0KCQjw4a3OBhCHARIsAChaqJOj-gQb5Fa7s_CXDZ_Hj5shcfi0tJHbE2HYav1f2hfwtdmkn89oVWcaAlgOEALw_wcB&fb_utm_campaign=Cloud-SS-DR-Firebase-FY26-global-pmax-1713590&fb_utm_content=pmax&fb_utm_medium=display&fb_utm_source=PMAX).
+**Firebase/Firestore**: [Banco de Dados](https://console.firebase.google.com/u/0/project/projetointegrador3-grupo18/overview?hl=pt-br&fb_gclid=Cj0KCQjw4a3OBhCHARIsAChaqJOj-gQb5Fa7s_CXDZ_Hj5shcfi0tJHbE2HYav1f2hfwtdmkn89oVWcaAlgOEALw_wcB&fb_utm_campaign=Cloud-SS-DR-Firebase-FY26-global-pmax-1713590&fb_utm_content=pmax&fb_utm_medium=display&fb_utm_source=PMAX).
 
 ---
 
@@ -53,3 +53,61 @@ Este projeto segue rigorosamente os requisitos tecnológicos estabelecidos no Do
 * **Controle de Versão:** Git / GitHub
 
 ---
+
+# Como executar o Projeto
+
+## Pré-requisitos
+
+- Flutter instalado
+- Node.js instalado (Versão mais recente)
+- Firebase CLI instalado (`npm install -g firebase-tools`)
+
+
+## 1. Clone o repositório
+
+```bash
+git clone https://github.com/zarpela/ES-PI3-2026-T3-G18.git
+```
+
+## 2. Acesse a pasta do projeto
+
+```bash
+cd ES-PI3-2026-T3-G18
+```
+
+---
+
+## Frontend (Flutter)
+
+Entre na pasta flutter_client:
+```bash
+cd flutter_client
+```
+
+Instale as dependências:
+```bash
+flutter pub get
+```
+
+Para rodar o app:
+```bash
+flutter run
+```
+
+---
+
+## Backend (Firebase Functions)
+
+
+Entre na pasta functions:
+```bash
+cd functions
+```
+
+Instale as dependências:
+```bash
+npm install
+```
+
+---
+
