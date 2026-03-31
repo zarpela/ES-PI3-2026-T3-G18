@@ -8,6 +8,8 @@
 
  **Mapa Mental**: [Artefato criado na ferramenta Miro](https://miro.com/app/board/uXjVGww0ESY=/?share_link_id=349184105866).
 
+ **Figma**: [Artefato criado no Figma](https://www.figma.com/design/7kIFc6Hmt5Pts6Sz3vaRDz/pi-3-mescla-invest?node-id=1-189&t=2uFCxR8mExioZfor-1).
+
  **Planilhas**:
    - **Coleção de Startups**: [Artefato criado no Excel](https://tinyurl.com/388xdxbj).
 
