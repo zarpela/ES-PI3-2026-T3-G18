@@ -1,32 +1,48 @@
-/**
- * Import function triggers from their respective submodules:
- *
- * import {onCall} from "firebase-functions/v2/https";
- * import {onDocumentWritten} from "firebase-functions/v2/firestore";
- *
- * See a full list of supported triggers at https://firebase.google.com/docs/functions
- */
+// Importa o Firebase Functions (permite criar funções HTTP - sua API)
+import * as functions from "firebase-functions";
 
-import {setGlobalOptions} from "firebase-functions";
-import {onRequest} from "firebase-functions/https";
-import * as logger from "firebase-functions/logger";
+// Importa o Express (framework para criar rotas como /login, /users, etc.)
+import express from "express";
 
-// Start writing functions
-// https://firebase.google.com/docs/functions/typescript
+// Cria uma aplicação Express
+const app = express();
 
-// For cost control, you can set the maximum number of containers that can be
-// running at the same time. This helps mitigate the impact of unexpected
-// traffic spikes by instead downgrading performance. This limit is a
-// per-function limit. You can override the limit for each function using the
-// `maxInstances` option in the function's options, e.g.
-// `onRequest({ maxInstances: 5 }, (req, res) => { ... })`.
-// NOTE: setGlobalOptions does not apply to functions using the v1 API. V1
-// functions should each use functions.runWith({ maxInstances: 10 }) instead.
-// In the v1 API, each function can only serve one request per container, so
-// this will be the maximum concurrent request count.
-setGlobalOptions({ maxInstances: 10 });
+// Middleware que permite receber dados em formato JSON (req.body)
+app.use(express.json());
 
-export const helloWorld = onRequest((request, response) => {
-   logger.info("Hello logs!", {structuredData: true});
-   response.send("Hello from Firebase!");
- });
+
+
+
+// Define uma rota GET na URL "/"
+// Quando acessar no navegador, essa função será executada
+app.get("/", (req, res) => {
+  
+  // Envia uma resposta simples para testar se a API está funcionando
+  res.send("Backend rodando 🚀");
+});
+
+
+
+// Define uma rota POST chamada "/login"
+// POST é usado quando enviamos dados (como email e senha)
+app.post("/login", (req, res) => {
+  
+  // Extrai email e senha do corpo da requisição (JSON)
+  const { email, senha } = req.body;
+
+  // Verifica se os dados enviados são iguais aos definidos
+  if (email === "admin@test.com" && senha === "123") {
+    
+    // Retorna sucesso em formato JSON
+    return res.json({ message: "Login ok" });
+  }
+
+  // Caso os dados estejam errados, retorna erro 401 (não autorizado)
+  return res.status(401).json({ error: "Credenciais inválidas" });
+});
+
+
+
+// Exporta a aplicação Express como uma função HTTP do Firebase
+// Isso transforma sua API em uma Cloud Function acessível por URL
+export const api = functions.https.onRequest(app);
