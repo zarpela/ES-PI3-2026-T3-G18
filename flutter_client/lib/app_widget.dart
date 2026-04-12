@@ -11,7 +11,8 @@ class AppWidget extends StatelessWidget {
       title: 'MesclaInvest',
       theme: ThemeData(
         useMaterial3: true,
-        colorSchemeSeed: Colors.amber,
+        primarySwatch: Colors.pink,
+        fontFamily: 'Montserrat',
       ),
       routerConfig: Modular.routerConfig, 
       debugShowCheckedModeBanner: false,
