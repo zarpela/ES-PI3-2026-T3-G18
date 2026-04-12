@@ -121,8 +121,19 @@ class _RegisterPageState extends State<RegisterPage> {
                         width: double.infinity,
                         height: 68,
                         child: ElevatedButton(
-                          onPressed: controller.isFormValid ? () {
-                            // Modular.to.pushNamed('/home');
+                          onPressed: controller.isFormValid && !controller.isLoading ? () async {
+                            final success = await controller.register();
+                            if (!context.mounted) return;
+                            if (success) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Conta criada com sucesso!')),
+                              );
+                              Modular.to.pop();
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(controller.errorMessage ?? 'Erro ao criar conta')),
+                              );
+                            }
                           } : null,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFFC71E74),
@@ -132,7 +143,11 @@ class _RegisterPageState extends State<RegisterPage> {
                             ),
                             elevation: 0, 
                           ),
-                          child: const Text(
+                          child: controller.isLoading
+                              ? const CircularProgressIndicator(
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                )
+                              : const Text(
                             'Cadastrar agora',
                             style: TextStyle(
                               fontSize: 18,

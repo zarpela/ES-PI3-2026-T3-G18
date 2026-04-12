@@ -146,6 +146,52 @@ mixin _$RegisterController on _RegisterControllerBase, Store {
     });
   }
 
+  late final _$isLoadingAtom = Atom(
+    name: '_RegisterControllerBase.isLoading',
+    context: context,
+  );
+
+  @override
+  bool get isLoading {
+    _$isLoadingAtom.reportRead();
+    return super.isLoading;
+  }
+
+  @override
+  set isLoading(bool value) {
+    _$isLoadingAtom.reportWrite(value, super.isLoading, () {
+      super.isLoading = value;
+    });
+  }
+
+  late final _$errorMessageAtom = Atom(
+    name: '_RegisterControllerBase.errorMessage',
+    context: context,
+  );
+
+  @override
+  String? get errorMessage {
+    _$errorMessageAtom.reportRead();
+    return super.errorMessage;
+  }
+
+  @override
+  set errorMessage(String? value) {
+    _$errorMessageAtom.reportWrite(value, super.errorMessage, () {
+      super.errorMessage = value;
+    });
+  }
+
+  late final _$registerAsyncAction = AsyncAction(
+    '_RegisterControllerBase.register',
+    context: context,
+  );
+
+  @override
+  Future<bool> register() {
+    return _$registerAsyncAction.run(() => super.register());
+  }
+
   late final _$_RegisterControllerBaseActionController = ActionController(
     name: '_RegisterControllerBase',
     context: context,
@@ -232,6 +278,8 @@ email: ${email},
 password: ${password},
 document: ${document},
 obscurePassword: ${obscurePassword},
+isLoading: ${isLoading},
+errorMessage: ${errorMessage},
 hasMinLength: ${hasMinLength},
 hasUpperAndLower: ${hasUpperAndLower},
 hasNumberOrSymbol: ${hasNumberOrSymbol},
