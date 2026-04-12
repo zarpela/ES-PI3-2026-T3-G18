@@ -11,16 +11,25 @@ const app = express();
 app.use(express.json());
 
 
+// RECUPERAÇÃO DE SENHA
+app.post("/forgot-password", (req, res) => {
 
+  // pega email enviado pelo app
+  const { email } = req.body;
 
-// Define uma rota GET na URL "/"
-// Quando acessar no navegador, essa função será executada
-app.get("/", (req, res) => {
-  
-  // Envia uma resposta simples para testar se a API está funcionando
-  res.send("Backend rodando 🚀");
+  // valida se veio preenchido
+  if (!email) {
+    return res.status(400).json({
+      error: "Email é obrigatório"
+    });
+  }
+
+  // resposta simulando sucesso
+  return res.status(200).json({
+    message: "Link de recuperação enviado com sucesso"
+  });
+
 });
-
 
 
 // Define uma rota POST chamada "/login"
