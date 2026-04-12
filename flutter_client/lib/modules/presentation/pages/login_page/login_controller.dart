@@ -1,3 +1,4 @@
+//feito por marcelo
 import 'package:mobx/mobx.dart';
 
 part 'login_controller.g.dart';
@@ -17,11 +18,17 @@ abstract class LoginControllerBase with Store {
   @observable
   String? errorMessage;
 
+  @observable
+  bool obscurePassword = true;
+
   @action
   void setEmail(String value) => email = value;
 
   @action
   void setPassword(String value) => password = value;
+
+  @action
+  void toggleObscurePassword() => obscurePassword = !obscurePassword;
 
   @action
   Future<void> login() async {

@@ -81,6 +81,24 @@ mixin _$LoginController on LoginControllerBase, Store {
     });
   }
 
+  late final _$obscurePasswordAtom = Atom(
+    name: 'LoginControllerBase.obscurePassword',
+    context: context,
+  );
+
+  @override
+  bool get obscurePassword {
+    _$obscurePasswordAtom.reportRead();
+    return super.obscurePassword;
+  }
+
+  @override
+  set obscurePassword(bool value) {
+    _$obscurePasswordAtom.reportWrite(value, super.obscurePassword, () {
+      super.obscurePassword = value;
+    });
+  }
+
   late final _$loginAsyncAction = AsyncAction(
     'LoginControllerBase.login',
     context: context,
@@ -121,12 +139,25 @@ mixin _$LoginController on LoginControllerBase, Store {
   }
 
   @override
+  void toggleObscurePassword() {
+    final _$actionInfo = _$LoginControllerBaseActionController.startAction(
+      name: 'LoginControllerBase.toggleObscurePassword',
+    );
+    try {
+      return super.toggleObscurePassword();
+    } finally {
+      _$LoginControllerBaseActionController.endAction(_$actionInfo);
+    }
+  }
+
+  @override
   String toString() {
     return '''
 email: ${email},
 password: ${password},
 isLoading: ${isLoading},
-errorMessage: ${errorMessage}
+errorMessage: ${errorMessage},
+obscurePassword: ${obscurePassword}
     ''';
   }
 }

@@ -1,19 +1,21 @@
 //feito por Marcelo
 import 'package:flutter/gestures.dart';
-import 'package:flutter_client/shared/app_routes.dart';
-import 'package:flutter_modular/flutter_modular.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_mobx/flutter_mobx.dart';
+import 'package:flutter_modular/flutter_modular.dart';
+import 'package:flutter_client/modules/presentation/pages/login_page/login_controller.dart';
+import 'package:flutter_client/shared/app_routes.dart';
 import 'package:flutter_client/shared/app_illustrations.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+  const LoginPage({super.key}); 
 
   @override
   State<LoginPage> createState() => _LoginPageState();
 }
 
 class _LoginPageState extends State<LoginPage> {
-  bool _obscurePassword = true;
+  final LoginController controller = Modular.get<LoginController>();
 
   @override
   Widget build(BuildContext context) {
@@ -77,7 +79,6 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: 64),
 
-                  // Saudação
                   const Text(
                     'Olá!',
                     style: TextStyle(
@@ -97,85 +98,37 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: 48),
 
-                  const Text(
-                    'E-MAIL',
-                    style: TextStyle(
-                      color: Color(0xFF584048),
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-
-                  Container(
-                    height: 56,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF6F1FF),
-                      borderRadius: BorderRadius.circular(28),
-                    ),
-                    child: TextField(
-                      keyboardType: TextInputType.emailAddress,
-                      style: const TextStyle(color: Color(0xFF584048), fontSize: 16),
-                      decoration: InputDecoration(
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
-                        hintText: 'nome@exemplo.com',
-                        hintStyle: TextStyle(
-                          color: const Color(0xFF584048).withOpacity(0.4),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  const Text(
-                    'SENHA',
-                    style: TextStyle(
-                      color: Color(0xFF584048),
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Input SENHA
-                  Container(
-                    height: 56,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF6F1FF),
-                      borderRadius: BorderRadius.circular(28),
-                    ),
-                    child: TextField(
-                      obscureText: _obscurePassword,
-                      style: const TextStyle(color: Color(0xFF584048), fontSize: 16),
-                      decoration: InputDecoration(
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.only(left: 24, top: 18, bottom: 18),
-                        hintText: '••••••••',
-                        hintStyle: TextStyle(
-                          color: const Color(0xFF584048).withOpacity(0.4),
-                        ),
-
-                        suffixIcon: Padding(
-                          padding: const EdgeInsets.only(right: 8.0),
-                          child: IconButton(
-                            splashRadius: 24,
-                            icon: AppIllustrations.eyeIcon(),
-                            
-                            onPressed: () {
-                              setState(() {
-                                _obscurePassword = !_obscurePassword;
-                              });
-                            },
+                  Observer(
+                    builder: (_) {
+                      return Column(
+                        children: [
+                          _buildInputField(
+                            label: 'E-MAIL',
+                            hint: 'nome@exemplo.com',
+                            keyboardType: TextInputType.emailAddress,
+                            onChanged: controller.setEmail, 
                           ),
-                        ),
-                      ),
-                    ),
+                          
+                          _buildInputField(
+                            label: 'SENHA',
+                            hint: '••••••••',
+                            obscureText: controller.obscurePassword,
+                            onChanged: controller.setPassword, 
+                            suffixIcon: Padding(
+                              padding: const EdgeInsets.only(right: 8.0),
+                              child: IconButton(
+                                splashRadius: 24,
+                                icon: AppIllustrations.eyeIcon(),
+                                onPressed: controller.toggleObscurePassword, 
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    }
                   ),
-                  const SizedBox(height: 48),
 
+                  const SizedBox(height: 24), 
 
                   SizedBox(
                     width: double.infinity,
@@ -221,17 +174,15 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
                 
-                // Aumentei o espaçamento aqui para afastar bem do botão de cima
                   const SizedBox(height: 48), 
 
-                  // Texto limpo e direto, em uma linha só
                   Center(
                     child: RichText(
                       text: TextSpan(
                         style: const TextStyle(
                           color: Color(0xFF584048), 
                           fontSize: 14,
-                          fontWeight: FontWeight.w500, // Um peso um pouquinho maior pra dar leitura
+                          fontWeight: FontWeight.w500, 
                         ),
                         children: [
                           const TextSpan(text: 'Ainda não tem uma conta? '),
@@ -253,9 +204,60 @@ class _LoginPageState extends State<LoginPage> {
                   const SizedBox(height: 32)
                 ],
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // MÉTODO REUTILIZÁVEL E ALINHADO
+  Widget _buildInputField({
+    required String label,
+    required String hint,
+    TextInputType? keyboardType,
+    bool obscureText = false,
+    Widget? suffixIcon,
+    Function(String)? onChanged,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 24.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              color: Color(0xFF584048),
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFFF6F1FF),
+              borderRadius: BorderRadius.circular(32),
+            ),
+            child: TextField(
+              obscureText: obscureText,
+              keyboardType: keyboardType,
+              onChanged: onChanged,
+              textAlignVertical: TextAlignVertical.center,
+              style: const TextStyle(color: Color(0xFF584048), fontSize: 16),
+              decoration: InputDecoration(
+                isDense: true,
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20), 
+                hintText: hint,
+                hintStyle: TextStyle(
+                  color: const Color(0xFF584048).withOpacity(0.4),
+                ),
+                suffixIcon: suffixIcon,
               ),
             ),
-          
+          ),
         ],
       ),
     );

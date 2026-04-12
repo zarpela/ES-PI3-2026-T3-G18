@@ -1,8 +1,11 @@
 //feito por Marcelo
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_client/modules/presentation/components/password_validation_card.dart';
+import 'package:flutter_mobx/flutter_mobx.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:flutter_client/shared/app_illustrations.dart';
+import 'register_controller.dart'; 
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -12,17 +15,12 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-  bool _obscurePassword = true;
-  String _password = '';
-
-  bool get _hasMinLength => _password.length >= 8;
-  bool get _hasUpperAndLower => _password.contains(RegExp(r'[A-Z]')) && _password.contains(RegExp(r'[a-z]'));
-  bool get _hasNumberOrSymbol => _password.contains(RegExp(r'[0-9]')) || _password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'));
+  final controller = Modular.get<RegisterController>();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFBFF), 
+      backgroundColor: const Color(0xFFFFFBFF),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -50,7 +48,6 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
               ),
               const SizedBox(height: 16),
-              
               const Text(
                 'Sua jornada para um futuro financeiro\npróspero começa agora. Preencha os\ndetalhes abaixo.',
                 style: TextStyle(
@@ -61,101 +58,130 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
               const SizedBox(height: 40),
 
-              _buildInputField(
-                label: 'NOME COMPLETO',
-                hint: 'Como no seu RG ou CNH',
-                keyboardType: TextInputType.name,
-              ),
-              
-              _buildInputField(
-                label: 'TELEFONE',
-                hint: '(00) 0 0000-0000',
-                keyboardType: TextInputType.phone,
-              ),
-              
-              _buildInputField(
-                label: 'E-MAIL',
-                hint: 'seuemail@exemplo.com',
-                keyboardType: TextInputType.emailAddress,
-              ),
+              Observer(
+                builder: (_) {
+                  return Column(
+                    children: [
+                      _buildInputField(
+                        label: 'NOME COMPLETO',
+                        hint: 'Como no seu RG ou CNH',
+                        keyboardType: TextInputType.name,
+                        onChanged: controller.setFullName,
+                      ),
+                      
+                      _buildInputField(
+                        label: 'TELEFONE',
+                        hint: '(00) 0 0000-0000',
+                        keyboardType: TextInputType.phone,
+                        onChanged: controller.setPhone,
+                      ),
+                      
+                      _buildInputField(
+                        label: 'E-MAIL',
+                        hint: 'seuemail@exemplo.com',
+                        keyboardType: TextInputType.emailAddress,
+                        onChanged: controller.setEmail,
+                      ),
 
-              _buildInputField(
-                label: 'SENHA',
-                hint: 'Mínimo 8 caracteres',
-                obscureText: _obscurePassword,
-                onChanged: (value) {
-                  setState(() {
-                    _password = value; 
-                  });
+                      _buildInputField(
+                        label: 'SENHA',
+                        hint: 'Mínimo 8 caracteres',
+                        obscureText: controller.obscurePassword,
+                        onChanged: controller.setPassword,
+                        suffixIcon: Padding(
+                          padding: const EdgeInsets.only(right: 8.0),
+                          child: IconButton(
+                            splashRadius: 24,
+                            icon: AppIllustrations.eyeIcon(
+                              color: const Color(0xFF514347),
+                            ),
+                            onPressed: controller.toggleObscurePassword,
+                          ),
+                        ),
+                      ),
+
+                      PasswordValidationCard(
+                        hasMinLength: controller.hasMinLength,
+                        hasUpperAndLower: controller.hasUpperAndLower,
+                        hasNumberOrSymbol: controller.hasNumberOrSymbol,
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      _buildInputField(
+                        label: 'CPF',
+                        hint: '000.000.000-00',
+                        keyboardType: TextInputType.number,
+                        onChanged: controller.setDocument,
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      SizedBox(
+                        width: double.infinity,
+                        height: 68,
+                        child: ElevatedButton(
+                          onPressed: controller.isFormValid ? () {
+                            // Modular.to.pushNamed('/home');
+                          } : null,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFC71E74),
+                            disabledBackgroundColor: const Color(0xFFC71E74).withOpacity(0.3),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(34),
+                            ),
+                            elevation: 0, 
+                          ),
+                          child: const Text(
+                            'Cadastrar agora',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
                 },
-                suffixIcon: Padding(
-                  padding: const EdgeInsets.only(right: 8.0),
-                  child: IconButton(
-                    splashRadius: 24,
-                    icon: AppIllustrations.eyeIcon(
-                      color: const Color(0xFF514347),
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _obscurePassword = !_obscurePassword;
-                      });
-                    },
-                  ),
-                ),
-              ),
-
-              PasswordValidationCard(
-                hasMinLength: _hasMinLength,
-                hasUpperAndLower: _hasUpperAndLower,
-                hasNumberOrSymbol: _hasNumberOrSymbol,
               ),
               
               const SizedBox(height: 24),
 
-              _buildInputField(
-                label: 'CPF',
-                hint: '000.000.000-00',
-                keyboardType: TextInputType.number,
-              ),
-
-              const SizedBox(height: 16),
-
-              Container(
-                width: double.infinity,
-                height: 68,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(34),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFFC71E74).withOpacity(0.15),
-                      offset: const Offset(0, 10),
-                      blurRadius: 15,
+              Center(
+                child: RichText(
+                  textAlign: TextAlign.center,
+                  text: TextSpan(
+                    style: const TextStyle(
+                      color: Color(0xFF514347),
+                      fontSize: 13,
+                      height: 1.4,
                     ),
-                  ],
-                ),
-                child: ElevatedButton(
-                  onPressed: (_hasMinLength && _hasUpperAndLower && _hasNumberOrSymbol) ? () {
-                    // TODO: controller cadastrar
-                    Modular.to.pop();
-                  } : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFC71E74),
-                    disabledBackgroundColor: const Color(0xFFC71E74).withOpacity(0.3),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(34),
-                    ),
-                    elevation: 0, 
-                  ),
-                  child: const Text(
-                    'Cadastrar agora',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
+                    children: [
+                      const TextSpan(text: 'Ao clicar em cadastrar, você concorda com nossos\n'),
+                      TextSpan(
+                        text: 'Termos de Uso',
+                        style: const TextStyle(
+                          color: Color(0xFFC71E74),
+                          fontWeight: FontWeight.bold,
+                        ),
+                        recognizer: TapGestureRecognizer()..onTap = () {},
+                      ),
+                      const TextSpan(text: ' e '),
+                      TextSpan(
+                        text: 'Política de Privacidade.',
+                        style: const TextStyle(
+                          color: Color(0xFF514347),
+                          fontWeight: FontWeight.bold,
+                        ),
+                        recognizer: TapGestureRecognizer()..onTap = () {},
+                      ),
+                    ],
                   ),
                 ),
               ),
+              const SizedBox(height: 32),
             ],
           ),
         ),
@@ -169,7 +195,7 @@ class _RegisterPageState extends State<RegisterPage> {
     TextInputType? keyboardType,
     bool obscureText = false,
     Widget? suffixIcon,
-    Function(String)? onChanged, 
+    required Function(String) onChanged,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 24.0),
