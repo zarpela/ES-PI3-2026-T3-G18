@@ -81,6 +81,24 @@ mixin _$LoginController on LoginControllerBase, Store {
     });
   }
 
+  late final _$infoMessageAtom = Atom(
+    name: 'LoginControllerBase.infoMessage',
+    context: context,
+  );
+
+  @override
+  String? get infoMessage {
+    _$infoMessageAtom.reportRead();
+    return super.infoMessage;
+  }
+
+  @override
+  set infoMessage(String? value) {
+    _$infoMessageAtom.reportWrite(value, super.infoMessage, () {
+      super.infoMessage = value;
+    });
+  }
+
   late final _$loginAsyncAction = AsyncAction(
     'LoginControllerBase.login',
     context: context,
@@ -89,6 +107,28 @@ mixin _$LoginController on LoginControllerBase, Store {
   @override
   Future<void> login() {
     return _$loginAsyncAction.run(() => super.login());
+  }
+
+  late final _$sendPasswordResetEmailAsyncAction = AsyncAction(
+    'LoginControllerBase.sendPasswordResetEmail',
+    context: context,
+  );
+
+  @override
+  Future<void> sendPasswordResetEmail() {
+    return _$sendPasswordResetEmailAsyncAction.run(
+      () => super.sendPasswordResetEmail(),
+    );
+  }
+
+  late final _$createAccountAsyncAction = AsyncAction(
+    'LoginControllerBase.createAccount',
+    context: context,
+  );
+
+  @override
+  Future<void> createAccount() {
+    return _$createAccountAsyncAction.run(() => super.createAccount());
   }
 
   late final _$LoginControllerBaseActionController = ActionController(
@@ -126,7 +166,8 @@ mixin _$LoginController on LoginControllerBase, Store {
 email: ${email},
 password: ${password},
 isLoading: ${isLoading},
-errorMessage: ${errorMessage}
+errorMessage: ${errorMessage},
+infoMessage: ${infoMessage}
     ''';
   }
 }
