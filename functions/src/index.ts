@@ -34,3 +34,5 @@ export const api = onRequest(
   {region: "southamerica-east1"},
   app
 );
+
+export { getStartups } from "./startups/getStartups";
