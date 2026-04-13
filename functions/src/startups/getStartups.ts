@@ -13,9 +13,10 @@ const colStartUps = db.collection("startups");
 
 export const getStartups = onRequest(async (request, response) => {
     try {
+        // a coleção já foi definida lá em cima
         const snapshot = await colStartUps.get(); 
 
-        // a coleção já foi definida lá em cima
+        // organiza as informações em um map
         const data = snapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
@@ -25,6 +26,7 @@ export const getStartups = onRequest(async (request, response) => {
         response.status(200).json(data)
     }
     catch (e) {
+        console.error("getStartups failed:", e); // apresenta o erro especificamente
         response.status(500).json({error: "Erro"});
     }
 });
