@@ -123,37 +123,59 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                             ),
                           ),
+
+                          // Mensagem de erro
+                          if (controller.errorMessage != null)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 16.0),
+                              child: Text(
+                                controller.errorMessage!,
+                                style: const TextStyle(
+                                  color: Colors.red,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+
+                          SizedBox(
+                            width: double.infinity,
+                            height: 56,
+                            child: ElevatedButton(
+                              onPressed: controller.isFormValid && !controller.isLoading
+                                  ? () async {
+                                      final success = await controller.login();
+                                      if (!context.mounted) return;
+                                      if (success) {
+                                        Modular.to.pushReplacementNamed(AppRoutes.home);
+                                      }
+                                    }
+                                  : null,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFC71E74),
+                                disabledBackgroundColor:
+                                    const Color(0xFFC71E74).withOpacity(0.3),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(28),
+                                ),
+                                elevation: 0,
+                              ),
+                              child: controller.isLoading
+                                  ? const CircularProgressIndicator(color: Colors.white)
+                                  : const Text(
+                                      'Entrar na minha conta',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                            ),
+                          ),
                         ],
                       );
-                    }
+                    },
                   ),
 
-                  const SizedBox(height: 24), 
-
-                  SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        // TODO: controller login
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFC71E74),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(28),
-                        ),
-                        elevation: 0, 
-                      ),
-                      child: const Text(
-                        'Entrar na minha conta',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
                   const SizedBox(height: 24),
 
                   Center(
@@ -201,7 +223,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 32)
+                  const SizedBox(height: 32),
                 ],
               ),
             ),
