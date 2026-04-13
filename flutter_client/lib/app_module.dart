@@ -28,7 +28,7 @@ class AppModule extends Module {
 
     // Controllers
     i.addSingleton(LoginController.new);
-    i.addSingleton(HomeController.new);
+    i.addSingleton(() => HomeController(i<Dio>()));
   }
 
   @override
