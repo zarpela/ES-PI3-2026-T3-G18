@@ -46,3 +46,5 @@ app.post("/login", (req, res) => {
 // Exporta a aplicação Express como uma função HTTP do Firebase
 // Isso transforma sua API em uma Cloud Function acessível por URL
 export const api = functions.https.onRequest(app);
+
+export { getStartups } from "./startups/getStartups";
