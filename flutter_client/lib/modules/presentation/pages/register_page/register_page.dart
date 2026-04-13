@@ -18,6 +18,12 @@ class _RegisterPageState extends State<RegisterPage> {
   final controller = Modular.get<RegisterController>();
 
   @override
+  void dispose(){
+    controller.clearForm();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFFFFBFF),
@@ -85,7 +91,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
                       _buildInputField(
                         label: 'SENHA',
-                        hint: 'Mínimo 8 caracteres',
+                        hint: '••••••••',
                         obscureText: controller.obscurePassword,
                         onChanged: controller.setPassword,
                         suffixIcon: Padding(

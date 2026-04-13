@@ -18,6 +18,12 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
   final ChangePasswordController controller = Modular.get<ChangePasswordController>();
 
   @override
+  void dispose(){
+    controller.clearForm();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFFFFBFF),

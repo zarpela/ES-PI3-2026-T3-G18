@@ -21,8 +21,15 @@ abstract class _ChangePasswordControllerBase with Store {
   bool obscureConfirmPassword = true;
 
   @action
-  void setPassword(String value) {
+  void clearForm(){
+    password = '';
+    confirmPassword = '';
+    obscurePassword = true;
+    obscureConfirmPassword = true;
+  }
 
+  @action
+  void setPassword(String value) {
     password = value;
   }
 

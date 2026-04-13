@@ -37,6 +37,16 @@ abstract class _RegisterControllerBase with Store {
   String? errorMessage;
 
   @action
+  void clearForm() {
+    fullName = '';
+    phone = '';
+    email = '';
+    password = '';
+    document = '';
+    obscurePassword = true;
+  }
+
+  @action
   void setFullName(String value) => fullName = value;
 
   @action
