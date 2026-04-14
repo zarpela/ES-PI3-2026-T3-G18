@@ -29,11 +29,23 @@ class AppModule extends Module {
     // Controllers
     i.addSingleton(LoginController.new);
     i.addSingleton(() => HomeController(i<Dio>()));
+<<<<<<< Updated upstream
+=======
+    i.addSingleton(ChangePasswordController.new);
+    i.addSingleton(RegisterController.new); // Já recebe Dio automaticamente
+>>>>>>> Stashed changes
   }
 
   @override
   void routes(r) {
     r.child(AppRoutes.login, child: (_) => const LoginPage());
     r.child(AppRoutes.home,  child: (_) => const HomePage());
+<<<<<<< Updated upstream
+=======
+    r.child(AppRoutes.register, child: (_) => const RegisterPage());
+    r.child(AppRoutes.catalogo, child: (context) => const HomePage());
+    r.child(AppRoutes.forgotPassword, child: (_) => const ForgotPasswordPage());
+    r.child(AppRoutes.changePassword, child: (_) => const ChangePasswordPage());
+>>>>>>> Stashed changes
   }
 }
