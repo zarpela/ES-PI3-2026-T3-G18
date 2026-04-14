@@ -45,3 +45,5 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+functions/local-mail.config.json
+functions/registered-users.local.json

@@ -1,0 +1,14 @@
+{
+  "mailUser": "seu-remetente@gmail.com",
+  "mailPass": "sua-app-password",
+  "testUsers": [
+    {
+      "email": "abdallahborges@gmail.com",
+      "senha": "123"
+    },
+    {
+      "email": "admin@test.com",
+      "senha": "123"
+    }
+  ]
+}
