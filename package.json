@@ -17,5 +17,15 @@
   "bugs": {
     "url": "https://github.com/zarpela/ES-PI3-2026-T3-G18/issues"
   },
-  "homepage": "https://github.com/zarpela/ES-PI3-2026-T3-G18#readme"
+  "homepage": "https://github.com/zarpela/ES-PI3-2026-T3-G18#readme",
+  "dependencies": {
+    "firebase-admin": "^13.8.0",
+    "firebase-functions": "^7.2.5"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.2.0",
+    "globals": "^17.5.0",
+    "typescript-eslint": "^8.58.1"
+  }
 }

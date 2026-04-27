@@ -17,19 +17,13 @@ import 'package:flutter/foundation.dart'
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      throw UnsupportedError(
-        'DefaultFirebaseOptions have not been configured for web - '
-        'you can reconfigure this by running the FlutterFire CLI again.',
-      );
+      return web;
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
         return android;
       case TargetPlatform.iOS:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for ios - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return ios;
       case TargetPlatform.macOS:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for macos - '
@@ -58,5 +52,24 @@ class DefaultFirebaseOptions {
     messagingSenderId: '249590976579',
     projectId: 'projetointegrador3-grupo18',
     storageBucket: 'projetointegrador3-grupo18.firebasestorage.app',
+  );
+
+  static const FirebaseOptions ios = FirebaseOptions(
+    apiKey: 'AIzaSyANkZGJik26CDl6hw_2FXYzDUs5Gd0yJjw',
+    appId: '1:249590976579:ios:09e58a7edbbee79aecc4f6',
+    messagingSenderId: '249590976579',
+    projectId: 'projetointegrador3-grupo18',
+    storageBucket: 'projetointegrador3-grupo18.firebasestorage.app',
+    iosBundleId: 'com.example.flutterClient',
+  );
+
+  static const FirebaseOptions web = FirebaseOptions(
+    apiKey: 'AIzaSyD24Qh_rAKk5EtBgW79oBwhI5RM4qkBbwc',
+    appId: '1:249590976579:web:2fc708f2812629d0ecc4f6',
+    messagingSenderId: '249590976579',
+    projectId: 'projetointegrador3-grupo18',
+    authDomain: 'projetointegrador3-grupo18.firebaseapp.com',
+    storageBucket: 'projetointegrador3-grupo18.firebasestorage.app',
+    measurementId: 'G-3BC1NYLBLK',
   );
 }

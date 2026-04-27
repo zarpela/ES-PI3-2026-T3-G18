@@ -93,9 +93,10 @@ abstract class _RegisterControllerBase with Store {
 
     try {
       await _dio.post(
-        'register',
+        'create-account',
         data: {
           'name': fullName.trim(),
+          'nome': fullName.trim(),
           'telefone': phone.trim(),
           'email': email.trim(),
           'senha': password,
@@ -108,6 +109,9 @@ abstract class _RegisterControllerBase with Store {
     } on DioException catch (error) {
       errorMessage =
           _extractErrorMessage(error) ?? 'Nao foi possivel criar a conta.';
+      return false;
+    } catch (_) {
+      errorMessage = 'Nao foi possivel criar a conta.';
       return false;
     } finally {
       isLoading = false;

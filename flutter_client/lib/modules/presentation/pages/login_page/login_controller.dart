@@ -1,5 +1,5 @@
 //feito por marcelo
-import 'package:dio/dio.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mobx/mobx.dart';
 
 part 'login_controller.g.dart';
@@ -7,8 +7,9 @@ part 'login_controller.g.dart';
 class LoginController = LoginControllerBase with _$LoginController;
 
 abstract class LoginControllerBase with Store {
-  final Dio _dio;
-  LoginControllerBase(this._dio);
+  final FirebaseAuth? _auth;
+
+  LoginControllerBase([FirebaseAuth? auth]) : _auth = auth;
 
   @observable
   String email = '';
@@ -37,6 +38,8 @@ abstract class LoginControllerBase with Store {
   @computed
   bool get isFormValid => email.isNotEmpty && password.isNotEmpty;
 
+  FirebaseAuth get auth => _auth ?? FirebaseAuth.instance;
+
   @action
   Future<bool> login() async {
     final trimmedEmail = email.trim();
@@ -50,40 +53,35 @@ abstract class LoginControllerBase with Store {
     errorMessage = null;
 
     try {
-      await _dio.post(
-        'login',
-        data: {'email': trimmedEmail, 'senha': password},
-        options: Options(headers: {'Content-Type': 'application/json'}),
+      await auth.signInWithEmailAndPassword(
+        email: trimmedEmail,
+        password: password,
       );
-
       return true;
-    } on DioException catch (error) {
-      errorMessage =
-          _extractErrorMessage(error) ?? 'E-mail ou senha incorretos';
+    } on FirebaseAuthException catch (e) {
+      switch (e.code) {
+        case 'user-not-found':
+        case 'invalid-credential':
+          errorMessage = 'E-mail ou senha incorretos';
+          break;
+        case 'wrong-password':
+          errorMessage = 'Senha incorreta';
+          break;
+        case 'user-disabled':
+          errorMessage = 'Usuário desativado';
+          break;
+        case 'too-many-requests':
+          errorMessage = 'Muitas tentativas. Tente novamente mais tarde';
+          break;
+        default:
+          errorMessage = 'Erro ao fazer login';
+      }
       return false;
     } catch (_) {
-      errorMessage = 'Nao foi possivel fazer login agora.';
+      errorMessage = 'Erro ao fazer login';
       return false;
     } finally {
       isLoading = false;
     }
-  }
-
-  String? _extractErrorMessage(DioException error) {
-    final data = error.response?.data;
-
-    if (data is Map) {
-      final map = Map<String, dynamic>.from(data);
-      final message = map['message'] ?? map['error'];
-      if (message is String && message.isNotEmpty) {
-        return message;
-      }
-    }
-
-    if (data is String && data.isNotEmpty) {
-      return data;
-    }
-
-    return null;
   }
 }
