@@ -9,6 +9,7 @@ import path from "path";
 import {auth, db} from "./config/firebase";
 import testRoutes from "./routes/testRoutes";
 import userRoutes from "./routes/userRoutes";
+import walletRoutes from "./routes/walletRoutes";
 
 type LocalMailConfig = {
   mailUser?: string;
@@ -30,6 +31,7 @@ app.use(cors({origin: true}));
 app.use(express.json());
 app.use(userRoutes);
 app.use(testRoutes);
+app.use(walletRoutes);
 
 function loadJsonFile<T>(fileName: string): T | undefined {
   const filePath = path.resolve(__dirname, fileName);
