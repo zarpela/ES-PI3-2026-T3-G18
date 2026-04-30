@@ -1,6 +1,7 @@
 import {onRequest} from "firebase-functions/v2/https";
 import * as logger from "firebase-functions/logger";
 import type {UserRecord} from "firebase-admin/auth";
+import {randomInt} from "crypto";
 import cors from "cors";
 import express from "express";
 import fs from "fs";
@@ -57,11 +58,7 @@ function normalizeEmail(value: string): string {
 }
 
 function generateVerificationCode(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString();
-}
-
-function shouldReturnCodeForTesting(): boolean {
-  return process.env.FUNCTIONS_EMULATOR === "true";
+  return randomInt(100000, 1000000).toString();
 }
 
 function isExpired(expiresAt: string): boolean {
@@ -72,7 +69,9 @@ async function findUserByEmail(email: string): Promise<UserRecord | null> {
   try {
     return await auth.getUserByEmail(email);
   } catch (error) {
-    if ((error as {code?: string}).code === "auth/user-not-found") {
+    const code = (error as {code?: string}).code;
+
+    if (code === "auth/user-not-found" || code === "auth/invalid-email") {
       return null;
     }
 
@@ -110,21 +109,29 @@ async function clearResetCode(email: string): Promise<void> {
     .delete();
 }
 
+function buildForgotPasswordResponse() {
+  return {
+    message: "Se o e-mail estiver cadastrado, enviaremos as instrucoes de recuperacao.",
+  };
+}
+
+async function invalidateResetCode(email: string): Promise<void> {
+  await clearResetCode(email);
+}
+
 async function sendPasswordResetEmail(
   to: string,
   code: string,
-): Promise<"sent" | "testing" | "unavailable"> {
+): Promise<boolean> {
   const localMailConfig = loadLocalMailConfig();
   const mailUser = process.env.MAIL_USER || localMailConfig.mailUser;
   const mailPass = process.env.MAIL_PASS || localMailConfig.mailPass;
 
   if (!mailUser || !mailPass) {
     logger.warn(
-      "MAIL_USER/MAIL_PASS nao configurados. Preencha functions/local-mail.config.json.",
-      {to, code},
+      "MAIL_USER/MAIL_PASS nao configurados. O envio de e-mail de recuperacao nao foi realizado.",
     );
-
-    return shouldReturnCodeForTesting() ? "testing" : "unavailable";
+    return false;
   }
 
   const transporter = nodemailer.createTransport({
@@ -149,7 +156,7 @@ async function sendPasswordResetEmail(
     `,
   });
 
-  return "sent";
+  return true;
 }
 
 app.get("/", (_req, res) => {
@@ -169,9 +176,8 @@ app.post("/forgot-password", async (req, res) => {
     const user = await findUserByEmail(email);
 
     if (!user) {
-      return res.status(404).json({
-        message: "Usuario nao encontrado.",
-      });
+      await invalidateResetCode(email);
+      return res.status(200).json(buildForgotPasswordResponse());
     }
 
     const code = generateVerificationCode();
@@ -186,26 +192,17 @@ app.post("/forgot-password", async (req, res) => {
       uid: user.uid,
     });
 
-    const emailStatus = await sendPasswordResetEmail(email, code);
+    const emailSent = await sendPasswordResetEmail(email, code);
 
-    if (emailStatus === "unavailable") {
-      return res.status(503).json({
-        message: "Nao foi possivel enviar o e-mail de recuperacao de senha.",
-      });
+    if (!emailSent) {
+      await invalidateResetCode(email);
     }
 
-    return res.status(200).json({
-      message: emailStatus === "sent" ?
-        "Codigo de verificacao enviado por e-mail." :
-        "Codigo gerado para teste local.",
-      email,
-      ...(shouldReturnCodeForTesting() ? {code} : {}),
-    });
+    return res.status(200).json(buildForgotPasswordResponse());
   } catch (error) {
+    await invalidateResetCode(email);
     logger.error("Erro ao enviar e-mail de recuperacao.", error);
-    return res.status(500).json({
-      message: "Nao foi possivel enviar o e-mail de recuperacao de senha.",
-    });
+    return res.status(200).json(buildForgotPasswordResponse());
   }
 });
 
@@ -223,19 +220,22 @@ app.post("/verify-reset-code", async (req, res) => {
     const user = await findUserByEmail(email);
     const resetCode = await readResetCode(email);
 
-    if (!user) {
-      return res.status(404).json({
-        message: "Usuario nao encontrado.",
+    if (!user || !resetCode) {
+      await invalidateResetCode(email);
+      return res.status(400).json({
+        message: "Codigo de verificacao invalido.",
       });
     }
 
-    if (!resetCode || resetCode.code !== code) {
+    if (resetCode.code !== code || resetCode.uid !== user.uid) {
+      await invalidateResetCode(email);
       return res.status(400).json({
         message: "Codigo de verificacao invalido.",
       });
     }
 
     if (isExpired(resetCode.expiresAt)) {
+      await invalidateResetCode(email);
       return res.status(400).json({
         message: "Codigo expirado. Solicite um novo codigo.",
       });
@@ -273,26 +273,29 @@ app.post("/reset-password", async (req, res) => {
     const user = await findUserByEmail(email);
     const resetCode = await readResetCode(email);
 
-    if (!user) {
-      return res.status(404).json({
-        message: "Usuario nao encontrado.",
+    if (!user || !resetCode) {
+      await invalidateResetCode(email);
+      return res.status(400).json({
+        message: "Codigo de verificacao invalido.",
       });
     }
 
-    if (!resetCode || resetCode.code !== code) {
+    if (resetCode.code !== code || resetCode.uid !== user.uid) {
+      await invalidateResetCode(email);
       return res.status(400).json({
         message: "Codigo de verificacao invalido.",
       });
     }
 
     if (isExpired(resetCode.expiresAt)) {
+      await invalidateResetCode(email);
       return res.status(400).json({
         message: "Codigo expirado. Solicite um novo codigo.",
       });
     }
 
-    await auth.updateUser(user.uid, {password: novaSenha});
     await clearResetCode(email);
+    await auth.updateUser(user.uid, {password: novaSenha});
 
     return res.status(200).json({
       message: "Senha redefinida com sucesso.",

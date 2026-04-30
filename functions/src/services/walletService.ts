@@ -6,11 +6,18 @@ RA: [COLOQUE SEU RA]
 import {db} from "../config/firebase";
 
 type CreateWalletInput = {
+  authenticatedUserId?: string;
   userId?: string;
 };
 
 type AddBalanceInput = {
   amount?: number | string;
+  authenticatedUserId?: string;
+  userId?: string;
+};
+
+type WalletAccessInput = {
+  authenticatedUserId?: string;
   userId?: string;
 };
 
@@ -49,6 +56,8 @@ type ServiceError = Error & {
 
 const walletsCollection = "wallets";
 const walletTransactionsCollection = "walletTransactions";
+const unauthorizedMessage = "Usuario nao autenticado.";
+const forbiddenMessage = "Voce nao tem permissao para acessar esta carteira.";
 
 function createServiceError(status: number, message: string): ServiceError {
   const error = new Error(message) as ServiceError;
@@ -58,6 +67,23 @@ function createServiceError(status: number, message: string): ServiceError {
 
 function normalizeUserId(value: string): string {
   return value.trim();
+}
+
+function resolveAuthorizedUserId(data: WalletAccessInput): string {
+  const authenticatedUserId = normalizeUserId(
+    String(data.authenticatedUserId ?? ""),
+  );
+  const requestedUserId = normalizeUserId(String(data.userId ?? ""));
+
+  if (!authenticatedUserId) {
+    throw createServiceError(401, unauthorizedMessage);
+  }
+
+  if (requestedUserId && requestedUserId !== authenticatedUserId) {
+    throw createServiceError(403, forbiddenMessage);
+  }
+
+  return requestedUserId || authenticatedUserId;
 }
 
 function parseAmount(value: number | string | undefined): number {
@@ -110,11 +136,7 @@ function normalizeWalletData(userId: string, data: Partial<WalletDocument>): Wal
 }
 
 export const createWallet = async (data: CreateWalletInput) => {
-  const userId = normalizeUserId(String(data.userId ?? ""));
-
-  if (!userId) {
-    throw createServiceError(400, "userId e obrigatorio.");
-  }
+  const userId = resolveAuthorizedUserId(data);
 
   const walletRef = getWalletRef(userId);
 
@@ -143,12 +165,8 @@ export const createWallet = async (data: CreateWalletInput) => {
   });
 };
 
-export const getWalletByUserId = async (userIdInput: string) => {
-  const userId = normalizeUserId(userIdInput);
-
-  if (!userId) {
-    throw createServiceError(400, "userId e obrigatorio.");
-  }
+export const getWalletByUserId = async (data: WalletAccessInput) => {
+  const userId = resolveAuthorizedUserId(data);
 
   const walletSnapshot = await getWalletRef(userId).get();
 
@@ -163,12 +181,8 @@ export const getWalletByUserId = async (userIdInput: string) => {
 };
 
 export const addBalanceToWallet = async (data: AddBalanceInput) => {
-  const userId = normalizeUserId(String(data.userId ?? ""));
+  const userId = resolveAuthorizedUserId(data);
   const amount = parseAmount(data.amount);
-
-  if (!userId) {
-    throw createServiceError(400, "userId e obrigatorio.");
-  }
 
   if (!Number.isFinite(amount)) {
     throw createServiceError(400, "amount deve ser um numero valido.");
@@ -212,7 +226,7 @@ export const addBalanceToWallet = async (data: AddBalanceInput) => {
   });
 };
 
-export const listWalletTokens = async (userIdInput: string) => {
-  const wallet = await getWalletByUserId(userIdInput);
+export const listWalletTokens = async (data: WalletAccessInput) => {
+  const wallet = await getWalletByUserId(data);
   return wallet.tokens;
 };

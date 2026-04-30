@@ -114,19 +114,9 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       final data = error.response?.data;
       if (data is Map) {
         final map = Map<String, dynamic>.from(data);
-        if (isResend && map['code'] != null) {
-          resendAttempts.value += 1;
-        }
-        if (isResend && map['code'] != null && resendAttempts.value >= 2) {
-          startResendCountdown();
-        }
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(_buildApiMessage(map))));
-
-        if (map['code'] != null && openDialog) {
-          showVerificationDialog(context);
-        }
       } else {
         ScaffoldMessenger.of(
           context,
@@ -177,16 +167,8 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   }
 
   String _buildApiMessage(Map<String, dynamic> data) {
-    final message =
-        (data['message'] ?? data['error'] ?? 'Codigo enviado com sucesso.')
-            .toString();
-    final code = data['code']?.toString();
-
-    if (code == null || code.isEmpty) {
-      return message;
-    }
-
-    return '$message Codigo para teste local: $code';
+    return (data['message'] ?? data['error'] ?? 'Codigo enviado com sucesso.')
+        .toString();
   }
 
   void showVerificationDialog(BuildContext context) {

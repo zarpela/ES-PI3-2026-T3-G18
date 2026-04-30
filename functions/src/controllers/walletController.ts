@@ -29,9 +29,16 @@ function getErrorMessage(error: unknown): string {
   return "Erro ao processar a carteira.";
 }
 
+function getAuthenticatedUserId(res: Response): string {
+  return String(res.locals.authenticatedUserId ?? "");
+}
+
 export const createWalletHandler = async (req: Request, res: Response) => {
   try {
-    const wallet = await createWallet(req.body);
+    const wallet = await createWallet({
+      ...req.body,
+      authenticatedUserId: getAuthenticatedUserId(res),
+    });
 
     return res.status(201).json({
       ok: true,
@@ -51,7 +58,10 @@ export const createWalletHandler = async (req: Request, res: Response) => {
 
 export const getWalletHandler = async (req: Request, res: Response) => {
   try {
-    const wallet = await getWalletByUserId(String(req.params.userId ?? ""));
+    const wallet = await getWalletByUserId({
+      userId: String(req.params.userId ?? ""),
+      authenticatedUserId: getAuthenticatedUserId(res),
+    });
 
     return res.status(200).json({
       ok: true,
@@ -71,7 +81,10 @@ export const getWalletHandler = async (req: Request, res: Response) => {
 
 export const addBalanceHandler = async (req: Request, res: Response) => {
   try {
-    const wallet = await addBalanceToWallet(req.body);
+    const wallet = await addBalanceToWallet({
+      ...req.body,
+      authenticatedUserId: getAuthenticatedUserId(res),
+    });
 
     return res.status(200).json({
       ok: true,
@@ -91,7 +104,10 @@ export const addBalanceHandler = async (req: Request, res: Response) => {
 
 export const listWalletTokensHandler = async (req: Request, res: Response) => {
   try {
-    const tokens = await listWalletTokens(String(req.params.userId ?? ""));
+    const tokens = await listWalletTokens({
+      userId: String(req.params.userId ?? ""),
+      authenticatedUserId: getAuthenticatedUserId(res),
+    });
 
     return res.status(200).json({
       ok: true,
