@@ -28,6 +28,7 @@ migrate_working_dir/
 **/ios/Flutter/.last_build_id
 .dart_tool/
 .flutter-plugins-dependencies
+flutter_client/devtools_options.yaml
 .pub-cache/
 .pub/
 /build/
@@ -45,6 +46,7 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
-
-
+node_modules/
+functions/local-mail.config.json
+functions/registered-users.local.json
 serviceAccount.json

@@ -1,5 +1,4 @@
 // feito por marcelo
-import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:mobx/mobx.dart';
 
@@ -8,7 +7,6 @@ part 'register_controller.g.dart';
 class RegisterController = _RegisterControllerBase with _$RegisterController;
 
 abstract class _RegisterControllerBase with Store {
-
   final Dio _dio;
   _RegisterControllerBase(this._dio);
 
@@ -44,6 +42,7 @@ abstract class _RegisterControllerBase with Store {
     password = '';
     document = '';
     obscurePassword = true;
+    errorMessage = null;
   }
 
   @action
@@ -69,7 +68,8 @@ abstract class _RegisterControllerBase with Store {
 
   @computed
   bool get hasUpperAndLower =>
-      password.contains(RegExp(r'[A-Z]')) && password.contains(RegExp(r'[a-z]'));
+      password.contains(RegExp(r'[A-Z]')) &&
+      password.contains(RegExp(r'[a-z]'));
 
   @computed
   bool get hasNumberOrSymbol =>
@@ -92,42 +92,47 @@ abstract class _RegisterControllerBase with Store {
     errorMessage = null;
 
     try {
-      final response = await _dio.post(
-        '/api/create-account',
+      await _dio.post(
+        'create-account',
         data: {
-          'nome': fullName,
-          'telefone': phone,
-          'email': email,
+          'name': fullName.trim(),
+          'nome': fullName.trim(),
+          'telefone': phone.trim(),
+          'email': email.trim(),
           'senha': password,
-          'cpf': document,
+          'cpf': document.trim(),
         },
-        options: Options(
-          headers: {'Content-Type': 'application/json'},
-          responseType: ResponseType.json,
-        ),
+        options: Options(headers: {'Content-Type': 'application/json'}),
       );
 
-      // Garante que data é um Map, não uma String
-      final responseData = response.data is String
-          ? jsonDecode(response.data as String)
-          : response.data as Map<String, dynamic>;
-
-      if (responseData['ok'] == true) {
-        return true;
-      } else {
-        errorMessage = responseData['error'] ?? 'Erro ao criar conta';
-        return false;
-      }
-    } on DioException catch (e) {
-      final data = e.response?.data;
-      if (data == null || data is String) {
-        errorMessage = 'Erro de conexão';
-      } else {
-        errorMessage = (data as Map<String, dynamic>)['error'] ?? 'Erro de conexão';
-      }
+      return true;
+    } on DioException catch (error) {
+      errorMessage =
+          _extractErrorMessage(error) ?? 'Nao foi possivel criar a conta.';
+      return false;
+    } catch (_) {
+      errorMessage = 'Nao foi possivel criar a conta.';
       return false;
     } finally {
       isLoading = false;
     }
+  }
+
+  String? _extractErrorMessage(DioException error) {
+    final data = error.response?.data;
+
+    if (data is Map) {
+      final map = Map<String, dynamic>.from(data);
+      final message = map['message'] ?? map['error'];
+      if (message is String && message.isNotEmpty) {
+        return message;
+      }
+    }
+
+    if (data is String && data.isNotEmpty) {
+      return data;
+    }
+
+    return null;
   }
 }

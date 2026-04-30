@@ -1,8 +1,9 @@
 // feito por marcelo
 import 'package:flutter/material.dart';
 import 'package:flutter_mobx/flutter_mobx.dart';
-import 'package:flutter_modular/flutter_modular.dart';
 import 'package:flutter_client/shared/app_illustrations.dart';
+import 'package:flutter_client/shared/app_routes.dart';
+import 'package:flutter_modular/flutter_modular.dart';
 import 'change_password_controller.dart';
 
 class ChangePasswordPage extends StatefulWidget {
@@ -10,17 +11,72 @@ class ChangePasswordPage extends StatefulWidget {
 
   @override
   State<ChangePasswordPage> createState() => _ChangePasswordPageState();
-
 }
 
 class _ChangePasswordPageState extends State<ChangePasswordPage> {
+  final ChangePasswordController controller =
+      Modular.get<ChangePasswordController>();
 
-  final ChangePasswordController controller = Modular.get<ChangePasswordController>();
+  late final Map<String, dynamic> recoveryData;
+  bool isSubmitting = false;
+
+  String get email => (recoveryData['email'] ?? '').toString();
+  String get code => (recoveryData['code'] ?? '').toString();
 
   @override
-  void dispose(){
+  void initState() {
+    super.initState();
+    final data = Modular.args.data;
+    recoveryData = data is Map
+        ? Map<String, dynamic>.from(data)
+        : <String, dynamic>{};
+  }
+
+  @override
+  void dispose() {
     controller.clearForm();
     super.dispose();
+  }
+
+  Future<void> submitReset() async {
+    if (!controller.isFormValid || isSubmitting) {
+      return;
+    }
+
+    if (email.isEmpty || code.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Solicite um novo codigo para continuar.'),
+        ),
+      );
+      return;
+    }
+
+    setState(() => isSubmitting = true);
+    final error = await controller.resetPassword(email: email, code: code);
+    if (!mounted) {
+      return;
+    }
+
+    setState(() => isSubmitting = false);
+
+    if (error != null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error)));
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Senha redefinida com sucesso.')),
+    );
+
+    await Future<void>.delayed(const Duration(milliseconds: 700));
+    if (!mounted) {
+      return;
+    }
+
+    Modular.to.navigate(AppRoutes.login);
   }
 
   @override
@@ -32,7 +88,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Color(0xFFC71E74)),
-          onPressed: () => Modular.to.pop(), 
+          onPressed: () => Modular.to.pop(),
         ),
       ),
       body: SafeArea(
@@ -61,7 +117,6 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                 ),
               ),
               const SizedBox(height: 40),
-
               Observer(
                 builder: (_) {
                   return Column(
@@ -70,61 +125,66 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                         label: 'NOVA SENHA',
                         hint: 'Digite sua nova senha',
                         obscureText: controller.obscurePassword,
-                        onChanged: controller.setPassword, 
+                        onChanged: controller.setPassword,
                         suffixIcon: IconButton(
                           splashRadius: 24,
-                          icon: AppIllustrations.eyeIcon(color: const Color(0xFF584048)),
+                          icon: AppIllustrations.eyeIcon(
+                            color: const Color(0xFF584048),
+                          ),
                           onPressed: controller.toggleObscurePassword,
                         ),
                       ),
-
-                      // Campo: Confirmar Senha
                       _buildInputField(
                         label: 'CONFIRMAR NOVA SENHA',
                         hint: 'Repita a nova senha',
                         obscureText: controller.obscureConfirmPassword,
-                        onChanged: controller.setConfirmPassword, 
+                        onChanged: controller.setConfirmPassword,
                         suffixIcon: IconButton(
                           splashRadius: 24,
-                          icon: AppIllustrations.eyeIcon(color: const Color(0xFF584048)),
+                          icon: AppIllustrations.eyeIcon(
+                            color: const Color(0xFF584048),
+                          ),
                           onPressed: controller.toggleObscureConfirmPassword,
                         ),
                       ),
-
-
                       _buildValidationCard(),
-
                       const SizedBox(height: 32),
-
                       SizedBox(
                         width: double.infinity,
                         height: 64,
                         child: ElevatedButton(
-                          onPressed: controller.isFormValid 
-                            ? () {
-                                // TODO: chamar o método do controller para salvar a senha
-                                print('Senha validada e pronta para salvar!');
-                                Modular.to.pop();
-                                Modular.to.pop();
-                                Modular.to.pop();
-                              } 
-                            : null,
+                          onPressed: controller.isFormValid && !isSubmitting
+                              ? submitReset
+                              : null,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFFC71E74),
-                            disabledBackgroundColor: const Color(0xFFC71E74).withOpacity(0.3),
+                            disabledBackgroundColor: const Color(
+                              0xFFC71E74,
+                            ).withOpacity(0.3),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(32),
                             ),
                             elevation: 0,
                           ),
-                          child: const Text(
-                            'Redefinir senha',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
+                          child: isSubmitting
+                              ? const SizedBox(
+                                  width: 22,
+                                  height: 22,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.5,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white,
+                                    ),
+                                  ),
+                                )
+                              : const Text(
+                                  'Redefinir senha',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
                         ),
                       ),
                     ],
@@ -138,7 +198,6 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
       ),
     );
   }
-
 
   Widget _buildValidationCard() {
     return Container(
@@ -161,8 +220,14 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
           ),
           const SizedBox(height: 16),
           _buildRuleRow('Pelo menos 8 caracteres', controller.hasMinLength),
-          _buildRuleRow('Letras maiúsculas e minúsculas', controller.hasUpperAndLower),
-          _buildRuleRow('Pelo menos um número ou símbolo', controller.hasNumberOrSymbol),
+          _buildRuleRow(
+            'Letras maiusculas e minusculas',
+            controller.hasUpperAndLower,
+          ),
+          _buildRuleRow(
+            'Pelo menos um numero ou simbolo',
+            controller.hasNumberOrSymbol,
+          ),
         ],
       ),
     );
@@ -175,7 +240,9 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
         children: [
           Icon(
             isValid ? Icons.check_circle : Icons.radio_button_unchecked,
-            color: isValid ? const Color(0xFFC71E74) : const Color(0xFF584048).withOpacity(0.4),
+            color: isValid
+                ? const Color(0xFFC71E74)
+                : const Color(0xFF584048).withOpacity(0.4),
             size: 20,
           ),
           const SizedBox(width: 8),
@@ -183,7 +250,9 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
             child: Text(
               text,
               style: TextStyle(
-                color: isValid ? const Color(0xFF584048) : const Color(0xFF584048).withOpacity(0.6),
+                color: isValid
+                    ? const Color(0xFF584048)
+                    : const Color(0xFF584048).withOpacity(0.6),
                 fontSize: 14,
               ),
             ),
@@ -192,7 +261,6 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
       ),
     );
   }
-
 
   Widget _buildInputField({
     required String label,
@@ -229,7 +297,10 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
               decoration: InputDecoration(
                 isDense: true,
                 border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 22),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 22,
+                ),
                 hintText: hint,
                 hintStyle: TextStyle(
                   color: const Color(0xFF584048).withOpacity(0.4),
