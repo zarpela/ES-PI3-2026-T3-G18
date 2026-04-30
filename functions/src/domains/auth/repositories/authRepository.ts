@@ -6,7 +6,9 @@ export async function findUserByEmail(email: string): Promise<UserRecord | null>
   try {
     return await auth.getUserByEmail(normalizeEmail(email));
   } catch (error) {
-    if ((error as {code?: string}).code === "auth/user-not-found") {
+    const code = (error as {code?: string}).code;
+
+    if (code === "auth/user-not-found" || code === "auth/invalid-email") {
       return null;
     }
 

@@ -4,9 +4,11 @@ import {
   createFutureIsoString,
   generateVerificationCode,
   isExpired,
-  shouldReturnCodeForTesting,
 } from "../../../shared/utils";
-import {findUserByEmail, updateUserPassword} from "../repositories/authRepository";
+import {
+  findUserByEmail,
+  updateUserPassword,
+} from "../repositories/authRepository";
 import {
   clearResetCode,
   readResetCode,
@@ -16,15 +18,25 @@ import {sendPasswordResetEmail} from "../repositories/mailRepository";
 
 const resetCodeExpiresInMinutes = 15;
 
-export async function requestPasswordReset(email: string): Promise<{
-  message: string;
-  email: string;
-  code?: string;
-}> {
+export function buildForgotPasswordResponse(): {message: string} {
+  return {
+    message:
+      "Se o e-mail estiver cadastrado, enviaremos as instrucoes de recuperacao.",
+  };
+}
+
+async function invalidateResetCode(email: string): Promise<void> {
+  await clearResetCode(email);
+}
+
+export async function requestPasswordReset(
+  email: string,
+): Promise<{message: string}> {
   const user = await findUserByEmail(email);
 
   if (!user) {
-    throw createAppError(404, "Usuario nao encontrado.");
+    await invalidateResetCode(email);
+    return buildForgotPasswordResponse();
   }
 
   const code = generateVerificationCode();
@@ -37,22 +49,13 @@ export async function requestPasswordReset(email: string): Promise<{
     uid: user.uid,
   });
 
-  const emailStatus = await sendPasswordResetEmail(email, code);
+  const emailSent = await sendPasswordResetEmail(email, code);
 
-  if (emailStatus === "unavailable") {
-    throw createAppError(
-      503,
-      "Nao foi possivel enviar o e-mail de recuperacao de senha.",
-    );
+  if (!emailSent) {
+    await invalidateResetCode(email);
   }
 
-  return {
-    message: emailStatus === "sent" ?
-      "Codigo de verificacao enviado por e-mail." :
-      "Codigo gerado para teste local.",
-    email,
-    ...(shouldReturnCodeForTesting() ? {code} : {}),
-  };
+  return buildForgotPasswordResponse();
 }
 
 export async function verifyPasswordResetCode(
@@ -62,11 +65,12 @@ export async function verifyPasswordResetCode(
   const user = await findUserByEmail(email);
   const resetCode = await readResetCode(email);
 
-  if (!user) {
-    throw createAppError(404, "Usuario nao encontrado.");
+  if (!user || !resetCode) {
+    await invalidateResetCode(email);
+    throw createAppError(400, "Codigo de verificacao invalido.");
   }
 
-  validateResetCode(resetCode, code);
+  await validateResetCode(email, user.uid, resetCode, code);
 
   return {
     message: "Codigo validado com sucesso.",
@@ -85,11 +89,12 @@ export async function resetPassword(
   const user = await findUserByEmail(email);
   const resetCode = await readResetCode(email);
 
-  if (!user) {
-    throw createAppError(404, "Usuario nao encontrado.");
+  if (!user || !resetCode) {
+    await invalidateResetCode(email);
+    throw createAppError(400, "Codigo de verificacao invalido.");
   }
 
-  validateResetCode(resetCode, code);
+  await validateResetCode(email, user.uid, resetCode, code);
 
   await updateUserPassword(user.uid, newPassword);
   await clearResetCode(email);
@@ -99,15 +104,19 @@ export async function resetPassword(
   };
 }
 
-function validateResetCode(
-  resetCode: StoredResetCode | null,
+async function validateResetCode(
+  email: string,
+  userId: string,
+  resetCode: StoredResetCode,
   code: string,
-): void {
-  if (!resetCode || resetCode.code !== code) {
+): Promise<void> {
+  if (resetCode.code !== code || resetCode.uid !== userId) {
+    await invalidateResetCode(email);
     throw createAppError(400, "Codigo de verificacao invalido.");
   }
 
   if (isExpired(resetCode.expiresAt)) {
+    await invalidateResetCode(email);
     throw createAppError(400, "Codigo expirado. Solicite um novo codigo.");
   }
 }

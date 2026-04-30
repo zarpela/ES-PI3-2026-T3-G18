@@ -4,6 +4,7 @@ import 'package:mobx/mobx.dart';
 
 part 'change_password_controller.g.dart';
 
+// ignore: library_private_types_in_public_api
 class ChangePasswordController = _ChangePasswordControllerBase
     with _$ChangePasswordController;
 

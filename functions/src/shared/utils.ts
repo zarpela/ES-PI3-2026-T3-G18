@@ -1,3 +1,4 @@
+import {randomInt} from "crypto";
 import * as logger from "firebase-functions/logger";
 import fs from "fs";
 import path from "path";
@@ -26,11 +27,7 @@ export function normalizeEmail(value: string): string {
 }
 
 export function generateVerificationCode(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString();
-}
-
-export function shouldReturnCodeForTesting(): boolean {
-  return process.env.FUNCTIONS_EMULATOR === "true";
+  return randomInt(100000, 1000000).toString();
 }
 
 export function isExpired(expiresAt: string): boolean {

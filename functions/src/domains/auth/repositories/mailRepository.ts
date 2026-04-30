@@ -1,10 +1,9 @@
 import * as logger from "firebase-functions/logger";
 import nodemailer from "nodemailer";
-import type {LocalMailConfig, PasswordResetEmailStatus} from "../../../shared/types";
+import type {LocalMailConfig} from "../../../shared/types";
 import {
   loadJsonFile,
   resolveFunctionsPath,
-  shouldReturnCodeForTesting,
 } from "../../../shared/utils";
 
 function loadLocalMailConfig(): LocalMailConfig {
@@ -18,18 +17,16 @@ function loadLocalMailConfig(): LocalMailConfig {
 export async function sendPasswordResetEmail(
   to: string,
   code: string,
-): Promise<PasswordResetEmailStatus> {
+): Promise<boolean> {
   const localMailConfig = loadLocalMailConfig();
   const mailUser = process.env.MAIL_USER || localMailConfig.mailUser;
   const mailPass = process.env.MAIL_PASS || localMailConfig.mailPass;
 
   if (!mailUser || !mailPass) {
     logger.warn(
-      "MAIL_USER/MAIL_PASS nao configurados. Preencha functions/local-mail.config.json.",
-      {to, code},
+      "MAIL_USER/MAIL_PASS nao configurados. O envio de e-mail de recuperacao nao foi realizado.",
     );
-
-    return shouldReturnCodeForTesting() ? "testing" : "unavailable";
+    return false;
   }
 
   const transporter = nodemailer.createTransport({
@@ -54,5 +51,5 @@ export async function sendPasswordResetEmail(
     `,
   });
 
-  return "sent";
+  return true;
 }

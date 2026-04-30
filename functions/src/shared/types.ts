@@ -3,8 +3,6 @@ export type LocalMailConfig = {
   mailPass?: string;
 };
 
-export type PasswordResetEmailStatus = "sent" | "testing" | "unavailable";
-
 export type StoredResetCode = {
   code: string;
   email: string;
