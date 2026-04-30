@@ -8,6 +8,7 @@ import fs from "fs";
 import nodemailer from "nodemailer";
 import path from "path";
 import {auth, db} from "./config/firebase";
+import marketRoutes from "./routes/marketRoutes";
 import testRoutes from "./routes/testRoutes";
 import userRoutes from "./routes/userRoutes";
 import walletRoutes from "./routes/walletRoutes";
@@ -32,6 +33,7 @@ app.use(cors({origin: true}));
 app.use(express.json());
 app.use(userRoutes);
 app.use(testRoutes);
+app.use("/market", marketRoutes);
 app.use(walletRoutes);
 
 function loadJsonFile<T>(fileName: string): T | undefined {
