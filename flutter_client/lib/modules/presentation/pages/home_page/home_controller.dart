@@ -1,12 +1,13 @@
 // feito por pedro henrique bonetto
 
-import 'package:dio/dio.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 
 class HomeController extends ChangeNotifier {
-  final Dio _dio;
+  HomeController();
 
-  HomeController(this._dio);
+  final FirebaseFunctions _functions =
+      FirebaseFunctions.instanceFor(region: 'southamerica-east1');
 
   final TextEditingController searchController = TextEditingController();
 
@@ -39,34 +40,66 @@ class HomeController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await _dio.get('/api/get-startups');
-      final data = response.data;
+      final callable = _functions.httpsCallable('getStartups');
+
+      final result = await callable.call(<String, dynamic>{});
+      final data = result.data;
+
+      debugPrint('getStartups result type: ${data.runtimeType}');
+      debugPrint('getStartups result: $data');
 
       if (data is List) {
-        _allStartups = data.map((e) {
-    final item = Map<String, dynamic>.from(e as Map);
+        _allStartups = data.map<Map<String, dynamic>>((e) {
+          final item = Map<String, dynamic>.from(e as Map);
 
-    return {
-      'id': item['id'],
-      'name': item['nome_startup'] ?? '',
-      'description': item['descricao'] ?? item['descrição'] ?? '',
-      'stage': item['estagio'] ?? '',
-      'sector': (item['setor'] ?? '').toString().toLowerCase(),
-      'raised': 'R\$ ${item['capitalAportado'] ?? 0}',
-      'roi': item['status'] ?? '',
-      'raw': item,
-    };
-  }).toList();
-} else {
-  _allStartups = [];
-}
+          return {
+            'id': item['id'],
+            'name': item['name'] ?? item['nome_startup'] ?? '',
+            'description':
+                item['description'] ?? item['descricao'] ?? item['descrição'] ?? '',
+            'tagline': item['tagline'] ?? '',
+            'stage': item['stage'] ?? item['estagio'] ?? '',
+            'sector': _normalizeSector(
+              (item['sector'] ?? item['setor'] ?? '').toString(),
+            ),
+            'raised': _formatRaised(item['raised'] ?? item['capitalAportado']),
+            'roi': (item['roi'] ?? item['status'] ?? '').toString(),
+            'raw': item,
+          };
+        }).toList();
+      } else if (data is Map && data['data'] is List) {
+        _allStartups = (data['data'] as List).map<Map<String, dynamic>>((e) {
+          final item = Map<String, dynamic>.from(e as Map);
 
-_applyFilters();
-    } on DioException {
+          return {
+            'id': item['id'],
+            'name': item['name'] ?? item['nome_startup'] ?? '',
+            'description':
+                item['description'] ?? item['descricao'] ?? item['descrição'] ?? '',
+            'tagline': item['tagline'] ?? '',
+            'stage': item['stage'] ?? item['estagio'] ?? '',
+            'sector': _normalizeSector(
+              (item['sector'] ?? item['setor'] ?? '').toString(),
+            ),
+            'raised': _formatRaised(item['raised'] ?? item['capitalAportado']),
+            'roi': (item['roi'] ?? item['status'] ?? '').toString(),
+            'raw': item,
+          };
+        }).toList();
+      } else {
+        _allStartups = [];
+      }
+
+      _applyFilters();
+    } on FirebaseFunctionsException catch (e) {
+      debugPrint(
+        'FirebaseFunctionsException: code=${e.code}, message=${e.message}, details=${e.details}',
+      );
       errorMessage = 'Não foi possível carregar as startups.';
       _allStartups = [];
       startups = [];
-    } catch (_) {
+    } catch (e) {
+      debugPrint('HomeController error: $e');
       errorMessage = 'Erro inesperado ao carregar o catálogo.';
       _allStartups = [];
       startups = [];
@@ -158,6 +191,31 @@ _applyFilters();
 
     startups = result;
     notifyListeners();
+  }
+
+  String _normalizeSector(String value) {
+    final lower = value.trim().toLowerCase();
+
+    switch (lower) {
+      case 'agrotech':
+      case 'agtech':
+        return 'agtech';
+      case 'fintech':
+        return 'fintech';
+      case 'health':
+      case 'healthtech':
+        return 'healthtech';
+      case 'edtech':
+        return 'edtech';
+      default:
+        return lower;
+    }
+  }
+
+  String _formatRaised(dynamic value) {
+    if (value == null) return 'R\$ 0';
+    final raw = value.toString();
+    return raw.contains('R\$') ? raw : 'R\$ $raw';
   }
 
   double _parseMoney(String value) {
