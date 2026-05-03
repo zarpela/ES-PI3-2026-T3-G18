@@ -1,5 +1,4 @@
-// feito por marcelo
-
+import 'package:dio/dio.dart';
 import 'package:flutter_client/core/app_settings.dart';
 import 'package:flutter_client/modules/presentation/pages/home_page/home_controller.dart';
 import 'package:flutter_client/modules/presentation/pages/home_page/home_page.dart';
@@ -29,7 +28,7 @@ class AppModule extends Module {
     );
 
     i.addSingleton(() => LoginController());
-    i.addSingleton(HomeController.new);
+    i.addSingleton<HomeController>(() => HomeController());
     i.addSingleton(() => ChangePasswordController(i()));
     i.addSingleton(() => RegisterController(i()));
   }
