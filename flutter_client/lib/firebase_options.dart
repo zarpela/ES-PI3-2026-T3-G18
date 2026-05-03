@@ -72,5 +72,4 @@ class DefaultFirebaseOptions {
     storageBucket: 'projetointegrador3-grupo18.firebasestorage.app',
     measurementId: 'G-3BC1NYLBLK',
   );
-
 }

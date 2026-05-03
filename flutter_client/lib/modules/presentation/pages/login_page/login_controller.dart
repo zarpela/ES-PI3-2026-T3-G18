@@ -7,7 +7,9 @@ part 'login_controller.g.dart';
 class LoginController = LoginControllerBase with _$LoginController;
 
 abstract class LoginControllerBase with Store {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseAuth? _auth;
+
+  LoginControllerBase([FirebaseAuth? auth]) : _auth = auth;
 
   @observable
   String email = '';
@@ -36,14 +38,23 @@ abstract class LoginControllerBase with Store {
   @computed
   bool get isFormValid => email.isNotEmpty && password.isNotEmpty;
 
+  FirebaseAuth get auth => _auth ?? FirebaseAuth.instance;
+
   @action
   Future<bool> login() async {
+    final trimmedEmail = email.trim();
+
+    if (trimmedEmail.isEmpty || password.isEmpty) {
+      errorMessage = 'Informe e-mail e senha.';
+      return false;
+    }
+
     isLoading = true;
     errorMessage = null;
 
     try {
-      await _auth.signInWithEmailAndPassword(
-        email: email.trim(),
+      await auth.signInWithEmailAndPassword(
+        email: trimmedEmail,
         password: password,
       );
       return true;
@@ -65,6 +76,9 @@ abstract class LoginControllerBase with Store {
         default:
           errorMessage = 'Erro ao fazer login';
       }
+      return false;
+    } catch (_) {
+      errorMessage = 'Erro ao fazer login';
       return false;
     } finally {
       isLoading = false;

@@ -1,1 +1,23 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"projetointegrador3-grupo18","appId":"1:249590976579:android:3f43484de77a05fdecc4f6","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"projetointegrador3-grupo18","configurations":{"web":"1:249590976579:web:2fc708f2812629d0ecc4f6"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "projetointegrador3-grupo18",
+          "appId": "1:249590976579:android:3f43484de77a05fdecc4f6",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "projetointegrador3-grupo18",
+          "configurations": {
+            "android": "1:249590976579:android:3f43484de77a05fdecc4f6",
+            "ios": "1:249590976579:ios:09e58a7edbbee79aecc4f6",
+            "web": "1:249590976579:web:2fc708f2812629d0ecc4f6"
+          }
+        }
+      }
+    }
+  }
+}

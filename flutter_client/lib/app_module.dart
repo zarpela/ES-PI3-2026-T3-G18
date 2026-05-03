@@ -11,6 +11,7 @@ import 'package:flutter_client/modules/presentation/pages/register_page/register
 import 'package:flutter_client/modules/presentation/pages/register_page/register_page.dart';
 import 'package:flutter_client/shared/app_routes.dart';
 import 'package:flutter_modular/flutter_modular.dart';
+import 'package:dio/dio.dart';
 
 class AppModule extends Module {
   @override
@@ -27,8 +28,8 @@ class AppModule extends Module {
     );
 
     i.addSingleton(() => LoginController());
-    i.addSingleton(() => HomeController(i()));
-    i.addSingleton(() => ChangePasswordController());
+    i.addSingleton(HomeController.new);
+    i.addSingleton(() => ChangePasswordController(i()));
     i.addSingleton(() => RegisterController(i()));
   }
 
