@@ -5,7 +5,7 @@ import {randomInt} from "crypto";
 import cors from "cors";
 import express from "express";
 import fs from "fs";
-//import nodemailer from "nodemailer";
+import nodemailer from "nodemailer";
 import path from "path";
 import {auth, db} from "./config/firebase";
 import marketRoutes from "./routes/marketRoutes";
@@ -315,7 +315,7 @@ export const api = onRequest(
   app,
 );
 
-import {setGlobalOptions} from "firebase-functions";
+import {setGlobalOptions} from "firebase-functions/v2";
 
 setGlobalOptions({maxInstances: 10});
 

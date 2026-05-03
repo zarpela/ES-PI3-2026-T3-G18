@@ -1,6 +1,6 @@
 // Desenvolvido por Miguel Castro
 
-import { HttpsError, onCall } from "firebase-functions/https";
+import { HttpsError, onCall } from "firebase-functions/v2/https";
 import { getStartupDocById } from "../repositories/startupRepo";
 
 export const getStartupById = onCall (

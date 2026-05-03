@@ -1,6 +1,6 @@
 // Desenvolvido por Miguel Castro
 
-import {Timestamp} from "firebase-admin/firestore";
+import { Timestamp, FieldValue } from "firebase-admin/firestore";
 
 /**
  * Sócios de uma startup
@@ -22,7 +22,7 @@ export type StartupStage = "nova" | "em_operacao" | "em_expansao";
  */
 export type ExternalMember = {
     name: string;
-    role: string; // exemplo : mentor
+    role: string; // exemplo: mentor
 }
 
 /**
@@ -42,7 +42,7 @@ export type StartupDoc = {
     logo: string; // URL
     video: string; // URL
 
-    // dados para possiveis cálculos
+    // dados para possíveis cálculos
     totalEmittedTokens: number;
     raisedCapital: number; // capital aportado
     targetCapital: number; // meta de captação
@@ -50,10 +50,10 @@ export type StartupDoc = {
 }
 
 /**
- * Versão resumida de Doc para apresentação no catalogo
+ * Versão resumida de Doc para apresentação no catálogo
  */
 export type StartupCatalog = {
-    id: string,
+    id: string;
     name: string;
     description: string; // descricão simples
     stage: StartupStage;
@@ -63,12 +63,62 @@ export type StartupCatalog = {
     backgroundImage: string; // URL
     logo: string; // URL
 
-    // dados para possiveis cálculos
+    // dados para possíveis cálculos
     totalEmittedTokens: number;
     raisedCapital: number; // capital aportado
     targetCapital: number; // meta de captação
 }
 
+/**
+ * Usuário autenticado extraído do request
+ */
+export type AuthenticatedUser = {
+    uid: string;
+    email: string | undefined;
+}
 
+/**
+ * Visibilidade de uma pergunta
+ */
+export type QuestionVisibility = "publica" | "privada";
 
-// Falta implementar Perguntas
+/**
+ * Resposta de uma pergunta
+ */
+export type QuestionAnswer = {
+    text: string;
+    answeredByUid: string;
+    answeredByEmail: string | undefined;
+    answeredAt: Timestamp | FieldValue;
+}
+
+/**
+ * Documento de uma pergunta armazenado no Firestore
+ * Subcoleção: startups/{startupId}/questions/{questionId}
+ */
+export type StartupQuestionDocument = {
+    authorUid: string;
+    authorEmail: string | undefined;
+    text: string;
+    visibility: QuestionVisibility;
+    createdAt: Timestamp | FieldValue;
+    answer?: QuestionAnswer;
+}
+
+/**
+ * Versão serializada para retorno na API
+ */
+export type StartupQuestionResponse = {
+    id: string;
+    authorUid: string;
+    authorEmail: string | undefined;
+    text: string;
+    visibility: QuestionVisibility;
+    createdAt: string | null;
+    answer?: {
+        text: string;
+        answeredByUid: string;
+        answeredByEmail: string | undefined;
+        answeredAt: string | null;
+    };
+}
