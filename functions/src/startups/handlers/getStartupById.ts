@@ -3,7 +3,9 @@
 import { HttpsError, onCall } from "firebase-functions/https";
 import { getStartupDocById } from "../repositories/startupRepo";
 
-export const getStartupById = onCall (async (request) => {
+export const getStartupById = onCall (
+    { region: "southamerica-east1" }, 
+    async (request) => {
 
     const id = request.data?.id;
 

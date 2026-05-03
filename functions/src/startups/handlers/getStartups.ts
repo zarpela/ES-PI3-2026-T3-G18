@@ -13,7 +13,9 @@ type GetStartupsRequest = {
   sector?: string;
 }
 
-export const getStartups = onCall(async (request) => {
+export const getStartups = onCall(
+  { region: "southamerica-east1" },
+  async (request) => {
 
   // filtros
   const data = request.data as GetStartupsRequest;

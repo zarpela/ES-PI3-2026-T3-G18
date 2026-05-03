@@ -1,3 +1,3 @@
 // Desenvolvido por Miguel Castro
-import {getStartupById} from "./handlers/getStartupById";
-import {getStartups} from "./handlers/getStartups";
+export {getStartupById} from "./handlers/getStartupById";
+export {getStartups} from "./handlers/getStartups";
