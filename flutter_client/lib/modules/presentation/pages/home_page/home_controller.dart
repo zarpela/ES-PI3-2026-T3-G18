@@ -1,6 +1,5 @@
 // feito por pedro henrique bonetto
 
-import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:cloud_functions/cloud_functions.dart';
@@ -8,7 +7,8 @@ import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+
+import 'profile_photo_storage.dart' as profile_photo_storage;
 
 class HomeController extends ChangeNotifier {
   HomeController(this._dio, [FirebaseAuth? auth, ImagePicker? imagePicker])
@@ -27,17 +27,23 @@ class HomeController extends ChangeNotifier {
   List<Map<String, dynamic>> _allStartups = [];
   List<Map<String, dynamic>> startups = [];
   List<Map<String, dynamic>> walletTokens = [];
+  List<Map<String, dynamic>> recentTransactions = [];
 
   Map<String, dynamic>? wallet;
   Uint8List? localProfilePhotoBytes;
   bool isBalanceVisible = true;
-  bool isLoading = false;
+  bool isStartupsLoading = false;
+  bool isWalletLoading = false;
+  bool isProfilePhotoLoading = false;
   String? errorMessage;
   String? walletErrorMessage;
   String selectedFilter = 'all';
   String selectedSort = 'relevance';
   double? investedBalance;
   double? estimatedReturnPercent;
+
+  bool get isLoading =>
+      isStartupsLoading || isWalletLoading || isProfilePhotoLoading;
 
   FirebaseAuth get auth => _auth ?? FirebaseAuth.instance;
   User? get currentUser => auth.currentUser;
@@ -105,6 +111,8 @@ class HomeController extends ChangeNotifier {
     return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
   }
 
+  double get availableBalance => _asDouble(wallet?['balance']);
+
   String get balanceLabel {
     if (!isBalanceVisible) {
       return 'R\$ ******';
@@ -115,6 +123,18 @@ class HomeController extends ChangeNotifier {
     }
 
     return _formatCurrency(investedBalance!);
+  }
+
+  String get availableBalanceLabel {
+    if (!isBalanceVisible) {
+      return 'R\$ ******';
+    }
+
+    if (isWalletLoading && wallet == null) {
+      return 'R\$ --';
+    }
+
+    return formatCurrencyAmount(availableBalance);
   }
 
   String get performanceLabel {
@@ -135,6 +155,29 @@ class HomeController extends ChangeNotifier {
     }
 
     return 'Sincronizando carteira';
+  }
+
+  String get walletVariationLabel {
+    if (isWalletLoading && wallet == null) {
+      return 'Sincronizando carteira';
+    }
+
+    final value = estimatedReturnPercent ?? 0;
+    final normalized = value.toStringAsFixed(1).replaceAll('.', ',');
+    final sign = value >= 0 ? '+' : '';
+    return '~ $sign$normalized% este mes';
+  }
+
+  List<Map<String, dynamic>> get recentTransactionsPreview {
+    final source = recentTransactions.where((transaction) {
+      if (transaction['type'] != 'CREATE_WALLET') {
+        return true;
+      }
+
+      return recentTransactions.length == 1;
+    });
+
+    return source.take(4).toList();
   }
 
   String get featuredStartupName {
@@ -164,21 +207,18 @@ class HomeController extends ChangeNotifier {
   }
 
   Future<void> load() async {
-    isLoading = true;
     errorMessage = null;
     walletErrorMessage = null;
+    isProfilePhotoLoading = true;
+    isStartupsLoading = true;
+    isWalletLoading = true;
     notifyListeners();
 
-    try {
-      await _loadProfilePhoto();
-      await _loadStartups();
-      await _loadWallet();
-      _applyFilters(notify: false);
-      _syncPortfolioHighlights();
-    } finally {
-      isLoading = false;
-      notifyListeners();
-    }
+    await Future.wait([
+      _loadProfilePhoto(),
+      _loadStartups(),
+      _loadWallet(),
+    ]);
   }
 
   Future<void> refresh() async {
@@ -197,17 +237,65 @@ class HomeController extends ChangeNotifier {
         return false;
       }
 
-      final bytes = await pickedFile.readAsBytes();
+      final bytes = await profile_photo_storage.saveProfilePhoto(
+        _profilePhotoStorageKey,
+        pickedFile,
+      );
       localProfilePhotoBytes = bytes;
-
-      final preferences = await SharedPreferences.getInstance();
-      await preferences.setString(_profilePhotoKey, base64Encode(bytes));
 
       notifyListeners();
       return true;
     } catch (error) {
       debugPrint('HomeController photo error: $error');
       return false;
+    }
+  }
+
+  Future<String> addBalance(double amount) async {
+    final user = currentUser;
+    if (user == null) {
+      throw Exception('Usuario nao autenticado.');
+    }
+
+    try {
+      final response = await _dio.post(
+        'wallet/add-balance',
+        data: {'userId': user.uid, 'amount': amount},
+        options: await _authorizedOptions(),
+      );
+
+      _applyWalletData(response.data);
+      await _loadWalletHistory();
+      notifyListeners();
+      return 'Deposito realizado com sucesso.';
+    } on DioException catch (error) {
+      throw Exception(_extractWalletError(error));
+    }
+  }
+
+  Future<String> withdrawBalance(double amount) async {
+    final user = currentUser;
+    if (user == null) {
+      throw Exception('Usuario nao autenticado.');
+    }
+
+    if (amount > availableBalance) {
+      throw Exception('Saldo insuficiente para concluir o saque.');
+    }
+
+    try {
+      final response = await _dio.post(
+        'wallet/withdraw-balance',
+        data: {'userId': user.uid, 'amount': amount},
+        options: await _authorizedOptions(),
+      );
+
+      _applyWalletData(response.data);
+      await _loadWalletHistory();
+      notifyListeners();
+      return 'Saque realizado com sucesso.';
+    } on DioException catch (error) {
+      throw Exception(_extractWalletError(error));
     }
   }
 
@@ -239,25 +327,34 @@ class HomeController extends ChangeNotifier {
     }).length;
   }
 
-  Future<void> _loadProfilePhoto() async {
-    final preferences = await SharedPreferences.getInstance();
-    final encodedPhoto = preferences.getString(_profilePhotoKey);
+  String formatCurrencyAmount(double value) {
+    return _formatCurrency(value);
+  }
 
-    if (encodedPhoto == null || encodedPhoto.isEmpty) {
+  Future<void> _loadProfilePhoto() async {
+    final user = currentUser;
+    if (user == null) {
       localProfilePhotoBytes = null;
+      isProfilePhotoLoading = false;
+      notifyListeners();
       return;
     }
 
     try {
-      localProfilePhotoBytes = base64Decode(encodedPhoto);
-    } catch (_) {
+      localProfilePhotoBytes = await profile_photo_storage.loadProfilePhoto(
+        _profilePhotoStorageKey,
+      );
+    } catch (error) {
+      debugPrint('HomeController photo load error: $error');
       localProfilePhotoBytes = null;
-      await preferences.remove(_profilePhotoKey);
+      await profile_photo_storage.clearProfilePhoto(_profilePhotoStorageKey);
+    } finally {
+      isProfilePhotoLoading = false;
+      notifyListeners();
     }
   }
 
-  String get _profilePhotoKey =>
-      'home_profile_photo_${currentUser?.uid ?? 'guest'}';
+  String get _profilePhotoStorageKey => currentUser?.uid ?? 'guest';
 
   Future<void> _loadStartups() async {
     try {
@@ -292,6 +389,11 @@ class HomeController extends ChangeNotifier {
       errorMessage = 'Erro inesperado ao carregar o catalogo.';
       _allStartups = [];
       startups = [];
+    } finally {
+      _applyFilters(notify: false);
+      _syncPortfolioHighlights();
+      isStartupsLoading = false;
+      notifyListeners();
     }
   }
 
@@ -300,7 +402,7 @@ class HomeController extends ChangeNotifier {
       'id': item['id'],
       'name': item['name'] ?? item['nome_startup'] ?? '',
       'description':
-          item['description'] ?? item['descricao'] ?? item['descriÃ§Ã£o'] ?? '',
+          item['description'] ?? item['descricao'] ?? item['descricao'] ?? '',
       'tagline': item['tagline'] ?? '',
       'stage': item['stage'] ?? item['estagio'] ?? '',
       'sector': _normalizeSector(
@@ -313,34 +415,41 @@ class HomeController extends ChangeNotifier {
   }
 
   Future<void> _loadWallet() async {
-    wallet = null;
-    walletTokens = [];
-    investedBalance = null;
-    estimatedReturnPercent = null;
-
-    final user = currentUser;
-    if (user == null) {
-      walletErrorMessage = null;
-      return;
-    }
-
     try {
-      final response = await _dio.get(
-        'wallet/${user.uid}',
-        options: await _authorizedOptions(),
-      );
-      _applyWalletData(response.data);
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 404) {
-        await _createWallet(user.uid);
+      final user = currentUser;
+      if (user == null) {
+        wallet = null;
+        walletTokens = [];
+        recentTransactions = [];
+        investedBalance = null;
+        estimatedReturnPercent = null;
+        walletErrorMessage = null;
         return;
       }
 
-      debugPrint('HomeController wallet error: ${e.message}');
-      walletErrorMessage = _extractWalletError(e);
-    } catch (e) {
-      debugPrint('HomeController unexpected wallet error: $e');
-      walletErrorMessage = 'Nao foi possivel carregar a carteira.';
+      try {
+        final response = await _dio.get(
+          'wallet/${user.uid}',
+          options: await _authorizedOptions(),
+        );
+        _applyWalletData(response.data);
+        await _loadWalletHistory();
+      } on DioException catch (e) {
+        if (e.response?.statusCode == 404) {
+          await _createWallet(user.uid);
+          return;
+        }
+
+        debugPrint('HomeController wallet error: ${e.message}');
+        walletErrorMessage = _extractWalletError(e);
+      } catch (e) {
+        debugPrint('HomeController unexpected wallet error: $e');
+        walletErrorMessage = 'Nao foi possivel carregar a carteira.';
+      }
+    } finally {
+      _syncPortfolioHighlights();
+      isWalletLoading = false;
+      notifyListeners();
     }
   }
 
@@ -352,6 +461,7 @@ class HomeController extends ChangeNotifier {
         options: await _authorizedOptions(),
       );
       _applyWalletData(response.data);
+      await _loadWalletHistory();
     } on DioException catch (e) {
       debugPrint('HomeController wallet creation error: ${e.message}');
       walletErrorMessage = _extractWalletError(e);
@@ -361,8 +471,59 @@ class HomeController extends ChangeNotifier {
     }
   }
 
+  Future<void> _loadWalletHistory() async {
+    final user = currentUser;
+    if (user == null) {
+      recentTransactions = [];
+      return;
+    }
+
+    try {
+      final response = await _dio.get(
+        'market/history/${user.uid}',
+        options: await _authorizedOptions(),
+      );
+      final transactions = response.data is Map && response.data['transactions'] is List
+          ? List<Map<String, dynamic>>.from(
+              (response.data['transactions'] as List).map(
+                (item) => Map<String, dynamic>.from(item as Map),
+              ),
+            )
+          : <Map<String, dynamic>>[];
+
+      transactions.sort((left, right) {
+        final leftDate = DateTime.tryParse(
+          (left['createdAt'] ?? '').toString(),
+        );
+        final rightDate = DateTime.tryParse(
+          (right['createdAt'] ?? '').toString(),
+        );
+
+        if (leftDate == null && rightDate == null) {
+          return 0;
+        }
+        if (leftDate == null) {
+          return 1;
+        }
+        if (rightDate == null) {
+          return -1;
+        }
+
+        return rightDate.compareTo(leftDate);
+      });
+
+      recentTransactions = transactions;
+    } on DioException catch (e) {
+      debugPrint('HomeController history error: ${e.message}');
+      recentTransactions = [];
+    } catch (e) {
+      debugPrint('HomeController unexpected history error: $e');
+      recentTransactions = [];
+    }
+  }
+
   Future<Options> _authorizedOptions() async {
-    final token = await currentUser?.getIdToken(true);
+    final token = await currentUser?.getIdToken();
 
     return Options(
       headers: token == null ? null : {'Authorization': 'Bearer $token'},

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_client/modules/presentation/pages/home_page/home_controller.dart';
+import 'package:flutter_client/modules/presentation/pages/home_page/wallet_amount_page.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 
 enum _HomeSection { inicio, explorar, carteira, perfil }
@@ -26,7 +27,7 @@ class _HomePageState extends State<HomePage> {
   static const Color softYellow = Color(0xFFFFDE74);
   static const Color activeNavBackground = Color(0xFFECE4FF);
 
-  _HomeSection _currentSection = _HomeSection.carteira;
+  _HomeSection _currentSection = _HomeSection.inicio;
 
   @override
   void initState() {
@@ -114,37 +115,11 @@ class _HomePageState extends State<HomePage> {
       const SizedBox(height: 16),
       const Divider(height: 1, thickness: 1.5, color: dividerBlue),
       const SizedBox(height: 18),
-      _buildWelcomeCard(),
-      const SizedBox(height: 22),
-      _buildShortcutCard(
-        title: 'Explorar Startups',
-        description:
-            'Volte para o catalogo que voce ja usava e descubra novas oportunidades.',
-        buttonLabel: 'Abrir explorar',
-        onPressed: () => _selectSection(_HomeSection.explorar),
-      ),
-      const SizedBox(height: 18),
-      if (controller.isLoading && controller.featuredStartup == null)
-        _buildLoadingCard()
-      else if (controller.errorMessage != null &&
-          controller.featuredStartup == null)
-        _buildErrorCard()
-      else
-        _buildFeaturedCard(controller.featuredStartup),
-    ];
-  }
-
-  List<Widget> _buildCarteiraSection() {
-    return [
-      _buildHeader(),
-      const SizedBox(height: 16),
-      const Divider(height: 1, thickness: 1.5, color: dividerBlue),
-      const SizedBox(height: 18),
-      _buildBalanceCard(),
+      _buildInvestedBalanceCard(),
       const SizedBox(height: 24),
-      _buildActionsGrid(),
+      _buildInicioActionsGrid(),
       const SizedBox(height: 24),
-      if (controller.isLoading && controller.featuredStartup == null)
+      if (controller.isStartupsLoading && controller.featuredStartup == null)
         _buildLoadingCard()
       else if (controller.errorMessage != null &&
           controller.featuredStartup == null)
@@ -168,7 +143,7 @@ class _HomePageState extends State<HomePage> {
       const SizedBox(height: 16),
       _buildExploreFilters(),
       const SizedBox(height: 18),
-      if (controller.isLoading)
+      if (controller.isStartupsLoading && startups.isEmpty)
         _buildExploreSkeletonList()
       else if (controller.errorMessage != null)
         _buildExploreErrorState()
@@ -176,6 +151,33 @@ class _HomePageState extends State<HomePage> {
         _buildExploreEmptyState()
       else
         ...startups.map(_buildStartupCard),
+    ];
+  }
+
+  List<Widget> _buildCarteiraSection() {
+    return [
+      _buildHeader(),
+      const SizedBox(height: 26),
+      _buildWalletBalanceHero(),
+      const SizedBox(height: 28),
+      _buildWalletQuickActions(),
+      const SizedBox(height: 30),
+      const Text(
+        'Historico recente',
+        style: TextStyle(
+          color: deepText,
+          fontSize: 17,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+      const SizedBox(height: 16),
+      if (controller.isWalletLoading &&
+          controller.recentTransactionsPreview.isEmpty)
+        _buildLoadingCard()
+      else if (controller.recentTransactionsPreview.isEmpty)
+        _buildEmptyHistoryCard()
+      else
+        ...controller.recentTransactionsPreview.map(_buildHistoryCard),
     ];
   }
 
@@ -283,39 +285,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildWelcomeCard() {
-    return Container(
-      padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(34),
-        gradient: const LinearGradient(
-          colors: [Color(0xFFF8F3FF), Color(0xFFECE3FA)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Ola, ${controller.userLabel}',
-            style: const TextStyle(
-              color: deepText,
-              fontSize: 24,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Seu painel principal continua aqui, e agora a aba Explorar voltou com o catalogo de startups.',
-            style: TextStyle(color: mutedText, fontSize: 14, height: 1.45),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBalanceCard() {
+  Widget _buildInvestedBalanceCard() {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 20, 16, 18),
       decoration: BoxDecoration(
@@ -392,7 +362,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildActionsGrid() {
+  Widget _buildInicioActionsGrid() {
     return Column(
       children: [
         Row(
@@ -405,6 +375,7 @@ class _HomePageState extends State<HomePage> {
                 iconBackground: const LinearGradient(
                   colors: [Color(0xFFD4147A), Color(0xFFB71269)],
                 ),
+                onTap: () => _openWalletAmountPage(WalletAmountPageMode.deposit),
               ),
             ),
             const SizedBox(width: 14),
@@ -416,6 +387,7 @@ class _HomePageState extends State<HomePage> {
                 iconBackground: const LinearGradient(
                   colors: [Color(0xFF7A6AE3), Color(0xFF655AC4)],
                 ),
+                onTap: () => _openWalletAmountPage(WalletAmountPageMode.withdraw),
               ),
             ),
           ],
@@ -429,6 +401,7 @@ class _HomePageState extends State<HomePage> {
             colors: [Color(0xFFE7DEFF), Color(0xFFD8CEFF)],
           ),
           wide: true,
+          onTap: _showHistorySheet,
         ),
       ],
     );
@@ -439,6 +412,7 @@ class _HomePageState extends State<HomePage> {
     required String label,
     required Color iconColor,
     required LinearGradient iconBackground,
+    required VoidCallback onTap,
     bool wide = false,
   }) {
     return Container(
@@ -458,7 +432,7 @@ class _HomePageState extends State<HomePage> {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(28),
-          onTap: () => _showPlaceholderMessage(label),
+          onTap: onTap,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -483,58 +457,6 @@ class _HomePageState extends State<HomePage> {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildShortcutCard({
-    required String title,
-    required String description,
-    required String buttonLabel,
-    required VoidCallback onPressed,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: panel,
-        borderRadius: BorderRadius.circular(30),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              color: deepText,
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            description,
-            style: const TextStyle(color: mutedText, fontSize: 14, height: 1.4),
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: ElevatedButton(
-              onPressed: onPressed,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: brandPink,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(999),
-                ),
-              ),
-              child: Text(
-                buttonLabel,
-                style: const TextStyle(fontWeight: FontWeight.w800),
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -620,7 +542,11 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildFilterChip(String label, String value, {Color? activeColor}) {
+  Widget _buildFilterChip(
+    String label,
+    String value, {
+    Color? activeColor,
+  }) {
     final isActive = controller.selectedFilter == value;
     final count = value == 'all'
         ? controller.totalStartups
@@ -900,13 +826,208 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildSkeletonLine(double width, double height, {double radius = 10}) {
+  Widget _buildSkeletonLine(
+    double width,
+    double height, {
+    double radius = 10,
+  }) {
     return Container(
       width: width,
       height: height,
       decoration: BoxDecoration(
         color: const Color(0xFFF1ECF6),
         borderRadius: BorderRadius.circular(radius),
+      ),
+    );
+  }
+
+  Widget _buildWalletBalanceHero() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Text(
+              'SALDO DISPONIVEL',
+              style: TextStyle(
+                color: mutedText,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(
+              controller.isBalanceVisible
+                  ? Icons.remove_red_eye_outlined
+                  : Icons.visibility_off_outlined,
+              color: mutedText,
+              size: 16,
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        GestureDetector(
+          onTap: controller.toggleBalanceVisibility,
+          child: Text(
+            controller.availableBalanceLabel,
+            style: const TextStyle(
+              color: deepText,
+              fontSize: 28,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+          decoration: BoxDecoration(
+            color: softYellow,
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Text(
+            controller.walletVariationLabel,
+            style: const TextStyle(
+              color: Color(0xFF655116),
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildWalletQuickActions() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        _WalletQuickAction(
+          icon: Icons.account_balance_wallet_outlined,
+          label: 'Depositar',
+          iconColor: brandPink,
+          backgroundColor: const Color(0xFFF0E8FF),
+          onTap: () => _openWalletAmountPage(WalletAmountPageMode.deposit),
+        ),
+        _WalletQuickAction(
+          icon: Icons.currency_exchange_rounded,
+          label: 'Sacar',
+          iconColor: brandPink,
+          backgroundColor: const Color(0xFFF0E8FF),
+          onTap: () => _openWalletAmountPage(WalletAmountPageMode.withdraw),
+        ),
+        _WalletQuickAction(
+          icon: Icons.receipt_long_outlined,
+          label: 'Extrato',
+          iconColor: brandPink,
+          backgroundColor: const Color(0xFFF0E8FF),
+          onTap: _showHistorySheet,
+        ),
+        _WalletQuickAction(
+          icon: Icons.account_balance_outlined,
+          label: 'Investir',
+          iconColor: brandPink,
+          backgroundColor: const Color(0xFFF0E8FF),
+          onTap: () => _selectSection(_HomeSection.explorar),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildHistoryCard(Map<String, dynamic> transaction) {
+    final amount = _transactionAmount(transaction);
+    final isPositive = amount >= 0;
+    final amountLabel = _transactionAmountLabel(transaction);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF5F0FF),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 54,
+            height: 54,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              border: Border.all(color: const Color(0xFFE9E0F7)),
+            ),
+            child: Icon(
+              _transactionIcon(transaction),
+              color: isPositive ? brandPink : deepText,
+              size: 22,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _transactionTitle(transaction),
+                  style: const TextStyle(
+                    color: deepText,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _transactionSubtitle(transaction),
+                  style: const TextStyle(
+                    color: mutedText,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            amountLabel,
+            textAlign: TextAlign.right,
+            style: TextStyle(
+              color: isPositive ? brandPink : deepText,
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyHistoryCard() {
+    return Container(
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF5F0FF),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: const Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Sem movimentacoes por enquanto',
+            style: TextStyle(
+              color: deepText,
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          SizedBox(height: 6),
+          Text(
+            'Os ultimos depositos, saques e investimentos vao aparecer aqui.',
+            style: TextStyle(
+              color: mutedText,
+              fontSize: 13,
+              height: 1.4,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1287,6 +1408,58 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  Widget _buildShortcutCard({
+    required String title,
+    required String description,
+    required String buttonLabel,
+    required VoidCallback onPressed,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: panel,
+        borderRadius: BorderRadius.circular(30),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              color: deepText,
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            description,
+            style: const TextStyle(color: mutedText, fontSize: 14, height: 1.4),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton(
+              onPressed: onPressed,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: brandPink,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ),
+              child: Text(
+                buttonLabel,
+                style: const TextStyle(fontWeight: FontWeight.w800),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _handleProfilePhotoTap() async {
     final updated = await controller.selectProfilePhoto();
 
@@ -1294,21 +1467,91 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
-    if (updated) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Foto atualizada com sucesso.'),
-          behavior: SnackBarBehavior.floating,
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          updated
+              ? 'Foto atualizada com sucesso.'
+              : 'Nenhuma foto foi selecionada.',
         ),
-      );
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  Future<void> _openWalletAmountPage(WalletAmountPageMode mode) async {
+    final result = await Navigator.of(context).push<String>(
+      MaterialPageRoute(
+        builder: (_) => WalletAmountPage(
+          controller: controller,
+          mode: mode,
+        ),
+      ),
+    );
+
+    if (!mounted || result == null) {
       return;
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Nenhuma foto foi selecionada.'),
+      SnackBar(
+        content: Text(result),
         behavior: SnackBarBehavior.floating,
       ),
+    );
+  }
+
+  Future<void> _showHistorySheet() async {
+    final transactions = controller.recentTransactions;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.72,
+          padding: const EdgeInsets.fromLTRB(20, 14, 20, 22),
+          decoration: const BoxDecoration(
+            color: pageBackground,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(34)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 42,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFD5CCE5),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              const Text(
+                'Extrato completo',
+                style: TextStyle(
+                  color: deepText,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 14),
+              Expanded(
+                child: transactions.isEmpty
+                    ? _buildEmptyHistoryCard()
+                    : ListView(
+                        children: transactions
+                            .map(_buildHistoryCard)
+                            .toList(growable: false),
+                      ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -1320,6 +1563,114 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       _currentSection = section;
     });
+  }
+
+  IconData _transactionIcon(Map<String, dynamic> transaction) {
+    switch ((transaction['type'] ?? '').toString()) {
+      case 'ADD_BALANCE':
+        return Icons.add_circle_rounded;
+      case 'WITHDRAW_BALANCE':
+        return Icons.account_balance_wallet_outlined;
+      case 'SELL':
+        return Icons.trending_up_rounded;
+      case 'BUY':
+        return Icons.insert_chart_outlined_rounded;
+      default:
+        return Icons.wallet_giftcard_rounded;
+    }
+  }
+
+  String _transactionTitle(Map<String, dynamic> transaction) {
+    switch ((transaction['type'] ?? '').toString()) {
+      case 'ADD_BALANCE':
+        return 'Aporte Mensal';
+      case 'WITHDRAW_BALANCE':
+        return 'Resgate Carteira';
+      case 'SELL':
+        return 'Venda de Ativos';
+      case 'BUY':
+        return 'Compra de Ativos';
+      case 'CREATE_WALLET':
+        return 'Carteira criada';
+      default:
+        return 'Movimentacao';
+    }
+  }
+
+  String _transactionSubtitle(Map<String, dynamic> transaction) {
+    final createdAt = DateTime.tryParse(
+      (transaction['createdAt'] ?? '').toString(),
+    );
+
+    if (createdAt == null) {
+      return 'Agora';
+    }
+
+    final now = DateTime.now();
+    final months = [
+      'Jan',
+      'Fev',
+      'Mar',
+      'Abr',
+      'Mai',
+      'Jun',
+      'Jul',
+      'Ago',
+      'Set',
+      'Out',
+      'Nov',
+      'Dez',
+    ];
+    final hour = createdAt.hour.toString().padLeft(2, '0');
+    final minute = createdAt.minute.toString().padLeft(2, '0');
+    final isYesterday =
+        now.difference(createdAt).inDays == 1 &&
+        now.day != createdAt.day;
+
+    if (isYesterday) {
+      return 'Ontem - $hour:$minute';
+    }
+
+    return '${createdAt.day} ${months[createdAt.month - 1]} - $hour:$minute';
+  }
+
+  double _transactionAmount(Map<String, dynamic> transaction) {
+    final type = (transaction['type'] ?? '').toString();
+    switch (type) {
+      case 'ADD_BALANCE':
+        return _asDouble(transaction['amount']);
+      case 'WITHDRAW_BALANCE':
+        return -_asDouble(transaction['amount']);
+      case 'SELL':
+        return _asDouble(transaction['total']);
+      case 'BUY':
+        return -_asDouble(transaction['total']);
+      default:
+        return 0;
+    }
+  }
+
+  String _transactionAmountLabel(Map<String, dynamic> transaction) {
+    final amount = _transactionAmount(transaction);
+    final formatted = controller.formatCurrencyAmount(amount.abs());
+
+    if (amount > 0) {
+      return '+ $formatted';
+    }
+
+    if (amount < 0) {
+      return '- $formatted';
+    }
+
+    return formatted;
+  }
+
+  double _asDouble(dynamic value) {
+    if (value is num) {
+      return value.toDouble();
+    }
+
+    return double.tryParse(value?.toString() ?? '') ?? 0;
   }
 
   String _featuredImageFor(Map<String, dynamic>? startup) {
@@ -1391,16 +1742,6 @@ class _HomePageState extends State<HomePage> {
     return roi;
   }
 
-  void _showPlaceholderMessage(String action) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$action em desenvolvimento.'),
-        backgroundColor: brandPurple,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
   void _showStartupMessage(String startupName) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -1466,6 +1807,56 @@ class _HomeNavItem extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _WalletQuickAction extends StatelessWidget {
+  const _WalletQuickAction({
+    required this.icon,
+    required this.label,
+    required this.iconColor,
+    required this.backgroundColor,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color iconColor;
+  final Color backgroundColor;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(18),
+      child: SizedBox(
+        width: 68,
+        child: Column(
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: backgroundColor,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: iconColor, size: 22),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: _HomePageState.deepText,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
         ),
       ),
     );

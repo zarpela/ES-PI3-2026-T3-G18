@@ -27,7 +27,7 @@ class AppModule extends Module {
     );
 
     i.addSingleton(() => LoginController());
-    i.addSingleton<HomeController>(() => HomeController(i()));
+    i.addLazySingleton<HomeController>(() => HomeController(i()));
     i.addSingleton(() => ChangePasswordController(i()));
     i.addSingleton(() => RegisterController(i()));
   }
