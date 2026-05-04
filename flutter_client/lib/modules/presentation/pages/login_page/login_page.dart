@@ -8,7 +8,7 @@ import 'package:flutter_client/shared/app_routes.dart';
 import 'package:flutter_client/shared/app_illustrations.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key}); 
+  const LoginPage({super.key});
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -33,7 +33,7 @@ class _LoginPageState extends State<LoginPage> {
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFFC71E74).withOpacity(0.05),
+                    color: const Color(0xFFC71E74).withValues(alpha: 0.05),
                     blurRadius: 100,
                     spreadRadius: 20,
                   ),
@@ -52,7 +52,7 @@ class _LoginPageState extends State<LoginPage> {
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF5B559F).withOpacity(0.05),
+                    color: const Color(0xFF5B559F).withValues(alpha: 0.05),
                     blurRadius: 120,
                     spreadRadius: 20,
                   ),
@@ -63,7 +63,10 @@ class _LoginPageState extends State<LoginPage> {
 
           SafeArea(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 24.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 32.0,
+                vertical: 24.0,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -93,7 +96,7 @@ class _LoginPageState extends State<LoginPage> {
                     style: TextStyle(
                       color: Color(0xFF584048),
                       fontSize: 16,
-                      height: 1.4, 
+                      height: 1.4,
                     ),
                   ),
                   const SizedBox(height: 48),
@@ -106,20 +109,20 @@ class _LoginPageState extends State<LoginPage> {
                             label: 'E-MAIL',
                             hint: 'nome@exemplo.com',
                             keyboardType: TextInputType.emailAddress,
-                            onChanged: controller.setEmail, 
+                            onChanged: controller.setEmail,
                           ),
-                          
+
                           _buildInputField(
                             label: 'SENHA',
                             hint: '••••••••',
                             obscureText: controller.obscurePassword,
-                            onChanged: controller.setPassword, 
+                            onChanged: controller.setPassword,
                             suffixIcon: Padding(
                               padding: const EdgeInsets.only(right: 8.0),
                               child: IconButton(
                                 splashRadius: 24,
                                 icon: AppIllustrations.eyeIcon(),
-                                onPressed: controller.toggleObscurePassword, 
+                                onPressed: controller.toggleObscurePassword,
                               ),
                             ),
                           ),
@@ -137,40 +140,7 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                             ),
 
-                          SizedBox(
-                            width: double.infinity,
-                            height: 56,
-                            child: ElevatedButton(
-                              onPressed: controller.isFormValid && !controller.isLoading
-                                  ? () async {
-                                      final success = await controller.login();
-                                      if (!context.mounted) return;
-                                      if (success) {
-                                        Modular.to.pushReplacementNamed(AppRoutes.home);
-                                      }
-                                    }
-                                  : null,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFFC71E74),
-                                disabledBackgroundColor:
-                                    const Color(0xFFC71E74).withOpacity(0.3),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(28),
-                                ),
-                                elevation: 0,
-                              ),
-                              child: controller.isLoading
-                                  ? const CircularProgressIndicator(color: Colors.white)
-                                  : const Text(
-                                      'Entrar na minha conta',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                            ),
-                          ),
+                          _buildLoginButton(context),
                         ],
                       );
                     },
@@ -195,16 +165,16 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
                   ),
-                
-                  const SizedBox(height: 48), 
+
+                  const SizedBox(height: 48),
 
                   Center(
                     child: RichText(
                       text: TextSpan(
                         style: const TextStyle(
-                          color: Color(0xFF584048), 
+                          color: Color(0xFF584048),
                           fontSize: 14,
-                          fontWeight: FontWeight.w500, 
+                          fontWeight: FontWeight.w500,
                         ),
                         children: [
                           const TextSpan(text: 'Ainda não tem uma conta? '),
@@ -271,16 +241,94 @@ class _LoginPageState extends State<LoginPage> {
               decoration: InputDecoration(
                 isDense: true,
                 border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20), 
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 20,
+                ),
                 hintText: hint,
                 hintStyle: TextStyle(
-                  color: const Color(0xFF584048).withOpacity(0.4),
+                  color: const Color(0xFF584048).withValues(alpha: 0.4),
                 ),
                 suffixIcon: suffixIcon,
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildLoginButton(BuildContext context) {
+    final isEnabled = controller.isFormValid && !controller.isLoading;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 220),
+      width: double.infinity,
+      height: 58,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(28),
+        gradient: LinearGradient(
+          colors: isEnabled
+              ? const [Color(0xFFD4147A), Color(0xFFAE1465)]
+              : const [Color(0xFFE4B3CF), Color(0xFFD4B1C6)],
+        ),
+        boxShadow: isEnabled
+            ? [
+                BoxShadow(
+                  color: const Color(0xFFD4147A).withValues(alpha: 0.22),
+                  blurRadius: 24,
+                  offset: const Offset(0, 12),
+                ),
+              ]
+            : null,
+      ),
+      child: ElevatedButton(
+        onPressed: isEnabled
+            ? () async {
+                final success = await controller.login();
+                if (!context.mounted) return;
+                if (success) {
+                  Modular.to.navigate(AppRoutes.home);
+                }
+              }
+            : null,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.transparent,
+          disabledBackgroundColor: Colors.transparent,
+          shadowColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28),
+          ),
+        ),
+        child: controller.isLoading
+            ? const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                  color: Colors.white,
+                ),
+              )
+            : const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Entrar na minha conta',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  SizedBox(width: 10),
+                  Icon(
+                    Icons.arrow_forward_rounded,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ],
+              ),
       ),
     );
   }

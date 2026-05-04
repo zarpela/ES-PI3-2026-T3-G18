@@ -16,6 +16,12 @@ type AddBalanceInput = {
   userId?: string;
 };
 
+type WithdrawBalanceInput = {
+  amount?: number | string;
+  authenticatedUserId?: string;
+  userId?: string;
+};
+
 type WalletAccessInput = {
   authenticatedUserId?: string;
   userId?: string;
@@ -39,6 +45,7 @@ type WalletDocument = {
 type WalletTransactionType =
   | "CREATE_WALLET"
   | "ADD_BALANCE"
+  | "WITHDRAW_BALANCE"
   | "BUY_TOKEN"
   | "SELL_TOKEN";
 
@@ -219,6 +226,57 @@ export const addBalanceToWallet = async (data: AddBalanceInput) => {
       type: "ADD_BALANCE",
       amount,
       description: `Saldo ficticio adicionado a carteira: R$ ${amount.toFixed(2)}.`,
+      createdAt: updatedAt,
+    } satisfies WalletTransaction);
+
+    return updatedWallet;
+  });
+};
+
+export const withdrawBalanceFromWallet = async (data: WithdrawBalanceInput) => {
+  const userId = resolveAuthorizedUserId(data);
+  const amount = parseAmount(data.amount);
+
+  if (!Number.isFinite(amount)) {
+    throw createServiceError(400, "amount deve ser um numero valido.");
+  }
+
+  if (amount <= 0) {
+    throw createServiceError(400, "amount deve ser maior que 0.");
+  }
+
+  const walletRef = getWalletRef(userId);
+
+  return db.runTransaction(async (transaction) => {
+    const walletSnapshot = await transaction.get(walletRef);
+
+    if (!walletSnapshot.exists) {
+      throw createServiceError(404, "Carteira nao encontrada para o usuario informado.");
+    }
+
+    const wallet = normalizeWalletData(
+      userId,
+      walletSnapshot.data() as Partial<WalletDocument>,
+    );
+
+    if (wallet.balance < amount) {
+      throw createServiceError(400, "Saldo insuficiente para realizar o saque.");
+    }
+
+    const updatedAt = new Date().toISOString();
+    const updatedWallet: WalletDocument = {
+      ...wallet,
+      balance: wallet.balance - amount,
+      updatedAt,
+    };
+    const walletTransactionRef = db.collection(walletTransactionsCollection).doc();
+
+    transaction.set(walletRef, updatedWallet);
+    transaction.set(walletTransactionRef, {
+      userId,
+      type: "WITHDRAW_BALANCE",
+      amount,
+      description: `Saque realizado da carteira: R$ ${amount.toFixed(2)}.`,
       createdAt: updatedAt,
     } satisfies WalletTransaction);
 

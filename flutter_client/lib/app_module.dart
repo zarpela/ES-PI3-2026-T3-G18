@@ -27,7 +27,7 @@ class AppModule extends Module {
     );
 
     i.addSingleton(() => LoginController());
-    i.addSingleton<HomeController>(() => HomeController());
+    i.addLazySingleton<HomeController>(() => HomeController(i()));
     i.addSingleton(() => ChangePasswordController(i()));
     i.addSingleton(() => RegisterController(i()));
   }
@@ -35,6 +35,7 @@ class AppModule extends Module {
   @override
   void routes(r) {
     r.child(AppRoutes.login, child: (_) => const LoginPage());
+    r.child(AppRoutes.loginAlias, child: (_) => const LoginPage());
     r.child(AppRoutes.home, child: (_) => const HomePage());
     r.child(AppRoutes.register, child: (_) => const RegisterPage());
     r.child(AppRoutes.forgotPassword, child: (_) => const ForgotPasswordPage());
