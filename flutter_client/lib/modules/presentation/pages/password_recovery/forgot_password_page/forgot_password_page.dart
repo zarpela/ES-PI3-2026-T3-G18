@@ -163,6 +163,17 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       return data;
     }
 
+    if (error.type == DioExceptionType.connectionTimeout ||
+        error.type == DioExceptionType.receiveTimeout ||
+        error.type == DioExceptionType.sendTimeout) {
+      return 'A solicitacao demorou demais. Tente novamente.';
+    }
+
+    if (error.type == DioExceptionType.connectionError ||
+        error.type == DioExceptionType.unknown) {
+      return 'Nao foi possivel conectar ao servidor. Verifique a API e tente novamente.';
+    }
+
     return 'Nao foi possivel concluir a solicitacao.';
   }
 

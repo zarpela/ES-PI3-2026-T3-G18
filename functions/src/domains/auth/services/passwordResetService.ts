@@ -53,6 +53,10 @@ export async function requestPasswordReset(
 
   if (!emailSent) {
     await invalidateResetCode(email);
+    throw createAppError(
+      503,
+      "Nao foi possivel enviar o codigo de recuperacao. Tente novamente em instantes.",
+    );
   }
 
   return buildForgotPasswordResponse();
