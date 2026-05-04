@@ -3,7 +3,7 @@ Autor: [COLOQUE SEU NOME COMPLETO]
 RA: [COLOQUE SEU RA]
 */
 
-import {db} from "../config/firebase";
+import {db} from "../shared/firebase";
 
 type CreateWalletInput = {
   authenticatedUserId?: string;

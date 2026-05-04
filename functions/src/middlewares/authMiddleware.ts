@@ -4,7 +4,7 @@ RA: [COLOQUE SEU RA]
 */
 
 import {NextFunction, Request, Response} from "express";
-import {auth} from "../config/firebase";
+import {auth} from "../shared/firebase";
 
 const unauthorizedMessage = "Usuario nao autenticado.";
 const invalidTokenMessage = "Token de autenticacao invalido.";

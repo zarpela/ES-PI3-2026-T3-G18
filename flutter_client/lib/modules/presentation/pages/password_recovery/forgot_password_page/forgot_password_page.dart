@@ -163,6 +163,17 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       return data;
     }
 
+    if (error.type == DioExceptionType.connectionTimeout ||
+        error.type == DioExceptionType.receiveTimeout ||
+        error.type == DioExceptionType.sendTimeout) {
+      return 'A solicitacao demorou demais. Tente novamente.';
+    }
+
+    if (error.type == DioExceptionType.connectionError ||
+        error.type == DioExceptionType.unknown) {
+      return 'Nao foi possivel conectar ao servidor. Verifique a API e tente novamente.';
+    }
+
     return 'Nao foi possivel concluir a solicitacao.';
   }
 
@@ -176,7 +187,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
     showDialog(
       context: context,
-      barrierColor: Colors.black.withOpacity(0.6),
+      barrierColor: Colors.black.withValues(alpha: 0.6),
       builder: (BuildContext dialogContext) {
         var isVerifying = false;
         var isResending = false;
@@ -268,7 +279,8 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                           hintText: '******',
                           hintStyle: TextStyle(
                             letterSpacing: 12.0,
-                            color: const Color(0xFF584048).withOpacity(0.4),
+                            color:
+                                const Color(0xFF584048).withValues(alpha: 0.4),
                           ),
                         ),
                       ),
@@ -337,7 +349,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                           backgroundColor: const Color(0xFFC71E74),
                           disabledBackgroundColor: const Color(
                             0xFFC71E74,
-                          ).withOpacity(0.3),
+                          ).withValues(alpha: 0.3),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(28),
                           ),
@@ -367,10 +379,10 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                     const SizedBox(height: 16),
                     ValueListenableBuilder<int>(
                       valueListenable: resendAttempts,
-                      builder: (_, attempts, __) {
+                      builder: (context, attempts, child) {
                         return ValueListenableBuilder<int>(
                           valueListenable: resendCountdown,
-                          builder: (_, countdown, ___) {
+                          builder: (context, countdown, child) {
                             final timerActive = attempts >= 2 && countdown > 0;
                             final canResend = !timerActive && !isResending;
 
@@ -415,7 +427,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                                     style: TextStyle(
                                       color: const Color(
                                         0xFF584048,
-                                      ).withOpacity(0.7),
+                                      ).withValues(alpha: 0.7),
                                       fontSize: 12,
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -472,7 +484,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFFC71E74).withOpacity(0.06),
+                    color: const Color(0xFFC71E74).withValues(alpha: 0.06),
                     blurRadius: 100,
                     spreadRadius: 30,
                   ),
@@ -490,7 +502,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF5B559F).withOpacity(0.06),
+                    color: const Color(0xFF5B559F).withValues(alpha: 0.06),
                     blurRadius: 120,
                     spreadRadius: 30,
                   ),
@@ -559,7 +571,8 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                         ),
                         hintText: 'seu@email.com',
                         hintStyle: TextStyle(
-                          color: const Color(0xFF584048).withOpacity(0.4),
+                          color:
+                              const Color(0xFF584048).withValues(alpha: 0.4),
                         ),
                       ),
                     ),
@@ -572,7 +585,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                       borderRadius: BorderRadius.circular(32),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFFC71E74).withOpacity(0.2),
+                          color: const Color(0xFFC71E74).withValues(alpha: 0.2),
                           offset: const Offset(0, 8),
                           blurRadius: 20,
                         ),
@@ -584,7 +597,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                         backgroundColor: const Color(0xFFC71E74),
                         disabledBackgroundColor: const Color(
                           0xFFC71E74,
-                        ).withOpacity(0.3),
+                        ).withValues(alpha: 0.3),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(32),
                         ),

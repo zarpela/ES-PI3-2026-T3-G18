@@ -1,13 +1,13 @@
 import admin from "firebase-admin";
 import fs from "fs";
-import path from "path";
+import {resolveFunctionsPath} from "./utils";
 
 function initializeFirebaseApp(): admin.app.App {
   if (admin.apps.length > 0) {
     return admin.app();
   }
 
-  const serviceAccountPath = path.resolve(__dirname, "../../serviceAccount.json");
+  const serviceAccountPath = resolveFunctionsPath("serviceAccount.json");
 
   if (fs.existsSync(serviceAccountPath)) {
     const serviceAccount = JSON.parse(
@@ -24,5 +24,6 @@ function initializeFirebaseApp(): admin.app.App {
 
 const firebaseApp = initializeFirebaseApp();
 
+export {firebaseApp};
 export const db = admin.firestore(firebaseApp);
 export const auth = admin.auth(firebaseApp);

@@ -4,6 +4,7 @@ import 'package:mobx/mobx.dart';
 
 part 'change_password_controller.g.dart';
 
+// ignore: library_private_types_in_public_api
 class ChangePasswordController = _ChangePasswordControllerBase
     with _$ChangePasswordController;
 
@@ -95,6 +96,17 @@ abstract class _ChangePasswordControllerBase with Store {
 
       if (data is String && data.isNotEmpty) {
         return data;
+      }
+
+      if (error.type == DioExceptionType.connectionTimeout ||
+          error.type == DioExceptionType.receiveTimeout ||
+          error.type == DioExceptionType.sendTimeout) {
+        return 'A solicitacao demorou demais. Tente novamente.';
+      }
+
+      if (error.type == DioExceptionType.connectionError ||
+          error.type == DioExceptionType.unknown) {
+        return 'Nao foi possivel conectar ao servidor. Verifique a API e tente novamente.';
       }
 
       return 'Nao foi possivel redefinir a senha.';
