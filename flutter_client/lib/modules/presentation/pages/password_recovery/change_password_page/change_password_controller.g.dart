@@ -127,6 +127,17 @@ mixin _$ChangePasswordController on _ChangePasswordControllerBase, Store {
   );
 
   @override
+  void clearForm() {
+    final _$actionInfo = _$_ChangePasswordControllerBaseActionController
+        .startAction(name: '_ChangePasswordControllerBase.clearForm');
+    try {
+      return super.clearForm();
+    } finally {
+      _$_ChangePasswordControllerBaseActionController.endAction(_$actionInfo);
+    }
+  }
+
+  @override
   void setPassword(String value) {
     final _$actionInfo = _$_ChangePasswordControllerBaseActionController
         .startAction(name: '_ChangePasswordControllerBase.setPassword');

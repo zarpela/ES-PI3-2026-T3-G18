@@ -7,29 +7,33 @@ class HomeProfileSection extends StatelessWidget {
   const HomeProfileSection({
     required this.controller,
     required this.onProfileTap,
+    this.showHeader = true,
     super.key,
   });
 
   final HomeController controller;
   final VoidCallback onProfileTap;
+  final bool showHeader;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        HomeHeader(
-          profileImage: controller.profileImage,
-          userInitials: controller.userInitials,
-          onProfileTap: onProfileTap,
-        ),
-        const SizedBox(height: 16),
-        const Divider(
-          height: 1,
-          thickness: 1.5,
-          color: HomePalette.dividerBlue,
-        ),
-        const SizedBox(height: 22),
+        if (showHeader) ...[
+          HomeHeader(
+            profileImage: controller.profileImage,
+            userInitials: controller.userInitials,
+            onProfileTap: onProfileTap,
+          ),
+          const SizedBox(height: 16),
+          const Divider(
+            height: 1,
+            thickness: 1.5,
+            color: HomePalette.dividerBlue,
+          ),
+          const SizedBox(height: 22),
+        ],
         _ProfileCard(controller: controller),
         const SizedBox(height: 18),
         _ShortcutCard(

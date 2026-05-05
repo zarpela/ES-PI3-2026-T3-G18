@@ -4,11 +4,12 @@ import 'package:flutter_client/modules/presentation/components/home/home_explore
 import 'package:flutter_client/modules/presentation/components/home/home_history_sheet.dart';
 import 'package:flutter_client/modules/presentation/components/home/home_inicio_section.dart';
 import 'package:flutter_client/modules/presentation/components/home/home_palette.dart';
-import 'package:flutter_client/modules/presentation/components/home/home_profile_section.dart';
 import 'package:flutter_client/modules/presentation/components/home/home_section.dart';
 import 'package:flutter_client/modules/presentation/components/home/home_wallet_section.dart';
+import 'package:flutter_client/modules/presentation/components/main_header.dart';
 import 'package:flutter_client/modules/presentation/pages/home_page/home_controller.dart';
 import 'package:flutter_client/modules/presentation/pages/home_page/wallet_amount_page.dart';
+import 'package:flutter_client/modules/presentation/pages/portfolio_page/portfolio_page.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 
 class HomePage extends StatefulWidget {
@@ -74,13 +75,20 @@ class _HomePageState extends State<HomePage> {
               borderRadius: borderRadius,
               child: Column(
                 children: [
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(18, topInset + 12, 18, 0),
+                    child: MainHeader(
+                      controller: controller,
+                      onProfileTap: _handleProfilePhotoTap,
+                    ),
+                  ),
                   Expanded(
                     child: RefreshIndicator(
                       color: HomePalette.brandPink,
                       onRefresh: controller.refresh,
                       child: ListView(
                         physics: const AlwaysScrollableScrollPhysics(),
-                        padding: EdgeInsets.fromLTRB(18, topInset + 12, 18, 24),
+                        padding: const EdgeInsets.fromLTRB(18, 18, 18, 24),
                         children: [_buildCurrentSection()],
                       ),
                     ),
@@ -113,6 +121,7 @@ class _HomePageState extends State<HomePage> {
           onFeaturedTap: () =>
               _showStartupMessage(controller.featuredStartupName),
           onRetry: controller.refresh,
+          showHeader: false,
         );
       case HomeSection.explorar:
         return HomeExploreSection(
@@ -120,6 +129,7 @@ class _HomePageState extends State<HomePage> {
           onProfileTap: _handleProfilePhotoTap,
           onRetry: controller.refresh,
           onInvestTap: _showStartupMessage,
+          showHeader: false,
         );
       case HomeSection.carteira:
         return HomeWalletSection(
@@ -131,12 +141,10 @@ class _HomePageState extends State<HomePage> {
               _openWalletAmountPage(WalletAmountPageMode.withdraw),
           onHistoryTap: _showHistorySheet,
           onInvestTap: _selectSection,
+          showHeader: false,
         );
-      case HomeSection.perfil:
-        return HomeProfileSection(
-          controller: controller,
-          onProfileTap: _handleProfilePhotoTap,
-        );
+      case HomeSection.portfolio:
+        return const PortfolioView();
     }
   }
 

@@ -1,1 +1,1 @@
-enum HomeSection { inicio, explorar, carteira, perfil }
+enum HomeSection { inicio, explorar, carteira, portfolio }

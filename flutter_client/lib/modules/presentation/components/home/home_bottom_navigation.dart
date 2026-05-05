@@ -50,10 +50,10 @@ class HomeBottomNavigation extends StatelessWidget {
           ),
           Expanded(
             child: _HomeNavItem(
-              icon: Icons.person_outline_rounded,
-              label: 'PERFIL',
-              isActive: currentSection == HomeSection.perfil,
-              onTap: () => onSectionSelected(HomeSection.perfil),
+              icon: Icons.pie_chart_outline_rounded,
+              label: 'PORTFOLIO',
+              isActive: currentSection == HomeSection.portfolio,
+              onTap: () => onSectionSelected(HomeSection.portfolio),
             ),
           ),
         ],

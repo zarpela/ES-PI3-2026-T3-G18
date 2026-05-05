@@ -9,6 +9,7 @@ class HomeExploreSection extends StatelessWidget {
     required this.onProfileTap,
     required this.onRetry,
     required this.onInvestTap,
+    this.showHeader = true,
     super.key,
   });
 
@@ -16,6 +17,7 @@ class HomeExploreSection extends StatelessWidget {
   final VoidCallback onProfileTap;
   final Future<void> Function() onRetry;
   final ValueChanged<String> onInvestTap;
+  final bool showHeader;
 
   @override
   Widget build(BuildContext context) {
@@ -24,18 +26,20 @@ class HomeExploreSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        HomeHeader(
-          profileImage: controller.profileImage,
-          userInitials: controller.userInitials,
-          onProfileTap: onProfileTap,
-        ),
-        const SizedBox(height: 16),
-        const Divider(
-          height: 1,
-          thickness: 1.5,
-          color: HomePalette.dividerBlue,
-        ),
-        const SizedBox(height: 18),
+        if (showHeader) ...[
+          HomeHeader(
+            profileImage: controller.profileImage,
+            userInitials: controller.userInitials,
+            onProfileTap: onProfileTap,
+          ),
+          const SizedBox(height: 16),
+          const Divider(
+            height: 1,
+            thickness: 1.5,
+            color: HomePalette.dividerBlue,
+          ),
+          const SizedBox(height: 18),
+        ],
         _ExploreHero(totalStartups: controller.totalStartups),
         const SizedBox(height: 18),
         _SearchField(controller: controller),

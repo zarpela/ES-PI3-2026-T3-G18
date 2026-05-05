@@ -12,6 +12,7 @@ class HomeInicioSection extends StatelessWidget {
     required this.onHistoryTap,
     required this.onFeaturedTap,
     required this.onRetry,
+    this.showHeader = true,
     super.key,
   });
 
@@ -22,24 +23,27 @@ class HomeInicioSection extends StatelessWidget {
   final VoidCallback onHistoryTap;
   final VoidCallback onFeaturedTap;
   final Future<void> Function() onRetry;
+  final bool showHeader;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        HomeHeader(
-          profileImage: controller.profileImage,
-          userInitials: controller.userInitials,
-          onProfileTap: onProfileTap,
-        ),
-        const SizedBox(height: 16),
-        const Divider(
-          height: 1,
-          thickness: 1.5,
-          color: HomePalette.dividerBlue,
-        ),
-        const SizedBox(height: 18),
+        if (showHeader) ...[
+          HomeHeader(
+            profileImage: controller.profileImage,
+            userInitials: controller.userInitials,
+            onProfileTap: onProfileTap,
+          ),
+          const SizedBox(height: 16),
+          const Divider(
+            height: 1,
+            thickness: 1.5,
+            color: HomePalette.dividerBlue,
+          ),
+          const SizedBox(height: 18),
+        ],
         _InvestedBalanceCard(controller: controller),
         const SizedBox(height: 24),
         _InicioActionsGrid(

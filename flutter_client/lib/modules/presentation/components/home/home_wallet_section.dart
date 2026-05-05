@@ -13,6 +13,7 @@ class HomeWalletSection extends StatelessWidget {
     required this.onWithdrawTap,
     required this.onHistoryTap,
     required this.onInvestTap,
+    this.showHeader = true,
     super.key,
   });
 
@@ -22,17 +23,19 @@ class HomeWalletSection extends StatelessWidget {
   final VoidCallback onWithdrawTap;
   final VoidCallback onHistoryTap;
   final ValueChanged<HomeSection> onInvestTap;
+  final bool showHeader;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        HomeHeader(
-          profileImage: controller.profileImage,
-          userInitials: controller.userInitials,
-          onProfileTap: onProfileTap,
-        ),
+        if (showHeader)
+          HomeHeader(
+            profileImage: controller.profileImage,
+            userInitials: controller.userInitials,
+            onProfileTap: onProfileTap,
+          ),
         const SizedBox(height: 26),
         _WalletBalanceHero(controller: controller),
         const SizedBox(height: 28),
