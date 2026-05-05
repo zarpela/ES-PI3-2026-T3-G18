@@ -1,5 +1,7 @@
+// feitor por abdallah, marcelo, pedro
 import 'package:dio/dio.dart';
 import 'package:flutter_client/core/app_settings.dart';
+import 'package:flutter_client/modules/presentation/pages/all_investments_page/all_investments_page.dart';
 import 'package:flutter_client/modules/presentation/pages/home_page/home_controller.dart';
 import 'package:flutter_client/modules/presentation/pages/home_page/home_page.dart';
 import 'package:flutter_client/modules/presentation/pages/login_page/login_controller.dart';
@@ -28,25 +30,27 @@ class AppModule extends Module {
     );
 
     i.addSingleton(() => LoginController());
-    i.addSingleton<HomeController>(() => HomeController());
+    i.addLazySingleton<HomeController>(() => HomeController(i()));
     i.addSingleton(() => ChangePasswordController(i()));
     i.addSingleton(() => RegisterController(i()));
   }
 
-  @override
-  void routes(r) {
-    r.child(AppRoutes.login, child: (_) => const LoginPage());
-    r.child(AppRoutes.home, child: (_) => const HomePage());
-    r.child(AppRoutes.register, child: (_) => const RegisterPage());
-    r.child(AppRoutes.forgotPassword, child: (_) => const ForgotPasswordPage());
-    r.child(AppRoutes.changePassword, child: (_) => const ChangePasswordPage());
+@override
+void routes(r) {
+  r.child(AppRoutes.login, child: (_) => const LoginPage());
+  r.child(AppRoutes.loginAlias, child: (_) => const LoginPage());
+  r.child(AppRoutes.home, child: (_) => const HomePage());
+  r.child(AppRoutes.register, child: (_) => const RegisterPage());
+  r.child(AppRoutes.forgotPassword, child: (_) => const ForgotPasswordPage());
+  r.child(AppRoutes.changePassword, child: (_) => const ChangePasswordPage());
 
-    r.child(
-      AppRoutes.startup_details_page,
-      child: (_) {
-        final startup = Modular.args.data as Map<String, dynamic>;
-        return StartupDetailsPage(startup: startup);
-      },
-    );
-  }
+  r.child(
+    AppRoutes.startup_details_page,
+    child: (_) {
+      final startup = Modular.args.data as Map<String, dynamic>;
+      return StartupDetailsPage(startup: startup);
+    },
+  );
+
+  r.child(AppRoutes.allInvestments, child: (_) => const AllInvestmentsPage());
 }

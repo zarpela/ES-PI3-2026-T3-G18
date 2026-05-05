@@ -3,7 +3,7 @@ Autor: [SEU NOME]
 RA: [SEU RA]
 */
 
-import {db} from "../config/firebase";
+import {db} from "../shared/firebase";
 
 type MarketOperationInput = {
   authenticatedUserId?: string;
