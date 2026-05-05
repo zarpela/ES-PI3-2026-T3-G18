@@ -21,7 +21,7 @@ class MainHeader extends StatelessWidget {
           Align(
             alignment: Alignment.centerLeft,
             child: InkWell(
-              onTap: onProfileTap,
+              onTap: null, //TODO: Levar para a página de configuração.
               borderRadius: BorderRadius.circular(999),
               child: Stack(
                 clipBehavior: Clip.none,
@@ -68,17 +68,7 @@ class MainHeader extends StatelessWidget {
                     bottom: -2,
                     child: Container(
                       width: 18,
-                      height: 18,
-                      decoration: BoxDecoration(
-                        color: brandPink,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: pageBackground, width: 2),
-                      ),
-                      child: const Icon(
-                        Icons.photo_camera_rounded,
-                        size: 9,
-                        color: Colors.white,
-                      ),
+                      height: 18
                     ),
                   ),
                 ],

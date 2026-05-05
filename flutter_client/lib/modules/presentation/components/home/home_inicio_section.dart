@@ -231,6 +231,7 @@ class _ActionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      width: wide ? double.infinity : null,
       height: wide ? 108 : 112,
       decoration: BoxDecoration(
         color: HomePalette.panel,
