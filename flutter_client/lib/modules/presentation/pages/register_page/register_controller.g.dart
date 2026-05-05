@@ -198,6 +198,18 @@ mixin _$RegisterController on _RegisterControllerBase, Store {
   );
 
   @override
+  void clearForm() {
+    final _$actionInfo = _$_RegisterControllerBaseActionController.startAction(
+      name: '_RegisterControllerBase.clearForm',
+    );
+    try {
+      return super.clearForm();
+    } finally {
+      _$_RegisterControllerBaseActionController.endAction(_$actionInfo);
+    }
+  }
+
+  @override
   void setFullName(String value) {
     final _$actionInfo = _$_RegisterControllerBaseActionController.startAction(
       name: '_RegisterControllerBase.setFullName',

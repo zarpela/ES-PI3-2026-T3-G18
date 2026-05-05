@@ -1,9 +1,12 @@
+//feito por abdallah, marcelo e pedro
 import 'package:flutter/material.dart';
+import 'package:flutter_client/modules/presentation/components/main_header.dart';
 import 'package:flutter_client/modules/presentation/pages/home_page/home_controller.dart';
 import 'package:flutter_client/modules/presentation/pages/home_page/wallet_amount_page.dart';
+import 'package:flutter_client/modules/presentation/pages/wallet_page/wallet_page.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 
-enum _HomeSection { inicio, explorar, carteira, perfil }
+enum _HomeSection { inicio, explorar, carteira, Portfolio }
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -105,7 +108,7 @@ class _HomePageState extends State<HomePage> {
       _HomeSection.inicio => _buildInicioSection(),
       _HomeSection.explorar => _buildExplorarSection(),
       _HomeSection.carteira => _buildCarteiraSection(),
-      _HomeSection.perfil => _buildPerfilSection(),
+      _HomeSection.Portfolio => [PortfolioView()]
     };
   }
 
@@ -181,108 +184,8 @@ class _HomePageState extends State<HomePage> {
     ];
   }
 
-  List<Widget> _buildPerfilSection() {
-    return [
-      _buildHeader(),
-      const SizedBox(height: 16),
-      const Divider(height: 1, thickness: 1.5, color: dividerBlue),
-      const SizedBox(height: 22),
-      _buildProfileCard(),
-      const SizedBox(height: 18),
-      _buildShortcutCard(
-        title: 'Sua foto de perfil',
-        description:
-            'Toque no avatar ou no botao abaixo para trocar a foto que aparece no cabecalho.',
-        buttonLabel: 'Alterar foto',
-        onPressed: _handleProfilePhotoTap,
-      ),
-    ];
-  }
-
   Widget _buildHeader() {
-    return SizedBox(
-      height: 48,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Align(
-            alignment: Alignment.centerLeft,
-            child: InkWell(
-              onTap: _handleProfilePhotoTap,
-              borderRadius: BorderRadius.circular(999),
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Container(
-                    width: 42,
-                    height: 42,
-                    padding: const EdgeInsets.all(1.6),
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: LinearGradient(
-                        colors: [Color(0xFF243645), Color(0xFF182632)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                    ),
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: const Color(0xFFF4EEF8),
-                        image: controller.profileImage == null
-                            ? null
-                            : DecorationImage(
-                                image: controller.profileImage!,
-                                fit: BoxFit.cover,
-                              ),
-                      ),
-                      child: controller.profileImage == null
-                          ? Center(
-                              child: Text(
-                                controller.userInitials,
-                                style: const TextStyle(
-                                  color: deepText,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                            )
-                          : null,
-                    ),
-                  ),
-                  Positioned(
-                    right: -2,
-                    bottom: -2,
-                    child: Container(
-                      width: 18,
-                      height: 18,
-                      decoration: BoxDecoration(
-                        color: brandPink,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: pageBackground, width: 2),
-                      ),
-                      child: const Icon(
-                        Icons.photo_camera_rounded,
-                        size: 9,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const Text(
-            'MesclaInvest',
-            style: TextStyle(
-              color: brandPink,
-              fontSize: 21,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-        ],
-      ),
-    );
+    return MainHeader(controller: controller);
   }
 
   Widget _buildInvestedBalanceCard() {
@@ -1184,9 +1087,9 @@ class _HomePageState extends State<HomePage> {
           Expanded(
             child: _HomeNavItem(
               icon: Icons.person_outline_rounded,
-              label: 'PERFIL',
-              isActive: _currentSection == _HomeSection.perfil,
-              onTap: () => _selectSection(_HomeSection.perfil),
+              label: 'PORTFOLIO',
+              isActive: _currentSection == _HomeSection.Portfolio,
+              onTap: () => _selectSection(_HomeSection.Portfolio),
             ),
           ),
         ],
