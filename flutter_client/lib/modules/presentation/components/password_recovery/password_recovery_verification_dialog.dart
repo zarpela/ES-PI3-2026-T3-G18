@@ -8,7 +8,6 @@ class PasswordRecoveryVerificationDialog extends StatefulWidget {
     required this.email,
     required this.resendAttempts,
     required this.resendCountdown,
-    required this.resendCountdownLabel,
     required this.onValidateCode,
     required this.onResendCode,
     super.key,
@@ -18,7 +17,6 @@ class PasswordRecoveryVerificationDialog extends StatefulWidget {
   final String email;
   final ValueNotifier<int> resendAttempts;
   final ValueNotifier<int> resendCountdown;
-  final String resendCountdownLabel;
   final Future<String?> Function(String email, String code) onValidateCode;
   final Future<void> Function() onResendCode;
 
@@ -80,6 +78,11 @@ class _PasswordRecoveryVerificationDialogState
     }
 
     setState(() => isResending = false);
+  }
+
+  String _formatCountdownLabel(int secondsRemaining) {
+    final seconds = secondsRemaining.toString().padLeft(2, '0');
+    return '00:$seconds';
   }
 
   @override
@@ -229,7 +232,7 @@ class _PasswordRecoveryVerificationDialogState
                         if (timerActive) ...[
                           const SizedBox(width: 8),
                           Text(
-                            'Reenviar em ${widget.resendCountdownLabel}',
+                            'Reenviar em ${_formatCountdownLabel(countdown)}',
                             style: const TextStyle(
                               color: Color(0xB3584048),
                               fontSize: 12,

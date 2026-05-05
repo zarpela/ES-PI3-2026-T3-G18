@@ -45,12 +45,17 @@ class HomeHistorySheet extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           Expanded(
-            child: SingleChildScrollView(
-              child: HomeTransactionHistoryList(
-                transactions: transactions,
-                formatCurrencyAmount: formatCurrencyAmount,
-              ),
-            ),
+            child: transactions.isEmpty
+                ? const HomeEmptyHistoryCard()
+                : ListView.builder(
+                    itemCount: transactions.length,
+                    itemBuilder: (context, index) {
+                      return HomeHistoryCard(
+                        transaction: transactions[index],
+                        formatCurrencyAmount: formatCurrencyAmount,
+                      );
+                    },
+                  ),
           ),
         ],
       ),

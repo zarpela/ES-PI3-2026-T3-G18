@@ -52,11 +52,6 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     });
   }
 
-  String get resendCountdownLabel {
-    final seconds = resendCountdown.value.toString().padLeft(2, '0');
-    return '00:$seconds';
-  }
-
   Future<void> sendInstructions({
     bool openDialog = true,
     bool isResend = false,
@@ -197,7 +192,6 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           email: (lastRequestedEmail ?? emailController.text).trim(),
           resendAttempts: resendAttempts,
           resendCountdown: resendCountdown,
-          resendCountdownLabel: resendCountdownLabel,
           onValidateCode: (email, code) =>
               validateCode(email: email, code: code),
           onResendCode: () =>
