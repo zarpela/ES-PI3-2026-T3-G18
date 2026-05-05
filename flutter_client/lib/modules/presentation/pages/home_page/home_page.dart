@@ -319,6 +319,7 @@ class _HomePageState extends State<HomePage> {
     bool wide = false,
   }) {
     return Container(
+      width: wide ? double.infinity : null,
       height: wide ? 108 : 112,
       decoration: BoxDecoration(
         color: panel,
