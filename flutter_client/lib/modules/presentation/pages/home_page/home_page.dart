@@ -10,6 +10,7 @@ import 'package:flutter_client/modules/presentation/components/main_header.dart'
 import 'package:flutter_client/modules/presentation/pages/home_page/home_controller.dart';
 import 'package:flutter_client/modules/presentation/pages/home_page/wallet_amount_page.dart';
 import 'package:flutter_client/modules/presentation/pages/portfolio_page/portfolio_page.dart';
+import 'package:flutter_client/shared/app_routes.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 
 class HomePage extends StatefulWidget {
@@ -89,7 +90,9 @@ class _HomePageState extends State<HomePage> {
                       child: ListView(
                         physics: const AlwaysScrollableScrollPhysics(),
                         padding: const EdgeInsets.fromLTRB(18, 18, 18, 24),
-                        children: [_buildCurrentSection()],
+                        children: [
+                          _buildCurrentSection(),
+                        ],
                       ),
                     ),
                   ),
@@ -107,6 +110,13 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  void _openStartupDetails(Map<String, dynamic> startup) {
+  Modular.to.pushNamed(
+    AppRoutes.startupDetailsPage,
+    arguments: startup,
+  );
+}
+
   Widget _buildCurrentSection() {
     switch (currentSection) {
       case HomeSection.inicio:
@@ -119,16 +129,17 @@ class _HomePageState extends State<HomePage> {
               _openWalletAmountPage(WalletAmountPageMode.withdraw),
           onHistoryTap: _showHistorySheet,
           onFeaturedTap: () =>
-              _showStartupMessage(controller.featuredStartupName),
+              _openStartupDetailsByName(controller.featuredStartupName),
           onRetry: controller.refresh,
           showHeader: false,
         );
+
       case HomeSection.explorar:
         return HomeExploreSection(
           controller: controller,
           onProfileTap: _handleProfilePhotoTap,
           onRetry: controller.refresh,
-          onInvestTap: _showStartupMessage,
+          onStartupTap: _openStartupDetails,
           showHeader: false,
         );
       case HomeSection.carteira:
@@ -143,6 +154,7 @@ class _HomePageState extends State<HomePage> {
           onInvestTap: _selectSection,
           showHeader: false,
         );
+
       case HomeSection.portfolio:
         return const PortfolioView();
     }
@@ -150,6 +162,7 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _handleProfilePhotoTap() async {
     final updated = await controller.selectProfilePhoto();
+
     if (!mounted) {
       return;
     }
@@ -178,7 +191,10 @@ class _HomePageState extends State<HomePage> {
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(result), behavior: SnackBarBehavior.floating),
+      SnackBar(
+        content: Text(result),
+        behavior: SnackBarBehavior.floating,
+      ),
     );
   }
 
@@ -206,13 +222,42 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  void _showStartupMessage(String startupName) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Abrir detalhes de $startupName em desenvolvimento.'),
-        backgroundColor: HomePalette.brandPink,
-        behavior: SnackBarBehavior.floating,
-      ),
+  void _openStartupDetailsByName(String startupName) {
+    final startup = _findStartupByName(startupName);
+
+    if (startup == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Startup "$startupName" não encontrada.'),
+          backgroundColor: HomePalette.brandPink,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    Modular.to.pushNamed(
+      AppRoutes.startupDetailsPage,
+      arguments: startup,
     );
+  }
+
+  Map<String, dynamic>? _findStartupByName(String startupName) {
+    final normalizedTarget = startupName.trim().toLowerCase();
+
+    for (final startup in controller.startups) {
+      final currentName = '${startup['name'] ?? ''}'.trim().toLowerCase();
+      if (currentName == normalizedTarget) {
+        return startup;
+      }
+    }
+
+    if ('${controller.featuredStartupName}'.trim().toLowerCase() ==
+            normalizedTarget &&
+        controller.startups.isNotEmpty) {
+      return controller.startups.first;
+    }
+
+    return null;
   }
 }
