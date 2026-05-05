@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_client/modules/presentation/pages/home_page/home_controller.dart';
+import 'package:flutter_client/modules/presentation/components/home/home_palette.dart';
 
-class MainHeader extends StatelessWidget {
-  const MainHeader({required this.controller, this.onProfileTap, super.key});
+class HomeHeader extends StatelessWidget {
+  const HomeHeader({
+    required this.profileImage,
+    required this.userInitials,
+    required this.onProfileTap,
+    super.key,
+  });
 
-  final HomeController controller;
-  final VoidCallback? onProfileTap;
-
-  static const Color pageBackground = Color(0xFFFCF9FF);
-  static const Color brandPink = Color(0xFFD4147A);
-  static const Color deepText = Color(0xFF241B60);
+  final ImageProvider? profileImage;
+  final String userInitials;
+  final VoidCallback onProfileTap;
 
   @override
   Widget build(BuildContext context) {
@@ -42,19 +44,19 @@ class MainHeader extends StatelessWidget {
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: const Color(0xFFF4EEF8),
-                        image: controller.profileImage == null
+                        image: profileImage == null
                             ? null
                             : DecorationImage(
-                                image: controller.profileImage!,
+                                image: profileImage!,
                                 fit: BoxFit.cover,
                               ),
                       ),
-                      child: controller.profileImage == null
+                      child: profileImage == null
                           ? Center(
                               child: Text(
-                                controller.userInitials,
+                                userInitials,
                                 style: const TextStyle(
-                                  color: deepText,
+                                  color: HomePalette.deepText,
                                   fontSize: 12,
                                   fontWeight: FontWeight.w800,
                                 ),
@@ -70,9 +72,12 @@ class MainHeader extends StatelessWidget {
                       width: 18,
                       height: 18,
                       decoration: BoxDecoration(
-                        color: brandPink,
+                        color: HomePalette.brandPink,
                         shape: BoxShape.circle,
-                        border: Border.all(color: pageBackground, width: 2),
+                        border: Border.all(
+                          color: HomePalette.pageBackground,
+                          width: 2,
+                        ),
                       ),
                       child: const Icon(
                         Icons.photo_camera_rounded,
@@ -88,7 +93,7 @@ class MainHeader extends StatelessWidget {
           const Text(
             'MesclaInvest',
             style: TextStyle(
-              color: brandPink,
+              color: HomePalette.brandPink,
               fontSize: 21,
               fontWeight: FontWeight.w800,
             ),

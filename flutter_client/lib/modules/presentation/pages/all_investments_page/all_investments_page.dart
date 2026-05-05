@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_client/modules/presentation/components/filter_chip.dart';
 
-
 class AllInvestmentsPage extends StatefulWidget {
   const AllInvestmentsPage({super.key});
 
@@ -12,14 +11,12 @@ class AllInvestmentsPage extends StatefulWidget {
 class _AllInvestmentsPageState extends State<AllInvestmentsPage> {
   static const Color deepText = Color(0xFF241B60);
   static const Color mutedText = Color(0xFF756E93);
-  static const Color brandPink = Color(0xFFD4147A);
   static const Color pageBackground = Color(0xFFFCF9FF);
   static const Color panelBackground = Color(0xFFF4EEFB);
   static const Color softYellow = Color(0xFFFFDE74);
-  static const Color greenTrend = Color(0xFF27AE60);
-  static const Color redTrend = Color(0xFFD93B3B);
 
-  String _selectedFilter = 'TODOS'; //TODO: trocar pelo selecionado no controller;
+  String _selectedFilter =
+      'TODOS'; //TODO: trocar pelo selecionado no controller;
 
   final List<String> _filters = ['TODOS', 'AÇÕES', 'FIIS', 'CRIPTO'];
 
@@ -56,7 +53,7 @@ class _AllInvestmentsPageState extends State<AllInvestmentsPage> {
                     },
                     softYellow: softYellow,
                     mutedText: mutedText,
-                    panelBackground: panelBackground, 
+                    panelBackground: panelBackground,
                   ),
                 );
               }).toList(),
@@ -100,7 +97,7 @@ class _AllInvestmentsPageState extends State<AllInvestmentsPage> {
                   onComprar: () {},
                   onVender: () {},
                 ),
-                const SizedBox(height: 100), 
+                const SizedBox(height: 100),
               ],
             ),
           ),
@@ -135,8 +132,12 @@ class _InvestmentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color trendColor = isPositive ? const Color(0xFF27AE60) : const Color(0xFFD93B3B);
-    final IconData trendIcon = isPositive ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded;
+    final Color trendColor = isPositive
+        ? const Color(0xFF27AE60)
+        : const Color(0xFFD93B3B);
+    final IconData trendIcon = isPositive
+        ? Icons.arrow_upward_rounded
+        : Icons.arrow_downward_rounded;
     const Color deepText = Color(0xFF241B60);
     const Color mutedText = Color(0xFF756E93);
     const Color brandPink = Color(0xFFD4147A);
@@ -150,7 +151,7 @@ class _InvestmentCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(32),
         boxShadow: [
           BoxShadow(
-            color: deepText.withOpacity(0.04),
+            color: deepText.withValues(alpha: 0.04),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -158,11 +159,9 @@ class _InvestmentCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              
               Container(
                 width: 48,
                 height: 48,
@@ -173,11 +172,15 @@ class _InvestmentCard extends StatelessWidget {
                 alignment: Alignment.center,
                 child: Text(
                   logoText != "" ? logoText.substring(0, 1) : "",
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                  ),
                 ),
               ),
               const SizedBox(width: 16),
-              
+
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -253,7 +256,11 @@ class _InvestmentCard extends StatelessWidget {
                   ),
                   child: const Text(
                     'COMPRAR',
-                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, letterSpacing: 0.5),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 13,
+                      letterSpacing: 0.5,
+                    ),
                   ),
                 ),
               ),
@@ -272,12 +279,16 @@ class _InvestmentCard extends StatelessWidget {
                   ),
                   child: const Text(
                     'VENDER',
-                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, letterSpacing: 0.5),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 13,
+                      letterSpacing: 0.5,
+                    ),
                   ),
                 ),
               ),
             ],
-          )
+          ),
         ],
       ),
     );

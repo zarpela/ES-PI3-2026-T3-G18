@@ -49,7 +49,9 @@ class PasswordValidationCard extends StatelessWidget {
         children: [
           Icon(
             isValid ? Icons.check_circle : Icons.radio_button_unchecked,
-            color: isValid ? const Color(0xFFC71E74) : const Color(0xFF584048).withOpacity(0.4),
+            color: isValid
+                ? const Color(0xFFC71E74)
+                : const Color(0xFF584048).withValues(alpha: 0.4),
             size: 20,
           ),
           const SizedBox(width: 8),
@@ -57,7 +59,9 @@ class PasswordValidationCard extends StatelessWidget {
             child: Text(
               text,
               style: TextStyle(
-                color: isValid ? const Color(0xFF584048) : const Color(0xFF584048).withOpacity(0.6),
+                color: isValid
+                    ? const Color(0xFF584048)
+                    : const Color(0xFF584048).withValues(alpha: 0.6),
                 fontSize: 14,
               ),
             ),

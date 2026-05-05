@@ -1,3 +1,4 @@
+// ignore_for_file: library_private_types_in_public_api
 // feito por marcelo
 import 'package:dio/dio.dart';
 import 'package:mobx/mobx.dart';

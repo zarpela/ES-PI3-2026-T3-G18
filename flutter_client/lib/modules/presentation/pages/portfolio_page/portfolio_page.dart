@@ -9,7 +9,7 @@ class PortfolioView extends StatelessWidget {
   static const Color mutedText = Color(0xFF756E93);
   static const Color brandPink = Color(0xFFD4147A);
   static const Color pageBackground = Color(0xFFFCF9FF);
-  
+
   static const Color colorFintech = Color(0xFFD4147A);
   static const Color colorAgrotech = Color(0xFF8C7311);
   static const Color colorHealthtech = Color(0xFFAEB2FF);
@@ -29,7 +29,6 @@ class PortfolioView extends StatelessWidget {
       ],
     );
   }
-
 
   Widget _buildPatrimonioHero() {
     return Column(
@@ -72,7 +71,7 @@ class PortfolioView extends StatelessWidget {
             const Spacer(),
             IconButton(
               icon: const Icon(Icons.remove_red_eye_outlined, color: deepText),
-              onPressed: () {}, 
+              onPressed: () {},
             ),
           ],
         ),
@@ -88,7 +87,7 @@ class PortfolioView extends StatelessWidget {
         borderRadius: BorderRadius.circular(32),
         boxShadow: [
           BoxShadow(
-            color: deepText.withOpacity(0.04),
+            color: deepText.withValues(alpha: 0.04),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -123,8 +122,22 @@ class PortfolioView extends StatelessWidget {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text('SETORES', style: TextStyle(fontSize: 10, color: mutedText, fontWeight: FontWeight.bold)),
-                          Text('3', style: TextStyle(fontSize: 24, color: deepText, fontWeight: FontWeight.w900)),
+                          Text(
+                            'SETORES',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: mutedText,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            '3',
+                            style: TextStyle(
+                              fontSize: 24,
+                              color: deepText,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -141,7 +154,7 @@ class PortfolioView extends StatelessWidget {
                       width: 120,
                       height: 120,
                       child: CircularProgressIndicator(
-                        value: 0.7, 
+                        value: 0.7,
                         strokeWidth: 16,
                         color: colorAgrotech,
                       ),
@@ -150,7 +163,7 @@ class PortfolioView extends StatelessWidget {
                       width: 120,
                       height: 120,
                       child: CircularProgressIndicator(
-                        value: 0.45, 
+                        value: 0.45,
                         strokeWidth: 16,
                         color: colorFintech,
                       ),
@@ -163,11 +176,23 @@ class PortfolioView extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _LegendItem(color: colorFintech, title: 'FINTECH', value: '45%'),
+                    _LegendItem(
+                      color: colorFintech,
+                      title: 'FINTECH',
+                      value: '45%',
+                    ),
                     SizedBox(height: 12),
-                    _LegendItem(color: colorAgrotech, title: 'AGROTECH', value: '25%'),
+                    _LegendItem(
+                      color: colorAgrotech,
+                      title: 'AGROTECH',
+                      value: '25%',
+                    ),
                     SizedBox(height: 12),
-                    _LegendItem(color: colorHealthtech, title: 'HEALTHTECH', value: '30%'),
+                    _LegendItem(
+                      color: colorHealthtech,
+                      title: 'HEALTHTECH',
+                      value: '30%',
+                    ),
                   ],
                 ),
               ),
@@ -201,7 +226,12 @@ class PortfolioView extends StatelessWidget {
     );
   }
 
-  Widget _buildMetricaCard({required IconData icon, required String title, required String value, Color iconColor = brandPink}) {
+  Widget _buildMetricaCard({
+    required IconData icon,
+    required String title,
+    required String value,
+    Color iconColor = brandPink,
+  }) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -209,7 +239,7 @@ class PortfolioView extends StatelessWidget {
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: deepText.withOpacity(0.03),
+            color: deepText.withValues(alpha: 0.03),
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),
@@ -222,12 +252,21 @@ class PortfolioView extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             title,
-            style: const TextStyle(fontSize: 10, color: mutedText, fontWeight: FontWeight.w800, letterSpacing: 0.5),
+            style: const TextStyle(
+              fontSize: 10,
+              color: mutedText,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.5,
+            ),
           ),
           const SizedBox(height: 4),
           Text(
             value,
-            style: const TextStyle(fontSize: 22, color: deepText, fontWeight: FontWeight.w900),
+            style: const TextStyle(
+              fontSize: 22,
+              color: deepText,
+              fontWeight: FontWeight.w900,
+            ),
           ),
         ],
       ),
@@ -238,21 +277,29 @@ class PortfolioView extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-         Row(
+        Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Text(
               'Seus Investimentos',
-              style: TextStyle(fontSize: 22, color: deepText, fontWeight: FontWeight.w900),
+              style: TextStyle(
+                fontSize: 22,
+                color: deepText,
+                fontWeight: FontWeight.w900,
+              ),
             ),
             GestureDetector(
               onTap: () {
-                Modular.to.pushNamed(AppRoutes.allInvestments); 
+                Modular.to.pushNamed(AppRoutes.allInvestments);
               },
               child: const Text(
                 'Ver todos',
-                style: TextStyle(fontSize: 13, color: brandPink, fontWeight: FontWeight.w700),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: brandPink,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ],
@@ -313,7 +360,7 @@ class PortfolioView extends StatelessWidget {
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: deepText.withOpacity(0.03),
+            color: deepText.withValues(alpha: 0.03),
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),
@@ -334,18 +381,47 @@ class PortfolioView extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(nome, style: const TextStyle(color: deepText, fontSize: 16, fontWeight: FontWeight.w800)),
+                Text(
+                  nome,
+                  style: const TextStyle(
+                    color: deepText,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
                 const SizedBox(height: 4),
-                Text(subtitulo, style: const TextStyle(color: mutedText, fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 0.5)),
+                Text(
+                  subtitulo,
+                  style: const TextStyle(
+                    color: mutedText,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.5,
+                  ),
+                ),
               ],
             ),
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(valor, style: const TextStyle(color: deepText, fontSize: 16, fontWeight: FontWeight.w800)),
+              Text(
+                valor,
+                style: const TextStyle(
+                  color: deepText,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
               const SizedBox(height: 4),
-              Text(rendimento, style: TextStyle(color: corRendimento, fontSize: 12, fontWeight: FontWeight.w700)),
+              Text(
+                rendimento,
+                style: TextStyle(
+                  color: corRendimento,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ],
           ),
         ],
@@ -359,7 +435,11 @@ class _LegendItem extends StatelessWidget {
   final String title;
   final String value;
 
-  const _LegendItem({required this.color, required this.title, required this.value});
+  const _LegendItem({
+    required this.color,
+    required this.title,
+    required this.value,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -376,8 +456,23 @@ class _LegendItem extends StatelessWidget {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: const TextStyle(fontSize: 10, color: PortfolioView.mutedText, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
-            Text(value, style: const TextStyle(fontSize: 14, color: PortfolioView.deepText, fontWeight: FontWeight.w900)),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 10,
+                color: PortfolioView.mutedText,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.5,
+              ),
+            ),
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 14,
+                color: PortfolioView.deepText,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
           ],
         ),
       ],
