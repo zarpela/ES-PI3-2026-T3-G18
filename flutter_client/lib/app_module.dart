@@ -9,9 +9,9 @@ import 'package:flutter_client/modules/presentation/pages/password_recovery/chan
 import 'package:flutter_client/modules/presentation/pages/password_recovery/forgot_password_page/forgot_password_page.dart';
 import 'package:flutter_client/modules/presentation/pages/register_page/register_controller.dart';
 import 'package:flutter_client/modules/presentation/pages/register_page/register_page.dart';
+import 'package:flutter_client/modules/presentation/pages/startup_details_page/startup_details_page.dart';
 import 'package:flutter_client/shared/app_routes.dart';
 import 'package:flutter_modular/flutter_modular.dart';
-import 'package:dio/dio.dart';
 
 class AppModule extends Module {
   @override
@@ -40,5 +40,13 @@ class AppModule extends Module {
     r.child(AppRoutes.register, child: (_) => const RegisterPage());
     r.child(AppRoutes.forgotPassword, child: (_) => const ForgotPasswordPage());
     r.child(AppRoutes.changePassword, child: (_) => const ChangePasswordPage());
+
+    r.child(
+      AppRoutes.startup_details_page,
+      child: (_) {
+        final startup = Modular.args.data as Map<String, dynamic>;
+        return StartupDetailsPage(startup: startup);
+      },
+    );
   }
 }

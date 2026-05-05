@@ -1,4 +1,4 @@
-//feito por pedro henrique bonetto
+// feito por pedro henrique bonetto
 
 import 'package:flutter/material.dart';
 import 'package:flutter_client/modules/presentation/pages/home_page/home_controller.dart';
@@ -144,17 +144,23 @@ class _HomePageState extends State<HomePage> {
       child: ListView(
         scrollDirection: Axis.horizontal,
         children: [
-          _chip('Tudo', 'all', active: controller.selectedFilter == 'all', color: yellowChip),
-          _chip('Agrotech', 'agtech', active: controller.selectedFilter == 'agtech'),
-          _chip('Fintech', 'fintech', active: controller.selectedFilter == 'fintech'),
-          _chip('Health', 'healthtech', active: controller.selectedFilter == 'healthtech'),
-          _chip('Edtech', 'edtech', active: controller.selectedFilter == 'edtech'),
+          _chip('Tudo', 'all',
+              active: controller.selectedFilter == 'all', color: yellowChip),
+          _chip('Agrotech', 'agtech',
+              active: controller.selectedFilter == 'agtech'),
+          _chip('Fintech', 'fintech',
+              active: controller.selectedFilter == 'fintech'),
+          _chip('Health', 'healthtech',
+              active: controller.selectedFilter == 'healthtech'),
+          _chip('Edtech', 'edtech',
+              active: controller.selectedFilter == 'edtech'),
         ],
       ),
     );
   }
 
-  Widget _chip(String label, String value, {required bool active, Color? color}) {
+  Widget _chip(String label, String value,
+      {required bool active, Color? color}) {
     return Padding(
       padding: const EdgeInsets.only(right: 8),
       child: InkWell(
@@ -185,172 +191,190 @@ class _HomePageState extends State<HomePage> {
     final price = _formatRaised('${s['raised'] ?? ''}');
     final investment = _fakeTicketByStage('${s['stage'] ?? ''}');
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 18),
-      decoration: BoxDecoration(
-        color: surface,
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 14,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Stack(
-            children: [
-              Container(
-                height: 132,
-                decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
-                  image: DecorationImage(
-                    image: NetworkImage(image),
-                    fit: BoxFit.cover,
-                  ),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 18),
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(22),
+          onTap: () {
+            Modular.to.pushNamed(
+              '/startup-details',
+              arguments: s,
+            );
+          },
+          child: Container(
+            decoration: BoxDecoration(
+              color: surface,
+              borderRadius: BorderRadius.circular(22),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 14,
+                  offset: const Offset(0, 6),
                 ),
-              ),
-              Positioned(
-                right: 10,
-                top: 10,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: primary,
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    sectorBadge.toUpperCase(),
-                    style: const TextStyle(
-                      fontSize: 9,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
-                      letterSpacing: 0.4,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+              ],
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  (s['name'] ?? '').toString(),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    color: text,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  (s['description'] ?? '').toString(),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    height: 1.35,
-                    color: textMuted,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'CAPTAÇÃO',
-                  style: TextStyle(
-                    fontSize: 9,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.6,
-                    color: textMuted,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Row(
+                Stack(
                   children: [
-                    Text(
-                      price,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                        color: primary,
+                    Container(
+                      height: 132,
+                      decoration: BoxDecoration(
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(22),
+                        ),
+                        image: DecorationImage(
+                          image: NetworkImage(image),
+                          fit: BoxFit.cover,
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    Text(
-                      (s['roi'] ?? '').toString(),
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: textMuted,
+                    Positioned(
+                      right: 10,
+                      top: 10,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: primary,
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          sectorBadge.toUpperCase(),
+                          style: const TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                            letterSpacing: 0.4,
+                          ),
+                        ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 14),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${s['name'] ?? ''}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: text,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${s['description'] ?? ''}',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          height: 1.35,
+                          color: textMuted,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'CAPTAÇÃO',
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.6,
+                          color: textMuted,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
                         children: [
-                          const Text(
-                            'INVESTIMENTO MÍN.',
-                            style: TextStyle(
-                              fontSize: 8.5,
+                          Text(
+                            price,
+                            style: const TextStyle(
+                              fontSize: 11,
                               fontWeight: FontWeight.w800,
-                              letterSpacing: 0.6,
-                              color: textMuted,
+                              color: primary,
                             ),
                           ),
-                          const SizedBox(height: 5),
+                          const SizedBox(width: 8),
                           Text(
-                            investment,
+                            '${s['roi'] ?? ''}',
                             style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w800,
-                              color: text,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: textMuted,
                             ),
                           ),
                         ],
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    SizedBox(
-                      height: 38,
-                      child: ElevatedButton(
-                        onPressed: () => _showInvestMessage(s),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: primary,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(999),
+                      const SizedBox(height: 14),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'INVESTIMENTO MÍN.',
+                                  style: TextStyle(
+                                    fontSize: 8.5,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 0.6,
+                                    color: textMuted,
+                                  ),
+                                ),
+                                const SizedBox(height: 5),
+                                Text(
+                                  investment,
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w800,
+                                    color: text,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                        ),
-                        child: const Text(
-                          'Investir',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
+                          const SizedBox(width: 12),
+                          SizedBox(
+                            height: 38,
+                            child: ElevatedButton(
+                              onPressed: () => _showInvestMessage(s),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: primary,
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 20),
+                              ),
+                              child: const Text(
+                                'Investir',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
+                        ],
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -538,7 +562,8 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _navItem(IconData icon, String label, int index, {bool active = false}) {
+  Widget _navItem(IconData icon, String label, int index,
+      {bool active = false}) {
     return InkWell(
       onTap: () {
         setState(() => currentIndex = index);
