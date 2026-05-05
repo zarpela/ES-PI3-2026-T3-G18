@@ -172,7 +172,7 @@ class _InvestmentCard extends StatelessWidget {
                 ),
                 alignment: Alignment.center,
                 child: Text(
-                  logoText.substring(0, 1),
+                  logoText != "" ? logoText.substring(0, 1) : "",
                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20),
                 ),
               ),
