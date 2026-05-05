@@ -8,7 +8,7 @@ class HomeExploreSection extends StatelessWidget {
     required this.controller,
     required this.onProfileTap,
     required this.onRetry,
-    required this.onInvestTap,
+    required this.onStartupTap,
     this.showHeader = true,
     super.key,
   });
@@ -16,7 +16,7 @@ class HomeExploreSection extends StatelessWidget {
   final HomeController controller;
   final VoidCallback onProfileTap;
   final Future<void> Function() onRetry;
-  final ValueChanged<String> onInvestTap;
+  final ValueChanged<Map<String, dynamic>> onStartupTap;
   final bool showHeader;
 
   @override
@@ -49,15 +49,27 @@ class HomeExploreSection extends StatelessWidget {
         if (controller.isStartupsLoading && startups.isEmpty)
           const _ExploreSkeletonList()
         else if (controller.errorMessage != null)
-          _ExploreErrorState(message: controller.errorMessage, onRetry: onRetry)
+          _ExploreErrorState(
+            message: controller.errorMessage,
+            onRetry: onRetry,
+          )
         else if (startups.isEmpty)
-          _ExploreEmptyState(onResetFilters: controller.resetFilters)
+          _ExploreEmptyState(
+            onResetFilters: controller.resetFilters,
+          )
         else
           ...startups.map(
             (startup) => _StartupCard(
               startup: startup,
-              onInvestTap: () =>
-                  onInvestTap((startup['name'] ?? 'Startup').toString()),
+              onTapStartup: () => onStartupTap(startup),
+              onInvestTap: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Em desenvolvimento'),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              },
             ),
           ),
       ],
@@ -87,7 +99,10 @@ class _ExploreHero extends StatelessWidget {
         const SizedBox(height: 6),
         const Text(
           'Invista no futuro hoje mesmo.',
-          style: TextStyle(fontSize: 13, color: HomePalette.mutedText),
+          style: TextStyle(
+            fontSize: 13,
+            color: HomePalette.mutedText,
+          ),
         ),
         const SizedBox(height: 12),
         Container(
@@ -258,197 +273,213 @@ class _FilterChip extends StatelessWidget {
 }
 
 class _StartupCard extends StatelessWidget {
-  const _StartupCard({required this.startup, required this.onInvestTap});
+  const _StartupCard({
+    required this.startup,
+    required this.onTapStartup,
+    required this.onInvestTap,
+  });
 
   final Map<String, dynamic> startup;
+  final VoidCallback onTapStartup;
   final VoidCallback onInvestTap;
 
   @override
   Widget build(BuildContext context) {
-    final image = _imageBySector((startup['sector'] ?? '').toString());
-    final sectorBadge = _sectorLabel((startup['sector'] ?? '').toString());
+    final image = imageBySector((startup['sector'] ?? '').toString());
+    final sectorBadge = sectorLabel((startup['sector'] ?? '').toString());
     final raised = (startup['raised'] ?? 'R\$ 0').toString();
-    final investment = _fakeTicketByStage((startup['stage'] ?? '').toString());
-    final roi = _startupRoiLabel(startup);
+    final investment = fakeTicketByStage((startup['stage'] ?? '').toString());
+    final roi = startupRoiLabel(startup);
     final name = (startup['name'] ?? 'Startup').toString();
-    final description = (startup['description'] ?? 'Sem descricao informada.')
-        .toString();
+    final description =
+        (startup['description'] ?? 'Sem descricao informada.').toString();
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 14,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Stack(
-            children: [
-              Container(
-                height: 132,
-                decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(22),
-                  ),
-                  image: DecorationImage(
-                    image: NetworkImage(image),
-                    fit: BoxFit.cover,
-                  ),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 18),
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(22),
+          onTap: onTapStartup,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(22),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 14,
+                  offset: const Offset(0, 6),
                 ),
-              ),
-              Positioned(
-                right: 10,
-                top: 10,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 5,
-                  ),
-                  decoration: BoxDecoration(
-                    color: HomePalette.brandPink,
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    sectorBadge.toUpperCase(),
-                    style: const TextStyle(
-                      fontSize: 9,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
-                      letterSpacing: 0.4,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+              ],
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    color: HomePalette.deepText,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  description,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    height: 1.35,
-                    color: HomePalette.mutedText,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'CAPTACAO',
-                  style: TextStyle(
-                    fontSize: 9,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.6,
-                    color: HomePalette.mutedText,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Row(
+                Stack(
                   children: [
-                    Text(
-                      raised,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                        color: HomePalette.brandPink,
+                    Container(
+                      height: 132,
+                      decoration: BoxDecoration(
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(22),
+                        ),
+                        image: DecorationImage(
+                          image: NetworkImage(image),
+                          fit: BoxFit.cover,
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        roi,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: HomePalette.mutedText,
+                    Positioned(
+                      right: 10,
+                      top: 10,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: HomePalette.brandPink,
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          sectorBadge.toUpperCase(),
+                          style: const TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                            letterSpacing: 0.4,
+                          ),
                         ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 14),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: HomePalette.deepText,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        description,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          height: 1.35,
+                          color: HomePalette.mutedText,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'CAPTACAO',
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.6,
+                          color: HomePalette.mutedText,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
                         children: [
-                          const Text(
-                            'INVESTIMENTO MIN.',
-                            style: TextStyle(
-                              fontSize: 8.5,
+                          Text(
+                            raised,
+                            style: const TextStyle(
+                              fontSize: 11,
                               fontWeight: FontWeight.w800,
-                              letterSpacing: 0.6,
-                              color: HomePalette.mutedText,
+                              color: HomePalette.brandPink,
                             ),
                           ),
-                          const SizedBox(height: 5),
-                          Text(
-                            investment,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w800,
-                              color: HomePalette.deepText,
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              roi,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: HomePalette.mutedText,
+                              ),
                             ),
                           ),
                         ],
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    SizedBox(
-                      height: 38,
-                      child: ElevatedButton(
-                        onPressed: onInvestTap,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: HomePalette.brandPink,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(999),
+                      const SizedBox(height: 14),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'INVESTIMENTO MIN.',
+                                  style: TextStyle(
+                                    fontSize: 8.5,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 0.6,
+                                    color: HomePalette.mutedText,
+                                  ),
+                                ),
+                                const SizedBox(height: 5),
+                                Text(
+                                  investment,
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w800,
+                                    color: HomePalette.deepText,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                        ),
-                        child: const Text(
-                          'Investir',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
+                          const SizedBox(width: 12),
+                          SizedBox(
+                            height: 38,
+                            child: ElevatedButton(
+                              onPressed: onInvestTap,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: HomePalette.brandPink,
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                ),
+                              ),
+                              child: const Text(
+                                'Investir',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
+                        ],
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -469,18 +500,12 @@ class _ExploreSkeletonList extends StatelessWidget {
             borderRadius: BorderRadius.circular(22),
           ),
           child: Column(
-            children: [
-              Container(
-                height: 132,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFEDE7F6),
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
-                ),
-              ),
+            children: const [
+              _SkeletonTop(),
               Padding(
-                padding: const EdgeInsets.all(14),
+                padding: EdgeInsets.all(14),
                 child: Column(
-                  children: const [
+                  children: [
                     _SkeletonLine(double.infinity, 18),
                     SizedBox(height: 8),
                     _SkeletonLine(double.infinity, 12),
@@ -507,6 +532,21 @@ class _ExploreSkeletonList extends StatelessWidget {
   }
 }
 
+class _SkeletonTop extends StatelessWidget {
+  const _SkeletonTop();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 132,
+      decoration: const BoxDecoration(
+        color: Color(0xFFEDE7F6),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+      ),
+    );
+  }
+}
+
 class _SkeletonLine extends StatelessWidget {
   const _SkeletonLine(this.width, this.height, {this.radius = 10});
 
@@ -528,7 +568,10 @@ class _SkeletonLine extends StatelessWidget {
 }
 
 class _ExploreErrorState extends StatelessWidget {
-  const _ExploreErrorState({required this.message, required this.onRetry});
+  const _ExploreErrorState({
+    required this.message,
+    required this.onRetry,
+  });
 
   final String? message;
   final Future<void> Function() onRetry;
@@ -625,7 +668,10 @@ class _ExploreEmptyState extends StatelessWidget {
             const SizedBox(height: 8),
             const Text(
               'Tente ajustar os filtros ou a busca.',
-              style: TextStyle(fontSize: 13, color: HomePalette.mutedText),
+              style: TextStyle(
+                fontSize: 13,
+                color: HomePalette.mutedText,
+              ),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
@@ -646,7 +692,7 @@ class _ExploreEmptyState extends StatelessWidget {
   }
 }
 
-String _imageBySector(String sector) {
+String imageBySector(String sector) {
   switch (sector.toLowerCase()) {
     case 'fintech':
       return 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=1200&auto=format&fit=crop';
@@ -661,7 +707,7 @@ String _imageBySector(String sector) {
   }
 }
 
-String _sectorLabel(String sector) {
+String sectorLabel(String sector) {
   switch (sector.toLowerCase()) {
     case 'fintech':
       return 'Fintech';
@@ -676,8 +722,9 @@ String _sectorLabel(String sector) {
   }
 }
 
-String _fakeTicketByStage(String stage) {
+String fakeTicketByStage(String stage) {
   final lower = stage.toLowerCase();
+
   if (lower.contains('seed')) {
     return 'R\$ 5.000';
   }
@@ -687,10 +734,11 @@ String _fakeTicketByStage(String stage) {
   if (lower.contains('series b') || lower == 'b') {
     return 'R\$ 50.000';
   }
+
   return 'R\$ 10.000';
 }
 
-String _startupRoiLabel(Map<String, dynamic> startup) {
+String startupRoiLabel(Map<String, dynamic> startup) {
   final roi = (startup['roi'] ?? '').toString().trim();
   if (roi.isEmpty) {
     return 'Potencial em analise';
