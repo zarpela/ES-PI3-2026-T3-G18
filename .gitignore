@@ -50,3 +50,6 @@ node_modules/
 functions/local-mail.config.json
 functions/registered-users.local.json
 serviceAccount.json
+
+# FVM Version Cache
+.fvm/

@@ -1,5 +1,7 @@
+// feitor por abdallah, marcelo, pedro
 import 'package:dio/dio.dart';
 import 'package:flutter_client/core/app_settings.dart';
+import 'package:flutter_client/modules/presentation/pages/all_investments_page/all_investments_page.dart';
 import 'package:flutter_client/modules/presentation/pages/home_page/home_controller.dart';
 import 'package:flutter_client/modules/presentation/pages/home_page/home_page.dart';
 import 'package:flutter_client/modules/presentation/pages/login_page/login_controller.dart';
@@ -40,5 +42,6 @@ class AppModule extends Module {
     r.child(AppRoutes.register, child: (_) => const RegisterPage());
     r.child(AppRoutes.forgotPassword, child: (_) => const ForgotPasswordPage());
     r.child(AppRoutes.changePassword, child: (_) => const ChangePasswordPage());
+    r.child(AppRoutes.allInvestments, child: (_) => const AllInvestmentsPage());
   }
 }
