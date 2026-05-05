@@ -6,7 +6,7 @@ import 'package:flutter_client/modules/presentation/pages/home_page/wallet_amoun
 import 'package:flutter_client/modules/presentation/pages/wallet_page/wallet_page.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 
-enum _HomeSection { inicio, explorar, carteira, Portfolio }
+enum _HomeSection { inicio, explorar, carteira, portfolio }
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -108,7 +108,7 @@ class _HomePageState extends State<HomePage> {
       _HomeSection.inicio => _buildInicioSection(),
       _HomeSection.explorar => _buildExplorarSection(),
       _HomeSection.carteira => _buildCarteiraSection(),
-      _HomeSection.Portfolio => [PortfolioView()]
+      _HomeSection.portfolio => [PortfolioView()]
     };
   }
 
@@ -1089,8 +1089,8 @@ class _HomePageState extends State<HomePage> {
             child: _HomeNavItem(
               icon: Icons.person_outline_rounded,
               label: 'PORTFOLIO',
-              isActive: _currentSection == _HomeSection.Portfolio,
-              onTap: () => _selectSection(_HomeSection.Portfolio),
+              isActive: _currentSection == _HomeSection.portfolio,
+              onTap: () => _selectSection(_HomeSection.portfolio),
             ),
           ),
         ],
@@ -1248,141 +1248,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildProfileCard() {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: panel,
-        borderRadius: BorderRadius.circular(32),
-      ),
-      child: Column(
-        children: [
-          Container(
-            width: 92,
-            height: 92,
-            padding: const EdgeInsets.all(3),
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                colors: [Color(0xFFD4147A), Color(0xFF655AC4)],
-              ),
-            ),
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white,
-                image: controller.profileImage == null
-                    ? null
-                    : DecorationImage(
-                        image: controller.profileImage!,
-                        fit: BoxFit.cover,
-                      ),
-              ),
-              child: controller.profileImage == null
-                  ? Center(
-                      child: Text(
-                        controller.userInitials,
-                        style: const TextStyle(
-                          color: deepText,
-                          fontSize: 28,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                    )
-                  : null,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            controller.userLabel,
-            style: const TextStyle(
-              color: deepText,
-              fontSize: 22,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            controller.currentUser?.email ?? 'Conta MesclaInvest',
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: mutedText, fontSize: 14),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildShortcutCard({
-    required String title,
-    required String description,
-    required String buttonLabel,
-    required VoidCallback onPressed,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: panel,
-        borderRadius: BorderRadius.circular(30),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              color: deepText,
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            description,
-            style: const TextStyle(color: mutedText, fontSize: 14, height: 1.4),
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: ElevatedButton(
-              onPressed: onPressed,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: brandPink,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(999),
-                ),
-              ),
-              child: Text(
-                buttonLabel,
-                style: const TextStyle(fontWeight: FontWeight.w800),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _handleProfilePhotoTap() async {
-    final updated = await controller.selectProfilePhoto();
-
-    if (!mounted) {
-      return;
-    }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          updated
-              ? 'Foto atualizada com sucesso.'
-              : 'Nenhuma foto foi selecionada.',
-        ),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
+ 
   Future<void> _openWalletAmountPage(WalletAmountPageMode mode) async {
     final result = await Navigator.of(context).push<String>(
       MaterialPageRoute(
