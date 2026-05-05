@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_client/modules/presentation/components/main_header.dart';
-import 'package:flutter_client/modules/presentation/pages/home_page/home_controller.dart';
 import 'package:flutter_client/shared/app_routes.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 
@@ -21,8 +19,6 @@ class PortfolioView extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        MainHeader(controller: Modular.get<HomeController>(),),
-        const SizedBox(height: 32),
         _buildPatrimonioHero(),
         const SizedBox(height: 24),
         _buildComposicaoCard(),

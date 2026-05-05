@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_client/modules/presentation/components/main_header.dart';
 import 'package:flutter_client/modules/presentation/pages/home_page/home_controller.dart';
 import 'package:flutter_client/modules/presentation/pages/home_page/wallet_amount_page.dart';
-import 'package:flutter_client/modules/presentation/pages/wallet_page/wallet_page.dart';
+import 'package:flutter_client/modules/presentation/pages/portfolio_page/portfolio_page.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 
 enum _HomeSection { inicio, explorar, carteira, portfolio }
@@ -82,6 +82,10 @@ class _HomePageState extends State<HomePage> {
               borderRadius: borderRadius,
               child: Column(
                 children: [
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(18, topInset + 12, 18, 0),
+                    child: MainHeader(controller: controller),
+                  ),
                   Expanded(
                     child: RefreshIndicator(
                       color: brandPink,
@@ -114,10 +118,6 @@ class _HomePageState extends State<HomePage> {
 
   List<Widget> _buildInicioSection() {
     return [
-      _buildHeader(),
-      const SizedBox(height: 16),
-      const Divider(height: 1, thickness: 1.5, color: dividerBlue),
-      const SizedBox(height: 18),
       _buildInvestedBalanceCard(),
       const SizedBox(height: 24),
       _buildInicioActionsGrid(),
@@ -136,10 +136,6 @@ class _HomePageState extends State<HomePage> {
     final startups = controller.startups;
 
     return [
-      _buildHeader(),
-      const SizedBox(height: 16),
-      const Divider(height: 1, thickness: 1.5, color: dividerBlue),
-      const SizedBox(height: 18),
       _buildExploreHero(),
       const SizedBox(height: 18),
       _buildSearchField(),
@@ -159,8 +155,6 @@ class _HomePageState extends State<HomePage> {
 
   List<Widget> _buildCarteiraSection() {
     return [
-      _buildHeader(),
-      const SizedBox(height: 26),
       _buildWalletBalanceHero(),
       const SizedBox(height: 28),
       _buildWalletQuickActions(),
@@ -184,9 +178,6 @@ class _HomePageState extends State<HomePage> {
     ];
   }
 
-  Widget _buildHeader() {
-    return MainHeader(controller: controller);
-  }
 
   Widget _buildInvestedBalanceCard() {
     return Container(
