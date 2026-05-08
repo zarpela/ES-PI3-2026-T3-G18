@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -70,12 +71,7 @@ class HomeController extends ChangeNotifier {
     if (localProfilePhotoBytes != null) {
       return MemoryImage(localProfilePhotoBytes!);
     }
-
-    final photoUrl = currentUser?.photoURL?.trim() ?? '';
-    if (photoUrl.isNotEmpty) {
-      return NetworkImage(photoUrl);
-    }
-
+    // Nunca usa NetworkImage — a foto é sempre baixada como bytes em _loadProfilePhoto
     return null;
   }
 
@@ -341,11 +337,45 @@ class HomeController extends ChangeNotifier {
     }
 
     try {
-      localProfilePhotoBytes = await profile_photo_storage.loadProfilePhoto(
+      final photoUrl = user.photoURL?.trim() ?? '';
+
+      // 1) Tenta cache local, passando a URL atual para validar se ainda é válido.
+      //    Se o usuário trocou a foto, a URL muda e o cache é descartado automaticamente.
+      final cached = await profile_photo_storage.loadProfilePhoto(
         _profilePhotoStorageKey,
+        currentUrl: photoUrl.isNotEmpty ? photoUrl : null,
       );
+
+      if (cached != null) {
+        localProfilePhotoBytes = cached;
+        return;
+      }
+
+      // 2) Sem cache válido: baixa via Firebase Storage SDK.
+      //    Usa ref().getData() — contorna CORS na web e funciona no Android/iOS.
+      final ref = FirebaseStorage.instance
+          .ref()
+          .child('profile_pictures/${user.uid}.jpg');
+
+      final bytes = await ref.getData();
+      if (bytes != null) {
+        localProfilePhotoBytes = bytes;
+
+        // Salva bytes + URL atual no cache — próximo login valida pela URL
+        await profile_photo_storage.saveProfilePhotoBytes(
+          _profilePhotoStorageKey,
+          bytes,
+          sourceUrl: photoUrl.isNotEmpty ? photoUrl : null,
+        );
+      }
+    } on FirebaseException catch (e) {
+      // object-not-found = usuário ainda não tem foto, não é erro real
+      if (e.code != 'object-not-found') {
+        debugPrint('HomeController photo load error: \$e');
+      }
+      localProfilePhotoBytes = null;
     } catch (error) {
-      debugPrint('HomeController photo load error: $error');
+      debugPrint('HomeController photo load error: \$error');
       localProfilePhotoBytes = null;
       await profile_photo_storage.clearProfilePhoto(_profilePhotoStorageKey);
     } finally {
@@ -353,7 +383,6 @@ class HomeController extends ChangeNotifier {
       notifyListeners();
     }
   }
-
   String get _profilePhotoStorageKey => currentUser?.uid ?? 'guest';
 
   Future<void> _loadStartups() async {

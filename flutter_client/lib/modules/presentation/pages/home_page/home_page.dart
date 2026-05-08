@@ -160,24 +160,9 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  Future<void> _handleProfilePhotoTap() async {
-    final updated = await controller.selectProfilePhoto();
-
-    if (!mounted) {
-      return;
-    }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          updated
-              ? 'Foto atualizada com sucesso.'
-              : 'Nenhuma foto foi selecionada.',
-        ),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
+  void _handleProfilePhotoTap() {
+  Modular.to.pushNamed(AppRoutes.settings);
+}
 
   Future<void> _openWalletAmountPage(WalletAmountPageMode mode) async {
     final result = await Navigator.of(context).push<String>(

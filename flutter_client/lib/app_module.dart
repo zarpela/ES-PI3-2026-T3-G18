@@ -13,6 +13,7 @@ import 'package:flutter_client/modules/presentation/pages/password_recovery/forg
 import 'package:flutter_client/modules/presentation/pages/register_page/register_controller.dart';
 import 'package:flutter_client/modules/presentation/pages/register_page/register_page.dart';
 import 'package:flutter_client/modules/presentation/pages/startup_details_page/startup_details_page.dart';
+import 'package:flutter_client/modules/presentation/pages/settings_page/settings_page.dart';
 import 'package:flutter_client/shared/app_routes.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 
@@ -53,5 +54,6 @@ class AppModule extends Module {
         return StartupDetailsPage(startup: startup);
       },
     );
+    r.child(AppRoutes.settings, child: (_) => const SettingsPage());
   }
 }
