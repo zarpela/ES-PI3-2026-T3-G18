@@ -1,11 +1,14 @@
 // feito por Gabriel Scolfaro
 
+import 'dart:convert';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import 'package:flutter_client/core/app_settings.dart';
 import 'package:flutter_client/modules/presentation/pages/home_page/home_controller.dart';
 
 class SettingsController extends ChangeNotifier {
@@ -15,14 +18,14 @@ class SettingsController extends ChangeNotifier {
     ImagePicker? imagePicker,
   ])  : _auth = auth ?? FirebaseAuth.instance,
         _imagePicker = imagePicker ?? ImagePicker(),
-        _storage = FirebaseStorage.instance,
-        _firestore = FirebaseFirestore.instance;
+        _firestore = FirebaseFirestore.instance,
+        _dio = Dio(BaseOptions(baseUrl: AppSettings.baseUrl));
 
   final HomeController _homeController;
   final FirebaseAuth _auth;
   final ImagePicker _imagePicker;
-  final FirebaseStorage _storage;
   final FirebaseFirestore _firestore;
+  final Dio _dio;
 
   bool isUploadingPhoto = false;
   String? _firestoreName;
@@ -52,6 +55,7 @@ class SettingsController extends ChangeNotifier {
 
   ImageProvider? get profileImage => _homeController.profileImage;
 
+  /// Busca o nome do usuário na coleção 'users' do Firestore.
   Future<void> loadUserName() async {
     final uid = currentUser?.uid;
     if (uid == null) return;
@@ -68,6 +72,8 @@ class SettingsController extends ChangeNotifier {
     }
   }
 
+  /// Abre câmera ou galeria, envia para o back que salva no Firebase Storage.
+  /// Atualiza a foto na home imediatamente com os bytes locais.
   Future<bool> pickAndUploadPhoto(ImageSource source) async {
     final picked = await _imagePicker.pickImage(
       source: source,
@@ -85,21 +91,21 @@ class SettingsController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Lê os bytes diretamente — funciona em todas as plataformas (mobile e web)
       final bytes = await picked.readAsBytes();
+      final base64Image = base64Encode(bytes);
 
-      final ref = _storage.ref().child('profile_pictures/$uid.jpg');
-      await ref.putData(
-        bytes,
-        SettableMetadata(contentType: 'image/jpeg'),
+      final token = await currentUser?.getIdToken();
+
+      await _dio.post(
+        '/upload-profile-photo',
+        data: {'imageBase64': base64Image},
+        options: Options(
+          headers: {'Authorization': 'Bearer $token'},
+        ),
       );
 
-      final url = await ref.getDownloadURL();
-
-      await currentUser?.updatePhotoURL(url);
-      await _auth.currentUser?.reload();
-
-      // Atualiza a foto na home imediatamente sem precisar recarregar
+      // Usa os bytes locais para atualizar a home imediatamente
+      // (evita nova chamada de rede e problema de CORS na web)
       _homeController.localProfilePhotoBytes = bytes;
       _homeController.notifyListeners();
 
@@ -114,6 +120,9 @@ class SettingsController extends ChangeNotifier {
   }
 
   Future<void> signOut() async {
+    // Reseta todo o estado do HomeController antes do logout —
+    // garante que o próximo usuário não veja dados do anterior
+    _homeController.reset();
     await _auth.signOut();
   }
 }

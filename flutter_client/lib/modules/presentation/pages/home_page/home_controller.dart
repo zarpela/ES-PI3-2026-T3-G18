@@ -1,24 +1,34 @@
 // feito por pedro henrique bonetto
 
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 
-import 'profile_photo_storage.dart' as profile_photo_storage;
 
 class HomeController extends ChangeNotifier {
-  HomeController(this._dio, [FirebaseAuth? auth, ImagePicker? imagePicker])
-    : _auth = auth,
-      _imagePicker = imagePicker ?? ImagePicker();
+  HomeController(this._dio, [FirebaseAuth? auth])
+    : _auth = auth {
+    // Escuta mudanças de autenticação — quando o uid muda (novo login),
+    // carrega automaticamente os dados do novo usuário
+    _authSub = this.auth.authStateChanges().listen((user) {
+      final uid = user?.uid;
+      if (uid != null && uid != _currentUid) {
+        _currentUid = uid;
+        load();
+      } else if (user == null) {
+        _currentUid = null;
+      }
+    });
+  }
 
   final Dio _dio;
   final FirebaseAuth? _auth;
-  final ImagePicker _imagePicker;
+  StreamSubscription<User?>? _authSub;
+  String? _currentUid;
   final FirebaseFunctions _functions = FirebaseFunctions.instanceFor(
     region: 'southamerica-east1',
   );
@@ -202,12 +212,36 @@ class HomeController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void reset() {
+    localProfilePhotoBytes = null;
+    wallet = null;
+    recentTransactions = [];
+    walletTokens = [];
+    startups = [];
+    _allStartups = [];
+    errorMessage = null;
+    walletErrorMessage = null;
+    isProfilePhotoLoading = false;
+    isStartupsLoading = false;
+    isWalletLoading = false;
+    isBalanceVisible = true;
+    investedBalance = null;
+    estimatedReturnPercent = null;
+    selectedFilter = 'all';
+    selectedSort = 'relevance';
+    notifyListeners();
+  }
+
+
   Future<void> load() async {
     errorMessage = null;
     walletErrorMessage = null;
     isProfilePhotoLoading = true;
     isStartupsLoading = true;
     isWalletLoading = true;
+    // Limpa bytes anteriores para não mostrar foto de outro usuário
+    // enquanto a do usuário atual ainda está carregando
+    localProfilePhotoBytes = null;
     notifyListeners();
 
     await Future.wait([
@@ -221,31 +255,6 @@ class HomeController extends ChangeNotifier {
     await load();
   }
 
-  Future<bool> selectProfilePhoto() async {
-    try {
-      final pickedFile = await _imagePicker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 1200,
-        imageQuality: 88,
-      );
-
-      if (pickedFile == null) {
-        return false;
-      }
-
-      final bytes = await profile_photo_storage.saveProfilePhoto(
-        _profilePhotoStorageKey,
-        pickedFile,
-      );
-      localProfilePhotoBytes = bytes;
-
-      notifyListeners();
-      return true;
-    } catch (error) {
-      debugPrint('HomeController photo error: $error');
-      return false;
-    }
-  }
 
   Future<String> addBalance(double amount) async {
     final user = currentUser;
@@ -337,53 +346,33 @@ class HomeController extends ChangeNotifier {
     }
 
     try {
-      final photoUrl = user.photoURL?.trim() ?? '';
-
-      // 1) Tenta cache local, passando a URL atual para validar se ainda é válido.
-      //    Se o usuário trocou a foto, a URL muda e o cache é descartado automaticamente.
-      final cached = await profile_photo_storage.loadProfilePhoto(
-        _profilePhotoStorageKey,
-        currentUrl: photoUrl.isNotEmpty ? photoUrl : null,
+      final token = await user.getIdToken();
+      
+      // O ?uid=${user.uid} força urls únicas por usuário
+      // e impede o cache indevido entre contas diferentes.
+      final response = await _dio.get<List<int>>(
+        'profile-photo?uid=${user.uid}', 
+        options: Options(
+          headers: {'Authorization': 'Bearer $token'},
+          responseType: ResponseType.bytes,
+        ),
       );
-
-      if (cached != null) {
-        localProfilePhotoBytes = cached;
-        return;
+      if (response.data != null) {
+        localProfilePhotoBytes = Uint8List.fromList(response.data!);
       }
-
-      // 2) Sem cache válido: baixa via Firebase Storage SDK.
-      //    Usa ref().getData() — contorna CORS na web e funciona no Android/iOS.
-      final ref = FirebaseStorage.instance
-          .ref()
-          .child('profile_pictures/${user.uid}.jpg');
-
-      final bytes = await ref.getData();
-      if (bytes != null) {
-        localProfilePhotoBytes = bytes;
-
-        // Salva bytes + URL atual no cache — próximo login valida pela URL
-        await profile_photo_storage.saveProfilePhotoBytes(
-          _profilePhotoStorageKey,
-          bytes,
-          sourceUrl: photoUrl.isNotEmpty ? photoUrl : null,
-        );
-      }
-    } on FirebaseException catch (e) {
-      // object-not-found = usuário ainda não tem foto, não é erro real
-      if (e.code != 'object-not-found') {
-        debugPrint('HomeController photo load error: \$e');
+    } on DioException catch (e) {
+      if (e.response?.statusCode != 404) {
+        debugPrint('HomeController photo load error: $e');
       }
       localProfilePhotoBytes = null;
     } catch (error) {
-      debugPrint('HomeController photo load error: \$error');
+      debugPrint('HomeController photo load error: $error');
       localProfilePhotoBytes = null;
-      await profile_photo_storage.clearProfilePhoto(_profilePhotoStorageKey);
     } finally {
       isProfilePhotoLoading = false;
       notifyListeners();
     }
   }
-  String get _profilePhotoStorageKey => currentUser?.uid ?? 'guest';
 
   Future<void> _loadStartups() async {
     try {
@@ -799,6 +788,7 @@ class HomeController extends ChangeNotifier {
 
   @override
   void dispose() {
+    _authSub?.cancel();
     searchController.dispose();
     super.dispose();
   }

@@ -1,6 +1,6 @@
 import admin from "firebase-admin";
 import fs from "fs";
-import {resolveFunctionsPath} from "./utils";
+import { resolveFunctionsPath } from "./utils";
 
 function initializeFirebaseApp(): admin.app.App {
   if (admin.apps.length > 0) {
@@ -16,6 +16,7 @@ function initializeFirebaseApp(): admin.app.App {
 
     return admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
+      storageBucket: "projetointegrador3-grupo18.firebasestorage.app",
     });
   }
 
@@ -24,6 +25,7 @@ function initializeFirebaseApp(): admin.app.App {
 
 const firebaseApp = initializeFirebaseApp();
 
-export {firebaseApp};
+export { firebaseApp };
 export const db = admin.firestore(firebaseApp);
 export const auth = admin.auth(firebaseApp);
+export const storage = admin.storage(firebaseApp);

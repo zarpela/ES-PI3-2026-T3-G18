@@ -228,11 +228,15 @@ class _AvatarSection extends StatelessWidget {
         borderRadius: BorderRadius.circular(28),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           GestureDetector(
             onTap: isLoading ? null : onTap,
-            child: Stack(
-              children: [
+            child: SizedBox(
+              width: 64,
+              height: 64,
+              child: Stack(
+                children: [
                 Container(
                   width: 64,
                   height: 64,
@@ -310,6 +314,7 @@ class _AvatarSection extends StatelessWidget {
                     ),
                   ),
               ],
+              ),
             ),
           ),
           const SizedBox(width: 16),
