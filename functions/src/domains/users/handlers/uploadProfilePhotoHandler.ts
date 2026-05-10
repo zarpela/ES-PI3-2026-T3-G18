@@ -40,10 +40,11 @@ export async function uploadProfilePhotoHandler(
     return;
   }
 
-  // Valida o body
   const imageBase64 = req.body?.imageBase64;
-  if (typeof imageBase64 !== "string" || imageBase64.trim().length === 0) {
-    res.status(400).json({ ok: false, message: "imageBase64 é obrigatório." });
+
+  // 1. Validação do tamanho da string Base64
+  if (typeof imageBase64 !== "string" || imageBase64.length > 3000000) {
+    res.status(413).json({ ok: false, message: "Payload muito grande ou inválido." });
     return;
   }
 
@@ -52,26 +53,42 @@ export async function uploadProfilePhotoHandler(
     const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
     const buffer = Buffer.from(base64Data, "base64");
 
+    // 2. Validação real do tamanho do arquivo (2MB)
+    if (buffer.length > 2 * 1024 * 1024) {
+      res.status(413).json({ ok: false, message: "A imagem deve ter no máximo 2MB." });
+      return;
+    }
+
+    // 3. Validação de Magic Bytes (JPEG: FF D8 no início e FF D9 no fim)
+    const isJpeg = buffer[0] === 0xFF && buffer[1] === 0xD8 && 
+                   buffer[buffer.length - 2] === 0xFF && buffer[buffer.length - 1] === 0xD9;
+    
+    if (!isJpeg) {
+      res.status(400).json({ ok: false, message: "Formato de arquivo inválido. Apenas JPEG é permitido." });
+      return;
+    }
+
     const bucket = storage.bucket();
     const filePath = `profile_pictures/${uid}.jpg`;
     const file = bucket.file(filePath);
 
+    // 4. Salvar como privado (removido makePublic e publicUrl)
     await file.save(buffer, {
-      metadata: { contentType: "image/jpeg" },
+      metadata: { 
+        contentType: "image/jpeg",
+        cacheControl: "public, max-age=3600"
+      },
+      public: false, 
     });
 
-    // Torna o arquivo público e pega a URL
-    await file.makePublic();
-    const url = file.publicUrl();
+    logger.info("Upload de foto realizado com sucesso e segurança.", { uid });
 
-    // Atualiza o photoURL no Firebase Auth
-    await auth.updateUser(uid, { photoURL: url });
-
-    logger.info("Foto de perfil atualizada.", { uid });
-
-    res.status(200).json({ ok: true, url });
+    res.status(200).json({
+      ok: true,
+      message: "Foto atualizada com sucesso!",
+    });
   } catch (error) {
-    logger.error("Erro ao fazer upload da foto de perfil.", error);
-    res.status(500).json({ ok: false, message: "Erro ao salvar a foto." });
+    logger.error("Erro no processamento do upload.", error);
+    res.status(500).json({ ok: false, message: "Erro interno ao salvar foto." });
   }
 }

@@ -96,6 +96,7 @@ class SettingsController extends ChangeNotifier {
 
       final token = await currentUser?.getIdToken();
 
+      // O backend agora valida tamanho e tipo, e não retorna mais publicUrl
       await _dio.post(
         '/upload-profile-photo',
         data: {'imageBase64': base64Image},
@@ -104,14 +105,21 @@ class SettingsController extends ChangeNotifier {
         ),
       );
 
-      // Usa os bytes locais para atualizar a home imediatamente
-      // (evita nova chamada de rede e problema de CORS na web)
+      // Sincroniza com a home usando os bytes locais
+      // Como o arquivo no Storage agora é privado, o app usará o 
+      // endpoint GET /profile-photo nas próximas inicializações.
       _homeController.localProfilePhotoBytes = bytes;
       _homeController.notifyListeners();
 
       return true;
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 413) {
+        debugPrint('Erro: Imagem grande demais para o servidor.');
+      }
+      debugPrint('SettingsController upload error: ${e.message}');
+      return false;
     } catch (error) {
-      debugPrint('SettingsController upload error: $error');
+      debugPrint('SettingsController generic error: $error');
       return false;
     } finally {
       isUploadingPhoto = false;
