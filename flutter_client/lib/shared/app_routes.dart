@@ -11,4 +11,5 @@ class AppRoutes {
   static const String changePassword = '/change-password';
   static const String allInvestments = '/all-investments';
   static const String startupDetailsPage = '/startup-details';
+  static const String settings = '/settings';
 }

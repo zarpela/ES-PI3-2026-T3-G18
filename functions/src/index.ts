@@ -10,7 +10,7 @@ import walletRoutes from "./routes/walletRoutes";
 const app = express();
 
 app.use(cors({origin: true}));
-app.use(express.json());
+app.use(express.json({ limit: '4mb' }));
 app.use(userRoutes);
 app.use(authRoutes);
 app.use("/market", marketRoutes);
