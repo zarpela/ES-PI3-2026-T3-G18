@@ -119,6 +119,40 @@ class SettingsController extends ChangeNotifier {
     }
   }
 
+
+  /// Remove a foto de perfil chamando o backend.
+  /// Atualiza a home imediatamente para refletir a mudança (mostrar as iniciais).
+  Future<bool> deletePhoto() async {
+    final uid = currentUser?.uid;
+    if (uid == null) return false;
+
+    isUploadingPhoto = true; //  Loading para a deleção
+    notifyListeners();
+
+    try {
+      final token = await currentUser?.getIdToken();
+
+      await _dio.delete(
+        '/delete-profile-photo',
+        options: Options(
+          headers: {'Authorization': 'Bearer $token'},
+        ),
+      );
+
+      // Limpa os bytes locais para atualizar a home imediatamente para as iniciais
+      _homeController.localProfilePhotoBytes = null;
+      _homeController.notifyListeners();
+
+      return true;
+    } catch (error) {
+      debugPrint('SettingsController delete error: $error');
+      return false;
+    } finally {
+      isUploadingPhoto = false;
+      notifyListeners();
+    }
+  }
+
   Future<void> signOut() async {
     // Reseta todo o estado do HomeController antes do logout —
     // garante que o próximo usuário não veja dados do anterior

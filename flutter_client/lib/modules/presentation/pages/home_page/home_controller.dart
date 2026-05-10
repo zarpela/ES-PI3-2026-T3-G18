@@ -351,7 +351,7 @@ class HomeController extends ChangeNotifier {
       // O ?uid=${user.uid} força urls únicas por usuário
       // e impede o cache indevido entre contas diferentes.
       final response = await _dio.get<List<int>>(
-        'profile-photo?uid=${user.uid}', 
+        'profile-photo?uid=${user.uid}&t=${DateTime.now().millisecondsSinceEpoch}', 
         options: Options(
           headers: {'Authorization': 'Bearer $token'},
           responseType: ResponseType.bytes,

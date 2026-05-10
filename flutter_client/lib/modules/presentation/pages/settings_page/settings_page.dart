@@ -9,6 +9,9 @@ import 'package:flutter_client/shared/app_routes.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:image_picker/image_picker.dart';
 
+
+enum PhotoAction { camera, gallery, remove }
+
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
 
@@ -42,25 +45,37 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _onPhotoTap() async {
-    final source = await _showPhotoSourceSheet();
-    if (source == null) return;
+    final hasPhoto = _controller.profileImage != null;
+    final action = await _showPhotoSourceSheet(hasPhoto: hasPhoto);
+    if (action == null) return;
 
-    final success = await _controller.pickAndUploadPhoto(source);
+    bool success = false;
 
-    if (!mounted) return;
-
-    _showSnackBar(
-      success
-          ? 'Foto atualizada com sucesso!'
-          : 'Erro ao atualizar a foto. Tente novamente.',
-    );
+    if (action == PhotoAction.remove) {
+      success = await _controller.deletePhoto();
+      if (!mounted) return;
+      _showSnackBar(
+        success
+            ? 'Foto removida com sucesso!'
+            : 'Erro ao remover a foto. Tente novamente.',
+      );
+    } else {
+      final source = action == PhotoAction.camera ? ImageSource.camera : ImageSource.gallery;
+      success = await _controller.pickAndUploadPhoto(source);
+      if (!mounted) return;
+      _showSnackBar(
+        success
+            ? 'Foto atualizada com sucesso!'
+            : 'Erro ao atualizar a foto. Tente novamente.',
+      );
+    }
   }
 
-  Future<ImageSource?> _showPhotoSourceSheet() {
-    return showModalBottomSheet<ImageSource>(
+  Future<PhotoAction?> _showPhotoSourceSheet({required bool hasPhoto}) {
+    return showModalBottomSheet<PhotoAction>(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (_) => const _PhotoSourceSheet(),
+      builder: (_) => _PhotoSourceSheet(hasPhoto: hasPhoto),
     );
   }
 
@@ -339,7 +354,8 @@ class _AvatarSection extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _PhotoSourceSheet extends StatelessWidget {
-  const _PhotoSourceSheet();
+  const _PhotoSourceSheet({required this.hasPhoto});
+  final bool hasPhoto;
 
   @override
   Widget build(BuildContext context) {
@@ -373,19 +389,28 @@ class _PhotoSourceSheet extends StatelessWidget {
           _PhotoSourceOption(
             icon: Icons.photo_camera_rounded,
             label: 'Tirar foto',
-            onTap: () => Navigator.pop(context, ImageSource.camera),
+            onTap: () => Navigator.pop(context, PhotoAction.camera),
           ),
           const SizedBox(height: 12),
           _PhotoSourceOption(
             icon: Icons.photo_library_outlined,
             label: 'Escolher da galeria',
-            onTap: () => Navigator.pop(context, ImageSource.gallery),
+            onTap: () => Navigator.pop(context, PhotoAction.gallery),
           ),
+          // Só exibe a opção de remover se o usuário tiver foto
+          if (hasPhoto) ...[
+            const SizedBox(height: 12),
+            _PhotoSourceOption(
+              icon: Icons.delete_outline_rounded,
+              label: 'Remover foto',
+              isDestructive: true,
+              onTap: () => Navigator.pop(context, PhotoAction.remove),
+            ),
+          ],
           const SizedBox(height: 12),
           _PhotoSourceOption(
             icon: Icons.close_rounded,
             label: 'Cancelar',
-            isDestructive: true,
             onTap: () => Navigator.pop(context),
           ),
         ],

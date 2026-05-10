@@ -5,15 +5,14 @@ import * as logger from "firebase-functions/logger";
 import { auth, storage } from "../../../shared/firebase";
 
 /**
- * GET /profile-photo
+ * DELETE /delete-profile-photo
  *
  * Headers:
- *   Authorization: Bearer <idToken>
+ * Authorization: Bearer <idToken>
  *
- * Retorna os bytes da foto de perfil do usuário autenticado.
- * Resolve o problema de CORS ao buscar direto do Storage pelo browser.
+ * Remove a foto de perfil do usuário no Firebase Storage e limpa a referência no Auth.
  */
-export async function getProfilePhotoHandler(
+export async function deleteProfilePhotoHandler(
   req: Request,
   res: Response,
 ): Promise<void> {
@@ -38,21 +37,22 @@ export async function getProfilePhotoHandler(
 
   try {
     const bucket = storage.bucket();
-    const file = bucket.file(`profile_pictures/${uid}.jpg`);
+    const filePath = `profile_pictures/${uid}.jpg`;
+    const file = bucket.file(filePath);
 
     const [exists] = await file.exists();
-    if (!exists) {
-      res.status(404).json({ ok: false, message: "Foto não encontrada." });
-      return;
+    if (exists) {
+      await file.delete();
     }
 
-    const [bytes] = await file.download();
+    // Limpa o photoURL no Firebase Auth
+    await auth.updateUser(uid, { photoURL: null });
 
-    res.set("Content-Type", "image/jpeg");
-    res.set("Cache-Control", "no-store");
-    res.status(200).send(bytes);
+    logger.info("Foto de perfil removida.", { uid });
+
+    res.status(200).json({ ok: true, message: "Foto removida com sucesso." });
   } catch (error) {
-    logger.error("Erro ao buscar foto de perfil.", error);
-    res.status(500).json({ ok: false, message: "Erro ao buscar a foto." });
+    logger.error("Erro ao remover a foto de perfil.", error);
+    res.status(500).json({ ok: false, message: "Erro ao remover a foto." });
   }
 }
