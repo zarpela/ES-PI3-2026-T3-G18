@@ -2,7 +2,6 @@ import cors from "cors";
 import express from "express";
 import {onRequest} from "firebase-functions/v2/https";
 import authRoutes from "./domains/auth";
-import {getStartups} from "./domains/startups";
 import userRoutes from "./domains/users";
 import marketRoutes from "./routes/marketRoutes";
 import walletRoutes from "./routes/walletRoutes";
@@ -25,4 +24,4 @@ export const api = onRequest(
   app,
 );
 
-export {getStartups};
+export * from "./domains/startups";

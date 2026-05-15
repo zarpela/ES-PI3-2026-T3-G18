@@ -1,7 +1,7 @@
 // Desenvolvido por Miguel Castro
 
 import { HttpsError, onCall } from "firebase-functions/v2/https";
-import { getStartupDocById } from "../repositories/startupRepo";
+import { getStartupDocById } from "../repositories/startupRepository";
 
 export const getStartupById = onCall (
     { region: "southamerica-east1" }, 

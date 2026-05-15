@@ -11,7 +11,7 @@ import {
     createQuestion,
     getStartupById,
     userIsInvestor,
-} from "../repositories/startupRepo";
+} from "../repositories/startupRepository";
 import { QuestionVisibility, StartupQuestionDocument } from "../types";
 
 /**

@@ -4,7 +4,7 @@ import { HttpsError, onCall } from "firebase-functions/v2/https";
 import { Timestamp } from "firebase-admin/firestore";
 
 import { normalizeString } from "../shared/validation";
-import { getPublicQuestions, getStartupById } from "../repositories/startupRepo";
+import { getPublicQuestions, getStartupById } from "../repositories/startupRepository";
 import { StartupQuestionResponse } from "../types";
 
 /**

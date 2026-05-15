@@ -1,7 +1,7 @@
 // Desenvolvido por Miguel Castro
 
 import { HttpsError, onCall } from "firebase-functions/v2/https";
-import { getStartupsCatalogs } from "../repositories/startupRepo";
+import { getStartupsCatalogs } from "../repositories/startupRepository";
 import { StartupStage } from "../types";
 import { allowedStages } from "../shared/constants";
 
