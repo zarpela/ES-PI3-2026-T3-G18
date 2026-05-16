@@ -36,6 +36,7 @@ export type StartupDoc = {
     sector: string;
     shareholders: Shareholder[];
     externalMembers: ExternalMember[];
+    tokenPrice: number; // preço de cada token
 
     // apresentação visual
     backgroundImage: string; // URL
