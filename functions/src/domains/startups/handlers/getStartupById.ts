@@ -2,12 +2,14 @@
 
 import { HttpsError, onCall } from "firebase-functions/v2/https";
 import { getStartupDocById } from "../repositories/startupRepository";
+import { normalizeString } from "../shared/validation";
 
 export const getStartupById = onCall (
     { region: "southamerica-east1" }, 
     async (request) => {
 
-    const id = request.data?.id;
+    // tratamento de dados não-vazios, mas ainda inválidos
+    const id = normalizeString(request.data?.id);
 
     if(!id) {
         throw new HttpsError(

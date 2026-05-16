@@ -17,9 +17,12 @@ export const getStartups = onCall(
   { region: "southamerica-east1" },
   async (request) => {
 
-  // filtros
-  const data = request.data as GetStartupsRequest;
+  
+  // Caso a request seja undefined de alguma forma, 
+  // não quebra as variaveis stage e sector
+  const data = (request.data ?? {}) as Partial<GetStartupsRequest>;
 
+  // filtros
   const stage = data.stage;
   const sector = data.sector;
 
