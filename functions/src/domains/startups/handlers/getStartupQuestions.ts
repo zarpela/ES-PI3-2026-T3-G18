@@ -38,7 +38,6 @@ export const getStartupQuestions = onCall(
         const data: StartupQuestionResponse[] = questions.map(({ id, data: q }) => ({
             id,
             authorUid: q.authorUid,
-            authorEmail: q.authorEmail,
             text: q.text,
             visibility: q.visibility,
             createdAt: q.createdAt instanceof Timestamp
@@ -48,7 +47,6 @@ export const getStartupQuestions = onCall(
                 ? {
                     text: q.answer.text,
                     answeredByUid: q.answer.answeredByUid,
-                    answeredByEmail: q.answer.answeredByEmail,
                     answeredAt: q.answer.answeredAt instanceof Timestamp
                         ? q.answer.answeredAt.toDate().toISOString()
                         : null,

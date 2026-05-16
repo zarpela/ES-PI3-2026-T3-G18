@@ -88,7 +88,6 @@ export type QuestionVisibility = "publica" | "privada";
 export type QuestionAnswer = {
     text: string;
     answeredByUid: string;
-    answeredByEmail: string | undefined;
     answeredAt: Timestamp | FieldValue;
 }
 
@@ -98,7 +97,6 @@ export type QuestionAnswer = {
  */
 export type StartupQuestionDocument = {
     authorUid: string;
-    authorEmail: string | undefined;
     text: string;
     visibility: QuestionVisibility;
     createdAt: Timestamp | FieldValue;
@@ -111,14 +109,12 @@ export type StartupQuestionDocument = {
 export type StartupQuestionResponse = {
     id: string;
     authorUid: string;
-    authorEmail: string | undefined;
     text: string;
     visibility: QuestionVisibility;
     createdAt: string | null;
     answer?: {
         text: string;
         answeredByUid: string;
-        answeredByEmail: string | undefined;
         answeredAt: string | null;
     };
 }

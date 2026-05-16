@@ -69,7 +69,6 @@ export const createStartupQuestion = onCall(
 
         const question: StartupQuestionDocument = {
             authorUid: user.uid,
-            authorEmail: user.email,
             text,
             visibility,
             createdAt: FieldValue.serverTimestamp(),
