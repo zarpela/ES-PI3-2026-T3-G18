@@ -1,0 +1,48 @@
+// Desenvolvido por Miguel Castro
+
+import { HttpsError, onCall } from "firebase-functions/v2/https";
+import { buySellOrder } from "../repositories/exchangeRepository";
+
+/**
+ * Padronização do request
+ */
+type BuySellOrderRequest = {
+    orderId?: string;
+}
+
+/**
+ * Compra de ordem de venda existente. O comprador paga o preço por token 
+ * definido na ordem e recebe os tokens comprados, enquanto o vendedor 
+ * recebe o dinheiro da venda. A ordem é removida do sistema.
+ * As ordens de vendas são vistas no balcão
+ */
+export const buySellOrderHandler = onCall(
+    { region: "southamerica-east1" },
+    async (request) => {
+        // usuário autenticado
+        const buyerId = request.auth?.uid;
+
+        if (!buyerId) {
+            throw new HttpsError("unauthenticated", "Usuário não autenticado.");
+        }
+
+        // evita quebra se request.data for undefined
+        const data = (request.data ?? {}) as Partial<BuySellOrderRequest>;
+        const orderId = data.orderId;
+
+        // valida orderId
+        if (!orderId || typeof orderId !== "string") 
+        {
+            throw new HttpsError("invalid-argument", "Ordem inválida.");
+        }
+
+        // executa compra da ordem
+        await buySellOrder(buyerId,orderId,);
+
+        return {
+            message: "Ordem comprada com sucesso.",
+            data: {orderId}
+        };
+
+    }
+);
