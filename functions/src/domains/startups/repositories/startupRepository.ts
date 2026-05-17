@@ -164,3 +164,21 @@ export async function getPublicQuestions(
         throw new HttpsError("internal", "Erro ao buscar perguntas.");
     }
 }
+
+export async function getPrivateQuestions(
+    startupId: string
+): Promise<{ id: string; data: StartupQuestionDocument }[]> {
+    try {
+        const snapshot = await questionsCol(startupId)
+            .where("visibility", "==", "privada")
+            .orderBy("createdAt", "asc")
+            .get();
+
+        return snapshot.docs.map((doc) => ({
+            id: doc.id,
+            data: doc.data() as StartupQuestionDocument,
+        }));
+    } catch (e) {
+        throw new HttpsError("internal", "Erro ao buscar perguntas privadas.");
+    }
+}
