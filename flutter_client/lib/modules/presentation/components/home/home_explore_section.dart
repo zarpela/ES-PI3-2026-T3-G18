@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_client/modules/presentation/components/home/home_header.dart';
 import 'package:flutter_client/modules/presentation/components/home/home_palette.dart';
 import 'package:flutter_client/modules/presentation/pages/home_page/home_controller.dart';
+import 'package:flutter_client/shared/app_routes.dart';
+import 'package:flutter_modular/flutter_modular.dart';
 
 class HomeExploreSection extends StatelessWidget {
   const HomeExploreSection({
@@ -105,21 +107,27 @@ class _ExploreHero extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-          decoration: BoxDecoration(
-            color: HomePalette.activeNavBackground,
-            borderRadius: BorderRadius.circular(999),
-          ),
-          child: Text(
-            '$totalStartups oportunidades carregadas',
-            style: const TextStyle(
-              color: HomePalette.brandPink,
+        ElevatedButton(
+            onPressed: () => Modular.to.pushNamed(AppRoutes.marketplace),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: HomePalette.brandPink,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(999),
+              ),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 20,
+              ),
+            ),
+            child: const Text(
+              "Compre de outros usuários",
+              style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w700,
+              ),
             ),
           ),
-        ),
       ],
     );
   }
