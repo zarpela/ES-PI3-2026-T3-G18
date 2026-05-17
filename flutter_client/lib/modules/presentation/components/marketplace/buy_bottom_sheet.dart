@@ -1,18 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// Bottom sheet de confirmação de compra.
-///
-/// Gerencia localmente a quantidade selecionada e calcula
-/// o total reativamente na tela.
-///
-/// Uso:
-/// ```dart
-/// showBuyBottomSheet(
-///   context: context,
-///   assetTitle: 'Imóvel Solar Residencial',
-///   pricePerToken: 150.00,
-/// );
-/// ```
 void showBuyBottomSheet({
   required BuildContext context,
   required String assetTitle,

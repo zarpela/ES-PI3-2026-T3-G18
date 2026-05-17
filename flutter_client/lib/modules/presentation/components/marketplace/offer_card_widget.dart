@@ -53,7 +53,6 @@ class OfferCardWidget extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header: ícone + título + subtítulo
           Row(
             children: [
               Container(
@@ -136,7 +135,7 @@ class OfferCardWidget extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'PREÇO',
+                          'PREÇO POR TOKEN',
                           style: theme.textTheme.labelSmall?.copyWith(
                             color: const Color(0xFF584048).withOpacity(0.6),
                             fontSize: 10,
@@ -161,7 +160,6 @@ class OfferCardWidget extends StatelessWidget {
 
           const SizedBox(height: 12),
 
-          // Botão Comprar
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(

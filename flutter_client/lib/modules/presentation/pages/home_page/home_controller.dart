@@ -204,7 +204,7 @@ class HomeController extends ChangeNotifier {
       return tagline;
     }
 
-    return 'Conheca a oportunidade em destaque disponivel na plataforma.';
+    return 'Conheca a oportunidade em destaque disponível na plataforma.';
   }
 
   void toggleBalanceVisibility() {

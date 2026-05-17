@@ -124,7 +124,7 @@ class WalletAmountForm extends StatelessWidget {
                   ),
                   const SizedBox(width: 10),
                   const Text(
-                    'Saldo disponivel:',
+                    'Saldo disponível:',
                     style: TextStyle(color: Color(0xFF756E93), fontSize: 14),
                   ),
                   const SizedBox(width: 6),

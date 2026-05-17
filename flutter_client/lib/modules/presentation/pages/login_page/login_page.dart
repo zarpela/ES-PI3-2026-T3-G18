@@ -55,7 +55,7 @@ class _LoginPageState extends State<LoginPage> {
           ),
           const SizedBox(height: 64),
           const AuthSectionHeader(
-            title: 'Ola!',
+            title: 'Olá!',
             subtitle: 'Bem-vindo de volta ao futuro dos seus\ninvestimentos.',
             titleColor: Color(0xFF170B58),
             subtitleColor: Color(0xFF584048),

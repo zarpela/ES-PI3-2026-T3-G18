@@ -167,9 +167,9 @@ IconData _transactionIcon(Map<String, dynamic> transaction) {
 String _transactionTitle(Map<String, dynamic> transaction) {
   switch ((transaction['type'] ?? '').toString()) {
     case 'ADD_BALANCE':
-      return 'Aporte Mensal';
+      return 'Depósito';
     case 'WITHDRAW_BALANCE':
-      return 'Resgate Carteira';
+      return 'Saque';
     case 'SELL':
       return 'Venda de Ativos';
     case 'BUY':

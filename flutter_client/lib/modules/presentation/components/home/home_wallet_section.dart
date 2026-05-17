@@ -47,7 +47,7 @@ class HomeWalletSection extends StatelessWidget {
         ),
         const SizedBox(height: 30),
         const Text(
-          'Historico recente',
+          'Histórico recente',
           style: TextStyle(
             color: HomePalette.deepText,
             fontSize: 17,
@@ -81,7 +81,7 @@ class _WalletBalanceHero extends StatelessWidget {
         Row(
           children: [
             const Text(
-              'SALDO DISPONIVEL',
+              'SALDO DISPONÍVEL',
               style: TextStyle(
                 color: HomePalette.mutedText,
                 fontSize: 13,
