@@ -4,6 +4,7 @@ import 'package:flutter_client/modules/presentation/components/auth/auth_action_
 import 'package:flutter_client/modules/presentation/components/auth/auth_input_field.dart';
 import 'package:flutter_client/modules/presentation/components/auth/auth_page_scaffold.dart';
 import 'package:flutter_client/modules/presentation/components/auth/auth_section_header.dart';
+import 'package:flutter_client/modules/presentation/pages/home_page/home_controller.dart';
 import 'package:flutter_client/modules/presentation/pages/login_page/login_controller.dart';
 import 'package:flutter_client/shared/app_illustrations.dart';
 import 'package:flutter_client/shared/app_routes.dart';
@@ -26,6 +27,10 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
+    // Força o reload do HomeController para o novo usuário —
+    // necessário porque o _HomePageState é singleton e o initState
+    // não é chamado de novo ao navegar de volta para /home
+    Modular.get<HomeController>().load();
     Modular.to.navigate(AppRoutes.home);
   }
 

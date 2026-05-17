@@ -1,7 +1,7 @@
-import {onRequest} from "firebase-functions/v2/https";
-import {getStartupsHandler} from "./handlers/getStartupsHandler";
+// Desenvolvido por Miguel Castro
 
-export const getStartups = onRequest(
-  {region: "southamerica-east1"},
-  getStartupsHandler,
-);
+export { getStartups } from "./handlers/getStartups";
+export { getStartupById } from "./handlers/getStartupById";
+export { createStartupQuestion } from "./handlers/createStartupQuestion";
+export { getStartupQuestions } from "./handlers/getStartupQuestions";
+export { getStartupPrivateQuestions } from "./handlers/getStartupPrivateQuestions";

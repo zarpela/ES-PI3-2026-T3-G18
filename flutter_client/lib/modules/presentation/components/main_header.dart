@@ -21,7 +21,7 @@ class MainHeader extends StatelessWidget {
           Align(
             alignment: Alignment.centerLeft,
             child: InkWell(
-              onTap: null, //TODO: Levar para a página de configuração.
+              onTap: onProfileTap,
               borderRadius: BorderRadius.circular(999),
               child: Stack(
                 clipBehavior: Clip.none,
