@@ -34,7 +34,7 @@ function getAuthenticatedUserId(res: Response): string {
 
 export const buyTokensHandler = async (req: Request, res: Response) => {
   try {
-    const result = await buyTokens({
+    const overview = await buyTokens({
       ...req.body,
       authenticatedUserId: getAuthenticatedUserId(res),
     });
@@ -42,8 +42,9 @@ export const buyTokensHandler = async (req: Request, res: Response) => {
     return res.status(200).json({
       ok: true,
       message: "Compra realizada com sucesso.",
-      wallet: result.wallet,
-      transaction: result.transaction,
+      wallet: overview.wallet,
+      tokens: overview.tokens,
+      recentTransactions: overview.recentTransactions,
     });
   } catch (error) {
     console.error("Erro ao comprar tokens.", error);
@@ -58,7 +59,7 @@ export const buyTokensHandler = async (req: Request, res: Response) => {
 
 export const sellTokensHandler = async (req: Request, res: Response) => {
   try {
-    const result = await sellTokens({
+    const overview = await sellTokens({
       ...req.body,
       authenticatedUserId: getAuthenticatedUserId(res),
     });
@@ -66,8 +67,9 @@ export const sellTokensHandler = async (req: Request, res: Response) => {
     return res.status(200).json({
       ok: true,
       message: "Venda realizada com sucesso.",
-      wallet: result.wallet,
-      transaction: result.transaction,
+      wallet: overview.wallet,
+      tokens: overview.tokens,
+      recentTransactions: overview.recentTransactions,
     });
   } catch (error) {
     console.error("Erro ao vender tokens.", error);

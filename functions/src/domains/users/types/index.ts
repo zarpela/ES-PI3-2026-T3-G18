@@ -1,13 +1,19 @@
 // Desenvolvido por Miguel Castro
-import { Timestamp } from "firebase-admin/firestore";
+import {FieldValue, Timestamp} from "firebase-admin/firestore";
 
 /**
- * Carteira do usuário
+ * Carteira do usuario
  */
 export type Wallet = {
-    balance: number, // saldo
+    userId: string;
+    balance: number; // saldo
+    totalInvested: number;
+    totalCurrentValue: number;
+    totalProfitLoss: number;
+    totalProfitLossPercent: number;
 
-    // não é nulo pq é adicionado um timestamp na criação da carteira
-    createdAt: Timestamp,
-    lastUpdated: Timestamp,
-}
+    // Miguel iniciou esta tipagem
+    // Abdallah ajustou a estrutura para wallet/{userId}
+    createdAt: Timestamp | FieldValue;
+    updatedAt: Timestamp | FieldValue;
+};
