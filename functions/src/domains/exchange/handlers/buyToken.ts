@@ -11,6 +11,14 @@ type BuyTokensRequest = {
     amount?: number;
 }
 
+/**
+ * Função callable para comprar tokens.
+ *
+ * @param request - Solicitação do cliente contendo os dados de compra.
+ *   - data.startupId: ID da startup cujos tokens serão comprados.
+ *   - data.amount: Quantidade de tokens a comprar.
+ * @returns Retorna mensagem de sucesso e os dados da compra.
+ */
 export const buyToken = onCall(
     { region: "southamerica-east1" },
     async (request) => {

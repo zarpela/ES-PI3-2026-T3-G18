@@ -16,6 +16,13 @@ type BuySellOrderRequest = {
  * recebe o dinheiro da venda. A ordem é removida do sistema.
  * As ordens de vendas são vistas no balcão
  */
+/**
+ * Função callable para comprar uma ordem de venda aberta.
+ *
+ * @param request - Solicitação do cliente contendo o ID da ordem.
+ *   - data.orderId: ID da ordem de venda a ser comprada.
+ * @returns Retorna mensagem de sucesso e o ID da ordem comprada.
+ */
 export const buySellOrderHandler = onCall(
     { region: "southamerica-east1" },
     async (request) => {

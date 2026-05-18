@@ -12,6 +12,15 @@ type SellTokensRequest = {
     pricePerToken?: number;
 }
 
+/**
+ * Função callable para criar uma ordem de venda de tokens.
+ *
+ * @param request - Solicitação do cliente contendo os dados da ordem.
+ *   - data.startupId: ID da startup cujos tokens serão vendidos.
+ *   - data.amount: Quantidade de tokens a vender.
+ *   - data.pricePerToken: Preço por token para a ordem.
+ * @returns Retorna mensagem de sucesso e os dados da ordem criada.
+ */
 export const sellToken = onCall(
     { region: "southamerica-east1" },
     async (request) => {
