@@ -151,8 +151,10 @@ class HomeEmptyHistoryCard extends StatelessWidget {
 
 IconData _transactionIcon(Map<String, dynamic> transaction) {
   switch ((transaction['type'] ?? '').toString()) {
+    case 'DEPOSIT':
     case 'ADD_BALANCE':
       return Icons.add_circle_rounded;
+    case 'WITHDRAW':
     case 'WITHDRAW_BALANCE':
       return Icons.account_balance_wallet_outlined;
     case 'SELL':
@@ -166,10 +168,12 @@ IconData _transactionIcon(Map<String, dynamic> transaction) {
 
 String _transactionTitle(Map<String, dynamic> transaction) {
   switch ((transaction['type'] ?? '').toString()) {
+    case 'DEPOSIT':
     case 'ADD_BALANCE':
-      return 'Aporte Mensal';
+      return 'Deposito';
+    case 'WITHDRAW':
     case 'WITHDRAW_BALANCE':
-      return 'Resgate Carteira';
+      return 'Saque';
     case 'SELL':
       return 'Venda de Ativos';
     case 'BUY':
@@ -182,15 +186,14 @@ String _transactionTitle(Map<String, dynamic> transaction) {
 }
 
 String _transactionSubtitle(Map<String, dynamic> transaction) {
-  final createdAt = DateTime.tryParse(
-    (transaction['createdAt'] ?? '').toString(),
-  );
+  final createdAt = DateTime.tryParse((transaction['createdAt'] ?? '').toString())
+      ?.toLocal();
 
   if (createdAt == null) {
     return 'Agora';
   }
 
-  final now = DateTime.now();
+  final now = DateTime.now().toLocal();
   final months = [
     'Jan',
     'Fev',
@@ -220,14 +223,16 @@ String _transactionSubtitle(Map<String, dynamic> transaction) {
 double _transactionAmount(Map<String, dynamic> transaction) {
   final type = (transaction['type'] ?? '').toString();
   switch (type) {
+    case 'DEPOSIT':
     case 'ADD_BALANCE':
-      return _asDouble(transaction['amount']);
+      return _asDouble(transaction['amount'] ?? transaction['totalAmount']);
+    case 'WITHDRAW':
     case 'WITHDRAW_BALANCE':
-      return -_asDouble(transaction['amount']);
+      return -_asDouble(transaction['amount'] ?? transaction['totalAmount']);
     case 'SELL':
-      return _asDouble(transaction['total']);
+      return _asDouble(transaction['total'] ?? transaction['totalAmount']);
     case 'BUY':
-      return -_asDouble(transaction['total']);
+      return -_asDouble(transaction['total'] ?? transaction['totalAmount']);
     default:
       return 0;
   }

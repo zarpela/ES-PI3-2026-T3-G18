@@ -25,6 +25,8 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
   bool isSending = false;
   String? lastRequestedEmail;
+  String? statusMessage;
+  bool isStatusError = false;
   Timer? resendTimer;
 
   @override
@@ -59,9 +61,10 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     final typedEmail = emailController.text.trim();
 
     if (typedEmail.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Informe o e-mail cadastrado.')),
-      );
+      setState(() {
+        statusMessage = 'Informe o e-mail cadastrado.';
+        isStatusError = true;
+      });
       return;
     }
 
@@ -71,7 +74,11 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       resendAttempts.value = 0;
     }
 
-    setState(() => isSending = true);
+    setState(() {
+      isSending = true;
+      statusMessage = null;
+      isStatusError = false;
+    });
     lastRequestedEmail = typedEmail;
 
     try {
@@ -97,9 +104,10 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
         startResendCountdown();
       }
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(_buildApiMessage(data))));
+      setState(() {
+        statusMessage = _buildApiMessage(data);
+        isStatusError = false;
+      });
 
       if (openDialog) {
         showVerificationDialog();
@@ -112,13 +120,15 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       final data = error.response?.data;
       if (data is Map) {
         final map = Map<String, dynamic>.from(data);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(_buildApiMessage(map))));
+        setState(() {
+          statusMessage = _buildApiMessage(map);
+          isStatusError = true;
+        });
       } else {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(_extractErrorMessage(error))));
+        setState(() {
+          statusMessage = _extractErrorMessage(error);
+          isStatusError = true;
+        });
       }
     } finally {
       if (mounted) {
@@ -244,6 +254,29 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
             labelFontSize: 10,
             labelLetterSpacing: 0.8,
           ),
+          if (statusMessage != null) ...[
+            const SizedBox(height: 8),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                color: isStatusError
+                    ? const Color(0xFFFFE7E7)
+                    : const Color(0xFFE9F7EE),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Text(
+                statusMessage!,
+                style: TextStyle(
+                  color: isStatusError
+                      ? const Color(0xFF9D1C1C)
+                      : const Color(0xFF1E6B3A),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
           const SizedBox(height: 16),
           AuthActionButton(
             label: 'Enviar instrucoes',
