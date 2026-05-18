@@ -1,6 +1,8 @@
+// feito por marcelo
 import 'package:flutter/material.dart';
 
 class OfferCardModel {
+  final String id;
   final String title;
   final String sellerName;
   final int quantity;
@@ -10,6 +12,7 @@ class OfferCardModel {
   final Color iconBackgroundColor;
 
   const OfferCardModel({
+    required this.id,
     required this.title,
     required this.sellerName,
     required this.quantity,
@@ -23,17 +26,19 @@ class OfferCardModel {
 class OfferCardWidget extends StatelessWidget {
   final OfferCardModel offer;
   final VoidCallback onBuyTap;
+  final VoidCallback onDetailsTap; 
 
   const OfferCardWidget({
     super.key,
     required this.offer,
     required this.onBuyTap,
+    required this.onDetailsTap, 
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final primaryColor = const Color(0xFFA1005B);
+    final primaryColor = const Color(0xFFD4147A);
     final currencyFormatted =
         'R\$ ${offer.pricePerUnit.toStringAsFixed(2).replaceAll('.', ',')}';
 
@@ -91,7 +96,6 @@ class OfferCardWidget extends StatelessWidget {
 
           const SizedBox(height: 12),
 
-          // Bloco de dados: quantidade e preço
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
@@ -160,24 +164,45 @@ class OfferCardWidget extends StatelessWidget {
 
           const SizedBox(height: 12),
 
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: onBuyTap,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: primaryColor,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: onDetailsTap,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: primaryColor,
+                    side: BorderSide(color: primaryColor.withOpacity(0.5)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  child: const Text(
+                    'Detalhes',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
                 ),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                elevation: 0,
               ),
-              child: const Text(
-                'Comprar',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: onBuyTap,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primaryColor,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    elevation: 0,
+                  ),
+                  child: const Text(
+                    'Comprar',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
         ],
       ),

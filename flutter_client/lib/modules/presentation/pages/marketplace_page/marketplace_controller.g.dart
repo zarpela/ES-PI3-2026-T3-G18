@@ -45,6 +45,80 @@ mixin _$MarketplaceController on _MarketplaceControllerBase, Store {
     });
   }
 
+  late final _$sellOrdersAtom = Atom(
+    name: '_MarketplaceControllerBase.sellOrders',
+    context: context,
+  );
+
+  @override
+  ObservableList<Map<String, dynamic>> get sellOrders {
+    _$sellOrdersAtom.reportRead();
+    return super.sellOrders;
+  }
+
+  @override
+  set sellOrders(ObservableList<Map<String, dynamic>> value) {
+    _$sellOrdersAtom.reportWrite(value, super.sellOrders, () {
+      super.sellOrders = value;
+    });
+  }
+
+  late final _$isLoadingAtom = Atom(
+    name: '_MarketplaceControllerBase.isLoading',
+    context: context,
+  );
+
+  @override
+  bool get isLoading {
+    _$isLoadingAtom.reportRead();
+    return super.isLoading;
+  }
+
+  @override
+  set isLoading(bool value) {
+    _$isLoadingAtom.reportWrite(value, super.isLoading, () {
+      super.isLoading = value;
+    });
+  }
+
+  late final _$errorMessageAtom = Atom(
+    name: '_MarketplaceControllerBase.errorMessage',
+    context: context,
+  );
+
+  @override
+  String? get errorMessage {
+    _$errorMessageAtom.reportRead();
+    return super.errorMessage;
+  }
+
+  @override
+  set errorMessage(String? value) {
+    _$errorMessageAtom.reportWrite(value, super.errorMessage, () {
+      super.errorMessage = value;
+    });
+  }
+
+  late final _$fetchSellOrdersAsyncAction = AsyncAction(
+    '_MarketplaceControllerBase.fetchSellOrders',
+    context: context,
+  );
+
+  @override
+  Future<void> fetchSellOrders() {
+    return _$fetchSellOrdersAsyncAction.run(() => super.fetchSellOrders());
+  }
+
+  late final _$buySellOrderAsyncAction = AsyncAction(
+    '_MarketplaceControllerBase.buySellOrder',
+    context: context,
+  );
+
+  @override
+  Future<void> buySellOrder(Map<String, dynamic> payload) {
+    return _$buySellOrderAsyncAction.run(() => super.buySellOrder(payload));
+  }
+
   late final _$_MarketplaceControllerBaseActionController = ActionController(
     name: '_MarketplaceControllerBase',
     context: context,
@@ -76,7 +150,10 @@ mixin _$MarketplaceController on _MarketplaceControllerBase, Store {
   String toString() {
     return '''
 searchQuery: ${searchQuery},
-activeFilter: ${activeFilter}
+activeFilter: ${activeFilter},
+sellOrders: ${sellOrders},
+isLoading: ${isLoading},
+errorMessage: ${errorMessage}
     ''';
   }
 }

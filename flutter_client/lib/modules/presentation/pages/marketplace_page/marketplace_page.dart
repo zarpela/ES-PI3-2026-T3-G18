@@ -1,39 +1,11 @@
+//feito por marcelo
 import 'package:flutter/material.dart';
 import 'package:flutter_client/modules/presentation/components/marketplace/buy_bottom_sheet.dart';
 import 'package:flutter_client/modules/presentation/components/marketplace/offer_card_widget.dart';
 import 'package:flutter_client/modules/presentation/pages/marketplace_page/marketplace_controller.dart';
+import 'package:flutter_client/shared/app_routes.dart';
 import 'package:flutter_mobx/flutter_mobx.dart';
 import 'package:flutter_modular/flutter_modular.dart';
-
-final List<OfferCardModel> _mockOffers = [ //TODO: remover mock quando o back chegar
-  OfferCardModel(
-    title: 'Imóvel Solar Residencial',
-    sellerName: 'joao.silva',
-    quantity: 125,
-    unit: 'tokens',
-    pricePerUnit: 150.00,
-    icon: Icons.home_outlined,
-    iconBackgroundColor: const Color(0xFFF0EBFF),
-  ),
-  OfferCardModel(
-    title: 'Painel Solar Industrial',
-    sellerName: 'energia.verde',
-    quantity: 300,
-    unit: 'tokens',
-    pricePerUnit: 89.90,
-    icon: Icons.solar_power_outlined,
-    iconBackgroundColor: const Color(0xFFFFF9E4),
-  ),
-  OfferCardModel(
-    title: 'Startup AgriTech',
-    sellerName: 'agro.invest',
-    quantity: 50,
-    unit: 'tokens',
-    pricePerUnit: 420.00,
-    icon: Icons.eco_outlined,
-    iconBackgroundColor: const Color(0xFFE8F5E9),
-  ),
-];
 
 class MarketplacePage extends StatefulWidget {
   const MarketplacePage({super.key});
@@ -45,8 +17,13 @@ class MarketplacePage extends StatefulWidget {
 class _MarketplacePageState extends State<MarketplacePage> {
   final _controller = Modular.get<MarketplaceController>();
 
+  static const _primaryColor = Color(0xFFD4147A);
 
-  static const _primaryColor = Color(0xFFA1005B);
+  @override
+  void initState() {
+    super.initState();
+    _controller.fetchSellOrders();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -69,16 +46,6 @@ class _MarketplacePageState extends State<MarketplacePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Título da página
-                Text(
-                  'Marketplace',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFF170B58),
-                      ),
-                ),
-                const SizedBox(height: 16),
-
                 _SearchBar(controller: _controller),
 
                 const SizedBox(height: 16),
@@ -93,26 +60,98 @@ class _MarketplacePageState extends State<MarketplacePage> {
           Expanded(
             child: Observer(
               builder: (_) {
-                final filtered = _mockOffers.where((o) {
+                if (_controller.isLoading && _controller.sellOrders.isEmpty) {
+                  return const Center(
+                    child: CircularProgressIndicator(color: _primaryColor),
+                  );
+                }
+
+                if (_controller.errorMessage != null && _controller.sellOrders.isEmpty) {
+                  return Center(
+                    child: Text(
+                      _controller.errorMessage!,
+                      style: const TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  );
+                }
+
+                final filtered = _controller.sellOrders.where((order) {
                   final q = _controller.searchQuery.toLowerCase();
-                  return q.isEmpty ||
-                      o.title.toLowerCase().contains(q) ||
-                      o.sellerName.toLowerCase().contains(q);
+                  
+                  final title = (order['startupName'] ?? order['title'] ?? '').toString().toLowerCase();
+                  final sellerName = (order['sellerName'] ?? '').toString().toLowerCase();
+                  
+                  return q.isEmpty || title.contains(q) || sellerName.contains(q);
                 }).toList();
+
+                if (filtered.isEmpty) {
+                  return Center(
+                    child: Text(
+                      'Nenhuma oferta encontrada.',
+                      style: TextStyle(
+                        color: const Color(0xFF584048).withOpacity(0.7),
+                      ),
+                    ),
+                  );
+                }
 
                 return ListView.separated(
                   padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
                   itemCount: filtered.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 16),
                   itemBuilder: (context, index) {
-                    final offer = filtered[index];
+                    final order = filtered[index];
+
+                    final offerId = (order['id'] ?? order['orderId'] ?? '').toString();
+                    final offerTitle = (order['startupName'] ?? order['title'] ?? 'Oferta').toString();
+                    final offerSeller = (order['sellerName'] ?? 'Vendedor').toString();
+                    final offerQuantity = int.tryParse(order['quantity']?.toString() ?? '0') ?? 0;
+                    final offerPrice = double.tryParse(order['price']?.toString() ?? '0') ?? 0.0;
+
+                    final offerModel = OfferCardModel(
+                      id: offerId,
+                      title: offerTitle,
+                      sellerName: offerSeller,
+                      quantity: offerQuantity,
+                      unit: 'tokens',
+                      pricePerUnit: offerPrice,
+                      icon: Icons.business_outlined,
+                      iconBackgroundColor: const Color(0xFFF0EBFF),
+                    );
+
                     return OfferCardWidget(
-                      offer: offer,
+                      offer: offerModel,
                       onBuyTap: () => showBuyBottomSheet(
                         context: context,
-                        assetTitle: offer.title,
-                        pricePerToken: offer.pricePerUnit,
+                        offerId: offerModel.id, 
+                        assetTitle: offerModel.title,
+                        pricePerToken: offerModel.pricePerUnit,
+                        availableQuantity: offerQuantity,
                       ),
+                      onDetailsTap: () async {
+                        try{
+                           final startupId = order['startupId']?.toString() ?? '';
+
+                          final startupDetails = await _controller.getStartupById(startupId);
+
+                          Modular.to.pushNamed(
+                            AppRoutes.startupDetailsPage,
+                            arguments: startupDetails,
+                          );
+                        }
+                        catch (e) {
+                          ScaffoldMessenger.of(context).
+                            showSnackBar(
+                                SnackBar(
+                                  content: Text(_controller.errorMessage ?? 'Erro ao carregar detalhes'),
+                                  backgroundColor: Colors.red,
+                                ),
+                            );
+                        }
+                      },
                     );
                   },
                 );
@@ -157,7 +196,7 @@ class _SearchBar extends StatelessWidget {
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(
-            color: Color(0xFFA1005B),
+            color: Color(0xFFD4147A),
             width: 1.5,
           ),
         ),
@@ -171,7 +210,7 @@ class _FilterChips extends StatelessWidget {
 
   const _FilterChips({required this.controller});
 
-  static const _primaryColor = Color(0xFFA1005B);
+  static const _primaryColor = Color(0xFFD4147A);
 
   @override
   Widget build(BuildContext context) {
