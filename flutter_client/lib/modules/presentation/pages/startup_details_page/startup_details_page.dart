@@ -1,13 +1,20 @@
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
+import 'package:video_player/video_player.dart';
 import 'package:flutter_client/modules/presentation/pages/token_transaction_page/token_transaction_controller.dart';
 import 'package:flutter_client/shared/app_routes.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 
-class StartupDetailsPage extends StatelessWidget {
+class StartupDetailsPage extends StatefulWidget {
   final Map<String, dynamic> startup;
 
   const StartupDetailsPage({super.key, required this.startup});
 
+  @override
+  State<StartupDetailsPage> createState() => _StartupDetailsPageState();
+}
+
+class _StartupDetailsPageState extends State<StartupDetailsPage> {
   static const Color bg = Color(0xFFF7F3FA);
   static const Color surface = Color(0xFFF2ECF8);
   static const Color surfaceStrong = Colors.white;
@@ -15,18 +22,342 @@ class StartupDetailsPage extends StatelessWidget {
   static const Color textMuted = Color(0xFF7D718F);
   static const Color textLight = Color(0xFF9B90AA);
   static const Color primary = Color(0xFFC2187A);
-  static const Color chipBg = Color(0xFFF1E9F8);
   static const Color divider = Color(0xFFE7DFF0);
+
+  final FirebaseFunctions functions = FirebaseFunctions.instanceFor(
+    region: 'southamerica-east1',
+  );
+
+  Map<String, dynamic>? fullStartup;
+  String? resolvedVideoUrl;
+  String? resolvedImageUrl;
+  String? resolvedLogoUrl;
+
+  VideoPlayerController? videoController;
+  bool isVideoReady = false;
+  bool isLoading = true;
+  String? errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    loadStartupDetails();
+  }
+
+  @override
+  void dispose() {
+    videoController?.dispose();
+    super.dispose();
+  }
+
+  Future<void> loadStartupDetails() async {
+    try {
+      debugPrint('========== STARTUP DETAILS ==========');
+      debugPrint('startup keys: ${widget.startup.keys.toList()}');
+      debugPrint('startup raw object: ${widget.startup}');
+
+      final startupId =
+          '${widget.startup['id'] ?? widget.startup['docId'] ?? widget.startup['startupId'] ?? ''}'
+              .trim();
+
+      debugPrint('startupId detectado: $startupId');
+
+      Map<String, dynamic> startupData = Map<String, dynamic>.from(
+        widget.startup,
+      );
+
+      if (startupId.isNotEmpty) {
+        final callable = functions.httpsCallable('getStartupById');
+        debugPrint('Chamando function getStartupById em southamerica-east1');
+
+        final result = await callable.call({'id': startupId});
+
+        final data = result.data;
+        debugPrint('getStartupById runtimeType: ${data.runtimeType}');
+        debugPrint('getStartupById result: $data');
+
+        if (data is Map && data['data'] is Map) {
+          startupData = Map<String, dynamic>.from(data['data'] as Map);
+        } else if (data is Map) {
+          startupData = Map<String, dynamic>.from(data);
+        }
+      } else {
+        debugPrint(
+          'Nenhum ID encontrado. Usando apenas os dados locais da listagem.',
+        );
+      }
+
+      debugPrint('startupData final: $startupData');
+
+      final resolvedImage = await resolveImageFromStartup(startupData);
+      final resolvedLogo = await resolveLogoFromStartup(startupData);
+      final resolvedVideo = await resolveVideoFromStartup(startupData);
+
+      debugPrint('resolvedImage: $resolvedImage');
+      debugPrint('resolvedLogo: $resolvedLogo');
+      debugPrint('resolvedVideo: $resolvedVideo');
+      debugPrint('=====================================');
+
+      await setupVideoPlayer(resolvedVideo);
+
+      if (!mounted) return;
+
+      setState(() {
+        fullStartup = startupData;
+        resolvedImageUrl = resolvedImage;
+        resolvedLogoUrl = resolvedLogo;
+        resolvedVideoUrl = resolvedVideo;
+        errorMessage = null;
+        isLoading = false;
+      });
+    } on FirebaseFunctionsException catch (e) {
+      debugPrint('========== FUNCTION ERROR ==========');
+      debugPrint('function: getStartupById');
+      debugPrint('region: southamerica-east1');
+      debugPrint('startup payload: ${widget.startup}');
+      debugPrint('exception code: ${e.code}');
+      debugPrint('exception message: ${e.message}');
+      debugPrint('exception details: ${e.details}');
+      debugPrint('===================================');
+
+      final fallbackData = Map<String, dynamic>.from(widget.startup);
+      final resolvedImage = await resolveImageFromStartup(fallbackData);
+      final resolvedLogo = await resolveLogoFromStartup(fallbackData);
+      final resolvedVideo = await resolveVideoFromStartup(fallbackData);
+
+      await setupVideoPlayer(resolvedVideo);
+
+      if (!mounted) return;
+
+      setState(() {
+        fullStartup = fallbackData;
+        resolvedImageUrl = resolvedImage;
+        resolvedLogoUrl = resolvedLogo;
+        resolvedVideoUrl = resolvedVideo;
+        errorMessage = null;
+        isLoading = false;
+      });
+    } catch (e) {
+      debugPrint('========== GENERIC DETAILS ERROR ==========');
+      debugPrint('error: $e');
+      debugPrint('startup payload: ${widget.startup}');
+      debugPrint('===========================================');
+
+      final fallbackData = Map<String, dynamic>.from(widget.startup);
+      final resolvedImage = await resolveImageFromStartup(fallbackData);
+      final resolvedLogo = await resolveLogoFromStartup(fallbackData);
+      final resolvedVideo = await resolveVideoFromStartup(fallbackData);
+
+      await setupVideoPlayer(resolvedVideo);
+
+      if (!mounted) return;
+
+      setState(() {
+        fullStartup = fallbackData;
+        resolvedImageUrl = resolvedImage;
+        resolvedLogoUrl = resolvedLogo;
+        resolvedVideoUrl = resolvedVideo;
+        errorMessage = e.toString();
+        isLoading = false;
+      });
+    }
+  }
+
+  Future<void> setupVideoPlayer(String? url) async {
+    videoController?.dispose();
+    videoController = null;
+    isVideoReady = false;
+
+    if (url == null || url.isEmpty) return;
+
+    try {
+      final controller = VideoPlayerController.networkUrl(Uri.parse(url));
+      await controller.initialize();
+      await controller.setLooping(true);
+      videoController = controller;
+
+      if (!mounted) return;
+      setState(() {
+        isVideoReady = true;
+      });
+    } catch (e) {
+      debugPrint('Erro inicializando video: $e');
+    }
+  }
+
+  Future<String?> resolveImageFromStartup(Map<String, dynamic> data) async {
+    final sector = readFirst(data, ['sector', 'setor']);
+
+    final rawImage =
+        readFirst(data, [
+          'backgroundImage',
+          'background',
+          'image',
+          'thumbnail',
+          'coverImage',
+          'banner',
+          'imagem',
+        ]) ??
+        readFirst(Map<String, dynamic>.from((data['raw'] ?? {}) as Map), [
+          'backgroundImage',
+          'background',
+          'image',
+          'thumbnail',
+          'coverImage',
+          'banner',
+          'imagem',
+        ]);
+
+    final resolved = await resolveMediaUrl(rawImage);
+    if (resolved != null && resolved.isNotEmpty) return resolved;
+
+    return imageBySector(sector ?? '');
+  }
+
+  Future<String?> resolveLogoFromStartup(Map<String, dynamic> data) async {
+    final rawLogo =
+        readFirst(data, ['logo', 'logoUrl', 'brandLogo', 'icon']) ??
+        readFirst(Map<String, dynamic>.from((data['raw'] ?? {}) as Map), [
+          'logo',
+          'logoUrl',
+          'brandLogo',
+          'icon',
+        ]);
+
+    final resolved = await resolveMediaUrl(rawLogo);
+    if (resolved != null && resolved.isNotEmpty) return resolved;
+
+    return null;
+  }
+
+  Future<String?> resolveVideoFromStartup(Map<String, dynamic> data) async {
+    final rawVideo = readFirst(data, [
+      'videoUrl',
+      'video',
+      'demoVideo',
+      'pitchVideo',
+      'videopitch',
+      'videourl',
+    ]);
+
+    debugPrint('Campo de video encontrado no doc: $rawVideo');
+
+    final resolved = await resolveMediaUrl(rawVideo);
+    if (resolved != null && resolved.isNotEmpty) {
+      return resolved;
+    }
+
+    return null;
+  }
+
+  Future<String?> resolveMediaUrl(String? rawValue) async {
+    final value = (rawValue ?? '').trim();
+    final lower = value.toLowerCase();
+
+    if (value.isEmpty || value == 'null' || lower == 'link') return null;
+
+    if (value.startsWith('http://') || value.startsWith('https://')) {
+      return value;
+    }
+
+    return null;
+  }
+
+  String? readFirst(Map<String, dynamic> data, List<String> keys) {
+    for (final key in keys) {
+      final value = data[key];
+      if (value == null) continue;
+      final parsed = value.toString().trim();
+      if (parsed.isNotEmpty && parsed.toLowerCase() != 'null') return parsed;
+    }
+    return null;
+  }
+
+  List<Map<String, dynamic>> extractListOfMaps(
+    Map<String, dynamic> data,
+    List<String> keys,
+  ) {
+    for (final key in keys) {
+      final candidate = data[key];
+      if (candidate is List) {
+        return candidate
+            .map((e) => Map<String, dynamic>.from(e as Map))
+            .toList();
+      }
+    }
+    return [];
+  }
 
   @override
   Widget build(BuildContext context) {
-    final sector = '${startup['sector'] ?? ''}';
-    final image = _imageBySector(sector);
-    final name = '${startup['name'] ?? 'Startup'}';
-    final description = '${startup['description'] ?? 'Sem descrição'}';
-    final stage = '${startup['stage'] ?? 'Não informado'}';
-    final raised = _formatRaised('${startup['raised'] ?? ''}');
-    final roi = '${startup['roi'] ?? 'Não informado'}';
+    final startup = fullStartup ?? widget.startup;
+
+    final sector =
+        readFirst(startup, ['sector', 'setor']) ??
+        '${widget.startup['sector'] ?? ''}';
+
+    final image = resolvedImageUrl ?? imageBySector(sector);
+    final name =
+        readFirst(startup, ['name', 'nomeStartup']) ??
+        '${widget.startup['name'] ?? 'Startup'}';
+    final description =
+        readFirst(startup, ['description', 'descricao']) ??
+        '${widget.startup['description'] ?? 'Sem descrição.'}';
+
+    final executiveSummary =
+        readFirst(startup, [
+          'executiveSummary',
+          'summary',
+          'resumoExecutivo',
+        ]) ??
+        executiveSummaryFromDescription(description);
+
+    final stage =
+        readFirst(startup, ['stage', 'estagio']) ??
+        '${widget.startup['stage'] ?? 'Não informado'}';
+
+    final raised = formatRaised(
+      readFirst(startup, ['raised', 'raisedCapital', 'capitalAportado']) ??
+          '${widget.startup['raised'] ?? ''}',
+    );
+
+    final totalTokens =
+        readFirst(startup, [
+          'totalEmittedTokens',
+          'tokens',
+          'tokensEmitidos',
+        ]) ??
+        tokenAmountByStage(stage);
+
+    final founders = extractListOfMaps(startup, [
+      'founders',
+      'fundadores',
+      'shareholders',
+      'socios',
+      'sociosFundadores',
+    ]);
+
+    final advisors = extractListOfMaps(startup, [
+      'advisors',
+      'externalMembers',
+      'conselho',
+      'board',
+      'conselhoConsultivo',
+    ]);
+
+    final faq = extractListOfMaps(startup, [
+      'faq',
+      'perguntas',
+      'questions',
+      'duvidas',
+    ]);
+
+    if (isLoading) {
+      return const Scaffold(
+        backgroundColor: bg,
+        body: SafeArea(child: Center(child: CircularProgressIndicator())),
+      );
+    }
 
     return Scaffold(
       backgroundColor: bg,
@@ -36,74 +367,138 @@ class StartupDetailsPage extends StatelessWidget {
             ListView(
               padding: const EdgeInsets.fromLTRB(12, 8, 12, 120),
               children: [
-                _buildTopBar(context),
+                buildTopBar(context),
                 const SizedBox(height: 14),
-                _buildHeroCard(image: image, name: name, sector: sector),
+                buildHeroCard(
+                  image: image,
+                  logo: resolvedLogoUrl,
+                  name: name,
+                  sector: sector,
+                ),
                 const SizedBox(height: 18),
-                _buildMetricsRow(raised: raised, stage: stage),
+                buildMetricsRow(
+                  raised: raised,
+                  stage: stage,
+                  totalTokens: totalTokens,
+                ),
                 const SizedBox(height: 22),
-                _buildHeadline(name, description),
+                buildHeadline(name, description),
                 const SizedBox(height: 18),
-                _buildSummaryCard(description),
+                buildSummaryCard(executiveSummary),
                 const SizedBox(height: 24),
-                _buildSectionKicker('SÓCIOS E FUNDADORES'),
+                buildSectionKicker('SÓCIOS E FUNDADORES'),
                 const SizedBox(height: 10),
-                _buildFounderCard(
-                  name: 'Dr. Ricardo\nLemos',
-                  role: 'CEO & Fundador',
-                  percent: '42%',
-                  description:
-                      'Doutor pelo MIT com mais de 15 anos de experiência em gestão de recursos hídricos e inovação tecnológica sustentável.',
-                ),
-                const SizedBox(height: 12),
-                _buildFounderCard(
-                  name: 'Dra. Beatriz\nSantos',
-                  role: 'CTO',
-                  percent: '18%',
-                  description:
-                      'Especialista em Inteligência Artificial e IoT, liderou o desenvolvimento de sistemas críticos para a indústria aeroespacial antes da EcoFlow.',
-                ),
-                const SizedBox(height: 22),
-                _buildSectionKicker('CONSELHO CONSULTIVO'),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildMiniAdvisorCard(
-                        name: 'Marcus Vale',
-                        role: 'Estrategista ESG',
+                if (founders.isEmpty)
+                  buildFounderCard(
+                    name: 'Equipe não informada',
+                    role: 'Fundadores',
+                    percent: '--',
+                    description:
+                        'Os dados dos fundadores ainda não foram enviados pelo backend.',
+                  )
+                else
+                  ...founders.map(
+                    (founder) => Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: buildFounderCard(
+                        name:
+                            readFirst(founder, ['name', 'nome']) ??
+                            'Nome não informado',
+                        role:
+                            readFirst(founder, ['role', 'cargo']) ??
+                            'Cargo não informado',
+                        percent:
+                            readFirst(founder, [
+                              'percent',
+                              'equityInterest',
+                              'participation',
+                              'equity',
+                              'participacao',
+                            ]) ??
+                            '--',
+                        description:
+                            readFirst(founder, [
+                              'description',
+                              'bio',
+                              'descricao',
+                            ]) ??
+                            'Sem descrição disponível.',
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _buildMiniAdvisorCard(
-                        name: 'Helena Rocha',
-                        role: 'Investimentos Venture\nCapital',
+                  ),
+                const SizedBox(height: 10),
+                buildSectionKicker('CONSELHO CONSULTIVO'),
+                const SizedBox(height: 10),
+                if (advisors.isEmpty)
+                  Row(
+                    children: [
+                      Expanded(
+                        child: buildMiniAdvisorCard(
+                          name: 'Conselho não informado',
+                          role: 'Aguardando dados',
+                        ),
                       ),
+                    ],
+                  )
+                else
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: advisors
+                        .map(
+                          (advisor) => SizedBox(
+                            width: MediaQuery.of(context).size.width / 2 - 22,
+                            child: buildMiniAdvisorCard(
+                              name:
+                                  readFirst(advisor, ['name', 'nome']) ??
+                                  'Nome não informado',
+                              role:
+                                  readFirst(advisor, [
+                                    'role',
+                                    'cargo',
+                                    'description',
+                                    'descricao',
+                                  ]) ??
+                                  'Função não informada',
+                            ),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                const SizedBox(height: 22),
+                buildSectionKicker('DEMONSTRAÇÃO DA TECNOLOGIA'),
+                const SizedBox(height: 10),
+                buildDemoCard(imageUrl: image),
+                const SizedBox(height: 22),
+                buildQuestionsHeader(),
+                const SizedBox(height: 10),
+                if (faq.isEmpty)
+                  buildEmptyFaqCard()
+                else
+                  ...faq.map(
+                    (item) => Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: buildDynamicQuestionCard(item),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 22),
-                _buildSectionKicker('DEMONSTRAÇÃO DA TECNOLOGIA'),
-                const SizedBox(height: 10),
-                _buildDemoCard(image),
-                const SizedBox(height: 22),
-                _buildQuestionsHeader(),
-                const SizedBox(height: 10),
-                _buildPublicQuestionCard(),
-                const SizedBox(height: 12),
-                _buildPrivateQuestionCard(),
-                const SizedBox(height: 8),
+                  ),
+                if (errorMessage != null) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    errorMessage!,
+                    style: const TextStyle(fontSize: 11, color: textMuted),
+                  ),
+                  const SizedBox(height: 8),
+                ],
               ],
             ),
-            _buildBottomBar(context, name),
+            buildBottomBar(context),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildTopBar(BuildContext context) {
+  Widget buildTopBar(BuildContext context) {
     return SizedBox(
       height: 36,
       child: Row(
@@ -136,8 +531,9 @@ class StartupDetailsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildHeroCard({
+  Widget buildHeroCard({
     required String image,
+    required String? logo,
     required String name,
     required String sector,
   }) {
@@ -151,10 +547,6 @@ class StartupDetailsPage extends StatelessWidget {
             width: double.infinity,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
-              image: DecorationImage(
-                image: NetworkImage(image),
-                fit: BoxFit.cover,
-              ),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.06),
@@ -162,6 +554,22 @@ class StartupDetailsPage extends StatelessWidget {
                   offset: const Offset(0, 8),
                 ),
               ],
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Image.network(
+              image,
+              fit: BoxFit.cover,
+              webHtmlElementStrategy: WebHtmlElementStrategy.prefer,
+              errorBuilder: (_, __, ___) {
+                return Container(
+                  color: const Color(0xFFE9E1F3),
+                  alignment: Alignment.center,
+                  child: const Icon(
+                    Icons.image_not_supported_outlined,
+                    color: textMuted,
+                  ),
+                );
+              },
             ),
           ),
           Positioned(
@@ -190,11 +598,26 @@ class StartupDetailsPage extends StatelessWidget {
                       color: const Color(0xFFFBE5F2),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(
-                      Icons.eco_outlined,
-                      color: primary,
-                      size: 24,
-                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: logo != null
+                        ? Image.network(
+                            logo,
+                            fit: BoxFit.cover,
+                            webHtmlElementStrategy:
+                                WebHtmlElementStrategy.prefer,
+                            errorBuilder: (_, __, ___) {
+                              return const Icon(
+                                Icons.eco_outlined,
+                                color: primary,
+                                size: 24,
+                              );
+                            },
+                          )
+                        : const Icon(
+                            Icons.eco_outlined,
+                            color: primary,
+                            size: 24,
+                          ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -213,7 +636,7 @@ class StartupDetailsPage extends StatelessWidget {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          _sectorLabel(sector),
+                          sectorLabel(sector),
                           style: const TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w500,
@@ -232,23 +655,19 @@ class StartupDetailsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildMetricsRow({required String raised, required String stage}) {
+  Widget buildMetricsRow({
+    required String raised,
+    required String stage,
+    required String totalTokens,
+  }) {
     return Row(
       children: [
+        Expanded(child: metricItem('CAPTAÇÃO', raised, valueColor: primary)),
+        Expanded(child: metricItem('TOKENS', totalTokens, valueColor: primary)),
         Expanded(
-          child: _metricItem('CAPTAÇÃO\nTOTAL', raised, valueColor: primary),
-        ),
-        Expanded(
-          child: _metricItem(
-            'TOKENS\nEMITIDOS',
-            _tokenAmountByStage(stage),
-            valueColor: primary,
-          ),
-        ),
-        Expanded(
-          child: _metricItem(
+          child: metricItem(
             'ESTÁGIO',
-            _formatStageForMetric(stage),
+            formatStageForMetric(stage),
             valueColor: primary,
           ),
         ),
@@ -256,7 +675,7 @@ class StartupDetailsPage extends StatelessWidget {
     );
   }
 
-  Widget _metricItem(String label, String value, {Color valueColor = text}) {
+  Widget metricItem(String label, String value, {Color valueColor = text}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: const BoxDecoration(
@@ -290,9 +709,9 @@ class StartupDetailsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildHeadline(String name, String description) {
+  Widget buildHeadline(String name, String description) {
     return Text(
-      _headlineFromStartup(name, description),
+      headlineFromStartup(name, description),
       style: const TextStyle(
         fontSize: 16,
         height: 1.28,
@@ -302,7 +721,7 @@ class StartupDetailsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildSummaryCard(String description) {
+  Widget buildSummaryCard(String description) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
@@ -324,7 +743,7 @@ class StartupDetailsPage extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           Text(
-            _executiveSummary(description),
+            description,
             style: const TextStyle(fontSize: 13, height: 1.6, color: textMuted),
           ),
         ],
@@ -332,19 +751,11 @@ class StartupDetailsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionKicker(String label) {
-    return Text(
-      label,
-      style: const TextStyle(
-        fontSize: 9,
-        fontWeight: FontWeight.w800,
-        color: textLight,
-        letterSpacing: 1.3,
-      ),
-    );
+  Widget buildSectionKicker(String label) {
+    return const Text('', style: TextStyle()).copyWithText(label);
   }
 
-  Widget _buildFounderCard({
+  Widget buildFounderCard({
     required String name,
     required String role,
     required String percent,
@@ -406,7 +817,7 @@ class StartupDetailsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildMiniAdvisorCard({required String name, required String role}) {
+  Widget buildMiniAdvisorCard({required String name, required String role}) {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -438,69 +849,102 @@ class StartupDetailsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildDemoCard(String image) {
+  Widget buildDemoCard({required String imageUrl}) {
     return Container(
-      height: 126,
+      height: 220,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
-        image: DecorationImage(image: NetworkImage(image), fit: BoxFit.cover),
+        color: Colors.black,
       ),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          gradient: LinearGradient(
-            colors: [
-              Colors.black.withOpacity(0.22),
-              Colors.black.withOpacity(0.38),
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: Stack(
-          children: [
-            Center(
-              child: Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.20),
-                  shape: BoxShape.circle,
+      clipBehavior: Clip.antiAlias,
+      child: isVideoReady && videoController != null
+          ? Stack(
+              children: [
+                Positioned.fill(
+                  child: FittedBox(
+                    fit: BoxFit.cover,
+                    child: SizedBox(
+                      width: videoController!.value.size.width,
+                      height: videoController!.value.size.height,
+                      child: VideoPlayer(videoController!),
+                    ),
+                  ),
                 ),
-                child: const Icon(
-                  Icons.play_arrow_rounded,
-                  color: Colors.white,
-                  size: 28,
+                Positioned(
+                  right: 12,
+                  bottom: 12,
+                  child: Row(
+                    children: [
+                      IconButton(
+                        onPressed: () {
+                          setState(() {
+                            if (videoController!.value.isPlaying) {
+                              videoController!.pause();
+                            } else {
+                              videoController!.play();
+                            }
+                          });
+                        },
+                        icon: Icon(
+                          videoController!.value.isPlaying
+                              ? Icons.pause_circle_filled
+                              : Icons.play_circle_fill,
+                          color: Colors.white,
+                          size: 34,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ),
-            const Positioned(
-              left: 14,
-              bottom: 22,
-              child: Text(
-                'Pitch Deck & Demo',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
+              ],
+            )
+          : Stack(
+              fit: StackFit.expand,
+              children: [
+                Image.network(
+                  imageUrl,
+                  fit: BoxFit.cover,
+                  webHtmlElementStrategy: WebHtmlElementStrategy.prefer,
+                  errorBuilder: (_, __, ___) {
+                    return Container(color: Colors.black12);
+                  },
                 ),
-              ),
+                Container(color: Colors.black.withOpacity(0.35)),
+                const Center(
+                  child: Icon(
+                    Icons.play_circle_fill_rounded,
+                    color: Colors.white,
+                    size: 54,
+                  ),
+                ),
+                const Positioned(
+                  left: 14,
+                  bottom: 22,
+                  child: Text(
+                    'Pitch Deck Demo',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+                Positioned(
+                  left: 14,
+                  bottom: 10,
+                  child: Text(
+                    resolvedVideoUrl == null || resolvedVideoUrl!.isEmpty
+                        ? 'Vídeo indisponível'
+                        : 'Toque para reproduzir',
+                    style: const TextStyle(fontSize: 9, color: Colors.white70),
+                  ),
+                ),
+              ],
             ),
-            const Positioned(
-              left: 14,
-              bottom: 10,
-              child: Text(
-                '05:43 min',
-                style: TextStyle(fontSize: 9, color: Colors.white70),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
-  Widget _buildQuestionsHeader() {
+  Widget buildQuestionsHeader() {
     return Row(
       children: const [
         Expanded(
@@ -515,7 +959,7 @@ class StartupDetailsPage extends StatelessWidget {
           ),
         ),
         Text(
-          '+ Perguntar',
+          'Perguntar',
           style: TextStyle(
             fontSize: 10,
             fontWeight: FontWeight.w700,
@@ -526,7 +970,21 @@ class StartupDetailsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildPublicQuestionCard() {
+  Widget buildDynamicQuestionCard(Map<String, dynamic> item) {
+    final isPrivate =
+        '${item['type'] ?? item['visibility'] ?? item['tipo'] ?? ''}'
+            .toLowerCase()
+            .contains('priv');
+
+    final question =
+        readFirst(item, ['question', 'pergunta', 'title']) ??
+        'Pergunta não informada';
+    final author =
+        readFirst(item, ['author', 'user', 'email', 'autor']) ??
+        'Usuário não informado';
+    final date = readFirst(item, ['date', 'createdAt', 'data']) ?? '--/--/----';
+    final answer = readFirst(item, ['answer', 'resposta']);
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -537,30 +995,34 @@ class StartupDetailsPage extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            children: const [
-              Icon(Icons.public, size: 12, color: primary),
-              SizedBox(width: 6),
+            children: [
+              Icon(
+                isPrivate ? Icons.lock_outline_rounded : Icons.public,
+                size: 12,
+                color: isPrivate ? textMuted : primary,
+              ),
+              const SizedBox(width: 6),
               Expanded(
                 child: Text(
-                  'PÚBLICA',
+                  isPrivate ? 'PRIVADA' : 'PÚBLICA',
                   style: TextStyle(
                     fontSize: 8.5,
                     fontWeight: FontWeight.w800,
-                    color: primary,
+                    color: isPrivate ? textMuted : primary,
                     letterSpacing: 0.7,
                   ),
                 ),
               ),
               Text(
-                '12/10/2023',
-                style: TextStyle(fontSize: 8.5, color: textLight),
+                date,
+                style: const TextStyle(fontSize: 8.5, color: textLight),
               ),
             ],
           ),
           const SizedBox(height: 10),
-          const Text(
-            'Qual a projeção de dividendos para este ano?',
-            style: TextStyle(
+          Text(
+            question,
+            style: const TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w800,
               color: text,
@@ -568,138 +1030,66 @@ class StartupDetailsPage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 6),
-          const Text(
-            'Por investor1@gmail.com',
-            style: TextStyle(fontSize: 9, color: textMuted),
+          Text(
+            'Por $author',
+            style: const TextStyle(fontSize: 9, color: textMuted),
           ),
-          const SizedBox(height: 14),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF9F3FB),
-              borderRadius: BorderRadius.circular(14),
-              border: const Border(left: BorderSide(color: primary, width: 2)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'RESPOSTA DA EQUIPE',
-                        style: TextStyle(
-                          fontSize: 8.5,
-                          fontWeight: FontWeight.w800,
-                          color: primary,
-                          letterSpacing: 0.7,
-                        ),
-                      ),
-                    ),
-                    Text(
-                      '15/10/2023',
-                      style: TextStyle(fontSize: 8.5, color: textLight),
-                    ),
-                  ],
+          if (answer != null && answer.trim().isNotEmpty) ...[
+            const SizedBox(height: 14),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF9F3FB),
+                borderRadius: BorderRadius.circular(14),
+                border: const Border(
+                  left: BorderSide(color: primary, width: 2),
                 ),
-                SizedBox(height: 8),
-                Text(
-                  'Projetamos um yield de 4-6% com base no crescimento dos contratos atuais e na otimização da planta piloto.',
-                  style: TextStyle(
-                    fontSize: 10.5,
-                    height: 1.55,
-                    color: textMuted,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'RESPOSTA DA EQUIPE',
+                    style: TextStyle(
+                      fontSize: 8.5,
+                      fontWeight: FontWeight.w800,
+                      color: primary,
+                      letterSpacing: 0.7,
+                    ),
                   ),
-                ),
-                SizedBox(height: 8),
-                Text(
-                  'Responder: team@startup.com',
-                  style: TextStyle(fontSize: 8.5, color: textLight),
-                ),
-              ],
+                  const SizedBox(height: 8),
+                  Text(
+                    answer,
+                    style: const TextStyle(
+                      fontSize: 10.5,
+                      height: 1.55,
+                      color: textMuted,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );
   }
 
-  Widget _buildPrivateQuestionCard() {
+  Widget buildEmptyFaqCard() {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: surface,
         borderRadius: BorderRadius.circular(18),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: const [
-              Icon(Icons.lock_outline_rounded, size: 12, color: textMuted),
-              SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  'PRIVADA',
-                  style: TextStyle(
-                    fontSize: 8.5,
-                    fontWeight: FontWeight.w800,
-                    color: textMuted,
-                    letterSpacing: 0.7,
-                  ),
-                ),
-              ),
-              Text(
-                '10/10/2023',
-                style: TextStyle(fontSize: 8.5, color: textLight),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          const Text(
-            'Conteúdo Restrito',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w800,
-              color: text,
-            ),
-          ),
-          const SizedBox(height: 6),
-          const Text(
-            'Por vip@personal.com',
-            style: TextStyle(fontSize: 9, color: textMuted),
-          ),
-          const SizedBox(height: 12),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8F5FB),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Row(
-              children: const [
-                Icon(Icons.info_outline_rounded, size: 16, color: textMuted),
-                SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Esta pergunta e sua resposta são visíveis apenas para investidores.',
-                    style: TextStyle(
-                      fontSize: 9.5,
-                      height: 1.4,
-                      color: textMuted,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+      child: const Text(
+        'Nenhuma pergunta foi enviada para esta startup até o momento.',
+        style: TextStyle(fontSize: 11, height: 1.5, color: textMuted),
       ),
     );
   }
 
-  Widget _buildBottomBar(BuildContext context, String name) {
+  Widget buildBottomBar(BuildContext context) {
     final String startupId = startup['id']?.toString() ?? '';
     return Positioned(
       left: 12,
@@ -782,100 +1172,131 @@ class StartupDetailsPage extends StatelessWidget {
       ),
     );
   }
+}
 
-  String _sectorLabel(String sector) {
-    switch (sector.toLowerCase()) {
-      case 'fintech':
-        return 'Fintech';
-      case 'agtech':
-      case 'agrotech':
-        return 'Agrotech';
-      case 'healthtech':
-      case 'health':
-        return 'HealthTech';
-      case 'edtech':
-        return 'EdTech';
-      default:
-        return 'Startup';
-    }
+extension on Text {
+  Widget copyWithText(String value) {
+    return Text(
+      value,
+      style: (this.style ?? const TextStyle()).copyWith(
+        fontSize: 9,
+        fontWeight: FontWeight.w800,
+        color: const Color(0xFF9B90AA),
+        letterSpacing: 1.3,
+      ),
+    );
   }
+}
 
-  String _imageBySector(String sector) {
-    switch (sector.toLowerCase()) {
-      case 'fintech':
-        return 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=1200&auto=format&fit=crop';
-      case 'agtech':
-      case 'agrotech':
-        return 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80&w=1200&auto=format&fit=crop';
-      case 'healthtech':
-      case 'health':
-        return 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?q=80&w=1200&auto=format&fit=crop';
-      case 'edtech':
-        return 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop';
-      default:
-        return 'https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=1200&auto=format&fit=crop';
-    }
+String sectorLabel(String sector) {
+  switch (sector.toLowerCase()) {
+    case 'fintech':
+      return 'Fintech';
+    case 'agtech':
+    case 'agrotech':
+      return 'Agrotech';
+    case 'healthtech':
+    case 'health':
+      return 'HealthTech';
+    case 'edtech':
+      return 'EdTech';
+    case 'productivitytech':
+      return 'ProductivityTech';
+    default:
+      return sector.isEmpty ? 'Startup' : sector;
   }
+}
 
-  String _formatRaised(String value) {
-    if (value.trim().isEmpty) return 'R\$ 0';
-    return value.contains('R\$') ? value : 'R\$ $value';
+String imageBySector(String sector) {
+  switch (sector.toLowerCase()) {
+    case 'fintech':
+      return 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=1200&auto=format&fit=crop';
+    case 'agtech':
+    case 'agrotech':
+      return 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80&w=1200&auto=format&fit=crop';
+    case 'healthtech':
+    case 'health':
+      return 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?q=80&w=1200&auto=format&fit=crop';
+    case 'edtech':
+      return 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop';
+    default:
+      return 'https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=1200&auto=format&fit=crop';
   }
+}
 
-  String _formatStageForMetric(String stage) {
-    final lower = stage.toLowerCase();
+String formatRaised(String value) {
+  if (value.trim().isEmpty) return 'R\$ 0';
+  final clean = value.trim();
+  if (clean.contains('R\$')) return clean;
+  return 'R\$ $clean';
+}
 
-    if (lower.contains('nova') || lower.contains('seed')) {
-      return 'Nova';
-    }
-    if (lower.contains('operação') ||
-        lower.contains('operacao') ||
-        lower.contains('series a')) {
-      return 'Em\nOperação';
-    }
-    if (lower.contains('expansão') ||
-        lower.contains('expansao') ||
-        lower.contains('series b')) {
-      return 'Em\nExpansão';
-    }
-    return stage;
+String formatStageForMetric(String stage) {
+  final lower = stage.toLowerCase();
+
+  if (lower.contains('nova') ||
+      lower.contains('novo') ||
+      lower.contains('seed')) {
+    return 'Novo';
   }
-
-  String _tokenAmountByStage(String stage) {
-    final lower = stage.toLowerCase();
-
-    if (lower.contains('nova') || lower.contains('seed')) {
-      return '350.000';
-    }
-    if (lower.contains('operação') ||
-        lower.contains('operacao') ||
-        lower.contains('series a')) {
-      return '1.250.000';
-    }
-    if (lower.contains('expansão') ||
-        lower.contains('expansao') ||
-        lower.contains('series b')) {
-      return '2.400.000';
-    }
-    return '500.000';
+  if (lower.contains('operação') ||
+      lower.contains('operacao') ||
+      lower.contains('em_operacao') ||
+      lower.contains('series a')) {
+    return 'Em op.';
   }
-
-  String _headlineFromStartup(String name, String description) {
-    final lower = description.toLowerCase();
-
-    if (lower.contains('água') || lower.contains('agua')) {
-      return 'Transformando desperdício em eficiência através da IA.';
-    }
-    if (lower.contains('agric') || lower.contains('monitoramento')) {
-      return 'Tecnologia aplicada ao campo para escalar produtividade.';
-    }
-    if (lower.contains('hardware') || lower.contains('tempo real')) {
-      return 'Infraestrutura inteligente para decisões em tempo real.';
-    }
-    return 'Construindo uma operação escalável com base tecnológica robusta.';
+  if (lower.contains('expansão') ||
+      lower.contains('expansao') ||
+      lower.contains('em_expansao') ||
+      lower.contains('series b')) {
+    return 'Em exp.';
   }
+  return stage;
+}
 
-  String _executiveSummary(String description) {
-    return '$description\n\nCom uma modelagem de crescimento orientada por dados, a startup projeta ganho de eficiência, expansão operacional e novas frentes de monetização nos próximos 24 meses.';
+String tokenAmountByStage(String stage) {
+  final lower = stage.toLowerCase();
+
+  if (lower.contains('nova') ||
+      lower.contains('novo') ||
+      lower.contains('seed')) {
+    return '350.000';
   }
+  if (lower.contains('operação') ||
+      lower.contains('operacao') ||
+      lower.contains('em_operacao') ||
+      lower.contains('series a')) {
+    return '1.250.000';
+  }
+  if (lower.contains('expansão') ||
+      lower.contains('expansao') ||
+      lower.contains('em_expansao') ||
+      lower.contains('series b')) {
+    return '2.400.000';
+  }
+  return '500.000';
+}
+
+String headlineFromStartup(String name, String description) {
+  final lower = description.toLowerCase();
+
+  if (lower.contains('água') || lower.contains('agua')) {
+    return 'Transformando desperdício em eficiência através da IA.';
+  }
+  if (lower.contains('agric') || lower.contains('monitoramento')) {
+    return 'Tecnologia aplicada ao campo para escalar produtividade.';
+  }
+  if (lower.contains('hardware') || lower.contains('tempo real')) {
+    return 'Infraestrutura inteligente para decisões em tempo real.';
+  }
+  if (lower.contains('foco') ||
+      lower.contains('distrações') ||
+      lower.contains('distracoes')) {
+    return 'IA aplicada à produtividade para reduzir distrações em tempo real.';
+  }
+  return 'Construindo uma operação escalável com base tecnológica robusta.';
+}
+
+String executiveSummaryFromDescription(String description) {
+  return '$description Com uma modelagem de crescimento orientada por dados, a startup projeta ganho de eficiência, expansão operacional e novas frentes de monetização nos próximos 24 meses.';
 }

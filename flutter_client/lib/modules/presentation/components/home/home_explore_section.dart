@@ -69,7 +69,7 @@ class HomeExploreSection extends StatelessWidget {
         _ExploreStageFilters(controller: controller),
         const SizedBox(height: 18),
         if (controller.isStartupsLoading && startups.isEmpty)
-          const _ExploreSkeletonList()
+          _ExploreSkeletonList()
         else if (controller.errorMessage != null)
           _ExploreErrorState(message: controller.errorMessage, onRetry: onRetry)
         else if (startups.isEmpty)
@@ -77,6 +77,7 @@ class HomeExploreSection extends StatelessWidget {
         else
           ...startups.map(
             (startup) => _StartupCard(
+              controller: controller,
               startup: startup,
               onTapStartup: () => onStartupTap(startup),
               onInvestTap: () {
@@ -346,18 +347,21 @@ class _FilterChip extends StatelessWidget {
 
 class _StartupCard extends StatelessWidget {
   const _StartupCard({
+    required this.controller,
     required this.startup,
     required this.onTapStartup,
     required this.onInvestTap,
   });
 
+  final HomeController controller;
   final Map<String, dynamic> startup;
   final VoidCallback onTapStartup;
   final VoidCallback onInvestTap;
 
   @override
   Widget build(BuildContext context) {
-    final image = imageBySector((startup['sector'] ?? '').toString());
+    final realImage = controller.backgroundImageOf(startup);
+    final fallbackImage = imageBySector((startup['sector'] ?? '').toString());
     final sectorBadge = sectorLabel((startup['sector'] ?? '').toString());
     final stageLabel = formatStageLabel((startup['stage'] ?? '').toString());
     final raised = (startup['raised'] ?? 'R\$ 0').toString();
@@ -391,16 +395,57 @@ class _StartupCard extends StatelessWidget {
               children: [
                 Stack(
                   children: [
-                    Container(
-                      height: 132,
-                      decoration: BoxDecoration(
-                        borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(22),
-                        ),
-                        image: DecorationImage(
-                          image: NetworkImage(image),
-                          fit: BoxFit.cover,
-                        ),
+                    ClipRRect(
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(22),
+                      ),
+                      child: SizedBox(
+                        height: 132,
+                        width: double.infinity,
+                        child: realImage != null
+                            ? Image.network(
+                                realImage,
+                                fit: BoxFit.cover,
+                                webHtmlElementStrategy:
+                                    WebHtmlElementStrategy.prefer,
+                                errorBuilder: (_, error, __) {
+                                  debugPrint(
+                                    'Erro ao carregar imagem real da startup $name: $realImage / $error',
+                                  );
+                                  return Image.network(
+                                    fallbackImage,
+                                    fit: BoxFit.cover,
+                                    webHtmlElementStrategy:
+                                        WebHtmlElementStrategy.prefer,
+                                    errorBuilder: (_, __, ___) {
+                                      return Container(
+                                        color: const Color(0xFFEDE7F6),
+                                        alignment: Alignment.center,
+                                        child: const Icon(
+                                          Icons.image_not_supported_outlined,
+                                          color: HomePalette.mutedText,
+                                          size: 28,
+                                        ),
+                                      );
+                                    },
+                                  );
+                                },
+                              )
+                            : Image.network(
+                                fallbackImage,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) {
+                                  return Container(
+                                    color: const Color(0xFFEDE7F6),
+                                    alignment: Alignment.center,
+                                    child: const Icon(
+                                      Icons.image_not_supported_outlined,
+                                      color: HomePalette.mutedText,
+                                      size: 28,
+                                    ),
+                                  );
+                                },
+                              ),
                       ),
                     ),
                     Positioned(
@@ -578,8 +623,6 @@ class _StartupCard extends StatelessWidget {
 }
 
 class _ExploreSkeletonList extends StatelessWidget {
-  const _ExploreSkeletonList();
-
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -809,16 +852,24 @@ String sectorLabel(String sector) {
 }
 
 String fakeTicketByStage(String stage) {
-  final lower = stage.toLowerCase();
+  final lower = stage
+      .trim()
+      .toLowerCase()
+      .replaceAll('_', ' ')
+      .replaceAll('-', ' ')
+      .replaceAll(RegExp(r'\s+'), ' ')
+      .trim();
 
-  if (lower.contains('seed')) {
-    return 'R\$ 5.000';
-  }
-  if (lower.contains('series a') || lower == 'a') {
-    return 'R\$ 25.000';
-  }
-  if (lower.contains('series b') || lower == 'b') {
+  if (lower.contains('expansao') ||
+      lower.contains('expansão') ||
+      lower.contains('series b')) {
     return 'R\$ 50.000';
+  }
+
+  if (lower.contains('operacao') ||
+      lower.contains('operação') ||
+      lower.contains('series a')) {
+    return 'R\$ 25.000';
   }
 
   return 'R\$ 10.000';
@@ -843,14 +894,32 @@ String formatStageLabel(String stage) {
 
   if (lower.contains('expansao') ||
       lower.contains('expansão') ||
-      lower.contains('series b')) {
+      lower.contains('em expansao') ||
+      lower.contains('em expansão') ||
+      lower.contains('series b') ||
+      lower.contains('serie b')) {
     return 'Em expansão';
   }
 
   if (lower.contains('operacao') ||
       lower.contains('operação') ||
-      lower.contains('series a')) {
+      lower.contains('em operacao') ||
+      lower.contains('em operação') ||
+      lower.contains('series a') ||
+      lower.contains('serie a')) {
     return 'Em operação';
+  }
+
+  if (lower.contains('seed') ||
+      lower.contains('pre seed') ||
+      lower.contains('preseed') ||
+      lower.contains('novo') ||
+      lower.contains('nova') ||
+      lower.contains('new') ||
+      lower.contains('inicial') ||
+      lower.contains('idea') ||
+      lower.contains('ideia')) {
+    return 'Novo';
   }
 
   return 'Novo';
