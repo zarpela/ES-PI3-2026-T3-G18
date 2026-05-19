@@ -8,12 +8,8 @@ import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-
 class HomeController extends ChangeNotifier {
-  HomeController(this._dio, [FirebaseAuth? auth])
-    : _auth = auth {
-    // Escuta mudanças de autenticação — quando o uid muda (novo login),
-    // carrega automaticamente os dados do novo usuário
+  HomeController(this._dio, [FirebaseAuth? auth]) : _auth = auth {
     _authSub = this.auth.authStateChanges().listen((user) {
       final uid = user?.uid;
       if (uid != null && uid != _currentUid) {
@@ -29,6 +25,7 @@ class HomeController extends ChangeNotifier {
   final FirebaseAuth? _auth;
   StreamSubscription<User?>? _authSub;
   String? _currentUid;
+
   final FirebaseFunctions _functions = FirebaseFunctions.instanceFor(
     region: 'southamerica-east1',
   );
@@ -42,14 +39,18 @@ class HomeController extends ChangeNotifier {
 
   Map<String, dynamic>? wallet;
   Uint8List? localProfilePhotoBytes;
+
   bool isBalanceVisible = true;
   bool isStartupsLoading = false;
   bool isWalletLoading = false;
   bool isProfilePhotoLoading = false;
+
   String? errorMessage;
   String? walletErrorMessage;
   String selectedFilter = 'all';
+  String selectedStageFilter = 'all';
   String selectedSort = 'relevance';
+
   double? investedBalance;
   double? estimatedReturnPercent;
 
@@ -81,7 +82,6 @@ class HomeController extends ChangeNotifier {
     if (localProfilePhotoBytes != null) {
       return MemoryImage(localProfilePhotoBytes!);
     }
-    // Nunca usa NetworkImage — a foto é sempre baixada como bytes em _loadProfilePhoto
     return null;
   }
 
@@ -179,7 +179,6 @@ class HomeController extends ChangeNotifier {
       if (transaction['type'] != 'CREATE_WALLET') {
         return true;
       }
-
       return recentTransactions.length == 1;
     });
 
@@ -207,6 +206,56 @@ class HomeController extends ChangeNotifier {
     return 'Conheca a oportunidade em destaque disponivel na plataforma.';
   }
 
+  String? mediaFromStartup(Map<String, dynamic> startup, List<String> keys) {
+    String? pick(Map<String, dynamic> map) {
+      for (final key in keys) {
+        final sanitized = _sanitizeMediaUrl(map[key]);
+        if (sanitized != null) {
+          return sanitized;
+        }
+      }
+      return null;
+    }
+
+    final direct = pick(startup);
+    if (direct != null) {
+      return direct;
+    }
+
+    final raw = startup['raw'];
+    if (raw is Map) {
+      return pick(Map<String, dynamic>.from(raw));
+    }
+
+    return null;
+  }
+
+  String? backgroundImageOf(Map<String, dynamic> startup) {
+    return mediaFromStartup(startup, [
+      'backgroundImage',
+      'background',
+      'image',
+      'banner',
+      'coverImage',
+      'thumbnail',
+    ]);
+  }
+
+  String? logoOf(Map<String, dynamic> startup) {
+    return mediaFromStartup(startup, ['logo', 'logoUrl', 'brandLogo', 'icon']);
+  }
+
+  String? videoUrlOf(Map<String, dynamic> startup) {
+    return mediaFromStartup(startup, [
+      'videoUrl',
+      'video',
+      'demoVideo',
+      'pitchVideo',
+      'video_pitch',
+      'video_url',
+    ]);
+  }
+
   void toggleBalanceVisibility() {
     isBalanceVisible = !isBalanceVisible;
     notifyListeners();
@@ -228,10 +277,10 @@ class HomeController extends ChangeNotifier {
     investedBalance = null;
     estimatedReturnPercent = null;
     selectedFilter = 'all';
+    selectedStageFilter = 'all';
     selectedSort = 'relevance';
     notifyListeners();
   }
-
 
   Future<void> load() async {
     errorMessage = null;
@@ -239,22 +288,15 @@ class HomeController extends ChangeNotifier {
     isProfilePhotoLoading = true;
     isStartupsLoading = true;
     isWalletLoading = true;
-    // Limpa bytes anteriores para não mostrar foto de outro usuário
-    // enquanto a do usuário atual ainda está carregando
     localProfilePhotoBytes = null;
     notifyListeners();
 
-    await Future.wait([
-      _loadProfilePhoto(),
-      _loadStartups(),
-      _loadWallet(),
-    ]);
+    await Future.wait([_loadProfilePhoto(), _loadStartups(), _loadWallet()]);
   }
 
   Future<void> refresh() async {
     await load();
   }
-
 
   Future<String> addBalance(double amount) async {
     final user = currentUser;
@@ -313,6 +355,11 @@ class HomeController extends ChangeNotifier {
     _applyFilters();
   }
 
+  void setStageFilter(String value) {
+    selectedStageFilter = value;
+    _applyFilters();
+  }
+
   void setSort(String value) {
     selectedSort = value;
     _applyFilters();
@@ -320,15 +367,31 @@ class HomeController extends ChangeNotifier {
 
   void resetFilters() {
     selectedFilter = 'all';
+    selectedStageFilter = 'all';
     selectedSort = 'relevance';
     searchController.clear();
     _applyFilters();
   }
 
   int sectorCount(String sector) {
+    if (sector == 'all') {
+      return _allStartups.length;
+    }
+
     return _allStartups.where((s) {
-      final current = (s['sector'] ?? '').toString().trim().toLowerCase();
+      final current = _normalizeSector((s['sector'] ?? '').toString());
       return current == sector;
+    }).length;
+  }
+
+  int stageCount(String stage) {
+    if (stage == 'all') {
+      return _allStartups.length;
+    }
+
+    return _allStartups.where((s) {
+      final current = _normalizeStageFromStartup(s);
+      return current == stage;
     }).length;
   }
 
@@ -347,16 +410,15 @@ class HomeController extends ChangeNotifier {
 
     try {
       final token = await user.getIdToken();
-      
-      // O ?uid=${user.uid} força urls únicas por usuário
-      // e impede o cache indevido entre contas diferentes.
+
       final response = await _dio.get<List<int>>(
-        'profile-photo?uid=${user.uid}&t=${DateTime.now().millisecondsSinceEpoch}', 
+        'profile-photo?uid=${user.uid}&t=${DateTime.now().millisecondsSinceEpoch}',
         options: Options(
           headers: {'Authorization': 'Bearer $token'},
           responseType: ResponseType.bytes,
         ),
       );
+
       if (response.data != null) {
         localProfilePhotoBytes = Uint8List.fromList(response.data!);
       }
@@ -395,6 +457,12 @@ class HomeController extends ChangeNotifier {
       } else {
         _allStartups = [];
       }
+
+      for (final startup in _allStartups) {
+        debugPrint(
+          '[HOME STARTUP] ${startup['name']} | bg=${startup['backgroundImage']} | logo=${startup['logo']} | video=${startup['videoUrl']}',
+        );
+      }
     } on FirebaseFunctionsException catch (e) {
       debugPrint(
         'FirebaseFunctionsException: code=${e.code}, message=${e.message}, details=${e.details}',
@@ -416,19 +484,67 @@ class HomeController extends ChangeNotifier {
   }
 
   Map<String, dynamic> _mapStartup(Map<String, dynamic> item) {
+    final raw = Map<String, dynamic>.from(item);
+
+    final backgroundImage = _firstValidMedia([
+      item['backgroundImage'],
+      item['background'],
+      item['image'],
+      item['banner'],
+      item['coverImage'],
+      item['thumbnail'],
+      raw['backgroundImage'],
+      raw['background'],
+      raw['image'],
+      raw['banner'],
+      raw['coverImage'],
+      raw['thumbnail'],
+    ]);
+
+    final logo = _firstValidMedia([
+      item['logo'],
+      item['logoUrl'],
+      item['brandLogo'],
+      item['icon'],
+      raw['logo'],
+      raw['logoUrl'],
+      raw['brandLogo'],
+      raw['icon'],
+    ]);
+
+    final video = _firstValidMedia([
+      item['videoUrl'],
+      item['video'],
+      item['demoVideo'],
+      item['pitchVideo'],
+      item['video_pitch'],
+      item['video_url'],
+      raw['videoUrl'],
+      raw['video'],
+      raw['demoVideo'],
+      raw['pitchVideo'],
+      raw['video_pitch'],
+      raw['video_url'],
+    ]);
+
     return {
       'id': item['id'],
       'name': item['name'] ?? item['nome_startup'] ?? '',
-      'description':
-          item['description'] ?? item['descricao'] ?? item['descricao'] ?? '',
+      'description': item['description'] ?? item['descricao'] ?? '',
       'tagline': item['tagline'] ?? '',
       'stage': item['stage'] ?? item['estagio'] ?? '',
       'sector': _normalizeSector(
         (item['sector'] ?? item['setor'] ?? '').toString(),
       ),
-      'raised': _formatRaised(item['raised'] ?? item['capitalAportado']),
+      'raised': _formatRaised(
+        item['raised'] ?? item['raisedCapital'] ?? item['capitalAportado'] ?? 0,
+      ),
       'roi': (item['roi'] ?? item['status'] ?? '').toString(),
-      'raw': item,
+      'backgroundImage': backgroundImage ?? '',
+      'logo': logo ?? '',
+      'video': video ?? '',
+      'videoUrl': video ?? '',
+      'raw': raw,
     };
   }
 
@@ -523,6 +639,7 @@ class HomeController extends ChangeNotifier {
     final response = rawResponse is Map
         ? Map<String, dynamic>.from(rawResponse)
         : <String, dynamic>{};
+
     final walletData = response['wallet'];
     final normalizedWallet = walletData is Map
         ? Map<String, dynamic>.from(walletData)
@@ -533,13 +650,13 @@ class HomeController extends ChangeNotifier {
         .whereType<Map>()
         .map((token) => Map<String, dynamic>.from(token))
         .toList();
+
     investedBalance = walletTokens.fold<double>(
       0,
       (total, token) =>
           total +
           (_asDouble(token['quantity']) * _asDouble(token['averagePrice'])),
     );
-    recentTransactions = _extractTransactionsFromResponse(response);
     walletErrorMessage = null;
   }
 
@@ -619,6 +736,7 @@ class HomeController extends ChangeNotifier {
     for (final token in walletTokens) {
       final weight =
           _asDouble(token['quantity']) * _asDouble(token['averagePrice']);
+
       if (weight <= 0) {
         continue;
       }
@@ -687,7 +805,8 @@ class HomeController extends ChangeNotifier {
           .toString()
           .toLowerCase();
       final tagline = (startup['tagline'] ?? '').toString().toLowerCase();
-      final sector = (startup['sector'] ?? '').toString().trim().toLowerCase();
+      final sector = _normalizeSector((startup['sector'] ?? '').toString());
+      final stage = _normalizeStageFromStartup(startup);
 
       final matchesQuery =
           query.isEmpty ||
@@ -696,8 +815,10 @@ class HomeController extends ChangeNotifier {
           tagline.contains(query);
 
       final matchesFilter = selectedFilter == 'all' || sector == selectedFilter;
+      final matchesStage =
+          selectedStageFilter == 'all' || stage == selectedStageFilter;
 
-      return matchesQuery && matchesFilter;
+      return matchesQuery && matchesFilter && matchesStage;
     }).toList();
 
     switch (selectedSort) {
@@ -710,9 +831,9 @@ class HomeController extends ChangeNotifier {
         break;
       case 'stage':
         result.sort(
-          (a, b) => (a['stage'] ?? '').toString().toLowerCase().compareTo(
-            (b['stage'] ?? '').toString().toLowerCase(),
-          ),
+          (a, b) => _normalizeStageFromStartup(
+            a,
+          ).compareTo(_normalizeStageFromStartup(b)),
         );
         break;
       case 'raised':
@@ -727,7 +848,7 @@ class HomeController extends ChangeNotifier {
         break;
     }
 
-    startups = result;
+    startups = List<Map<String, dynamic>>.from(result);
     if (notify) {
       notifyListeners();
     }
@@ -736,20 +857,89 @@ class HomeController extends ChangeNotifier {
   String _normalizeSector(String value) {
     final lower = value.trim().toLowerCase();
 
-    switch (lower) {
-      case 'agrotech':
-      case 'agtech':
-        return 'agtech';
-      case 'fintech':
-        return 'fintech';
-      case 'health':
-      case 'healthtech':
-        return 'healthtech';
-      case 'edtech':
-        return 'edtech';
-      default:
-        return lower;
+    final sanitized = lower
+        .replaceAll('-', ' ')
+        .replaceAll('_', ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+
+    if (sanitized.contains('agtech') || sanitized.contains('agro')) {
+      return 'agtech';
     }
+
+    if (sanitized.contains('fintech') || sanitized.contains('finance')) {
+      return 'fintech';
+    }
+
+    if (sanitized.contains('healthtech') || sanitized.contains('health')) {
+      return 'healthtech';
+    }
+
+    if (sanitized.contains('edtech') || sanitized.contains('education')) {
+      return 'edtech';
+    }
+
+    if (sanitized.contains('startup')) {
+      return 'startup';
+    }
+
+    if (sanitized.contains('productivity')) {
+      return 'startup';
+    }
+
+    return 'startup';
+  }
+
+  String _normalizeStageFromStartup(Map<String, dynamic> startup) {
+    final rawStage = (startup['stage'] ?? '').toString().trim().toLowerCase();
+    final rawDescription = (startup['description'] ?? '')
+        .toString()
+        .trim()
+        .toLowerCase();
+    final rawTagline = (startup['tagline'] ?? '')
+        .toString()
+        .trim()
+        .toLowerCase();
+    final rawName = (startup['name'] ?? '').toString().trim().toLowerCase();
+
+    final combined = '$rawStage $rawDescription $rawTagline $rawName'
+        .replaceAll('_', ' ')
+        .replaceAll('-', ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+
+    if (combined.contains('series b') ||
+        combined.contains('serie b') ||
+        combined.contains('expansao') ||
+        combined.contains('expansão') ||
+        combined.contains('em expansao') ||
+        combined.contains('em expansão') ||
+        combined.contains('growth')) {
+      return 'em_expansao';
+    }
+
+    if (combined.contains('series a') ||
+        combined.contains('serie a') ||
+        combined.contains('operacao') ||
+        combined.contains('operação') ||
+        combined.contains('em operacao') ||
+        combined.contains('em operação')) {
+      return 'em_operacao';
+    }
+
+    if (combined.contains('seed') ||
+        combined.contains('pre seed') ||
+        combined.contains('preseed') ||
+        combined.contains('novo') ||
+        combined.contains('nova') ||
+        combined.contains('new') ||
+        combined.contains('inicial') ||
+        combined.contains('idea') ||
+        combined.contains('ideia')) {
+      return 'novo';
+    }
+
+    return 'novo';
   }
 
   String _formatRaised(dynamic value) {
@@ -757,7 +947,11 @@ class HomeController extends ChangeNotifier {
       return 'R\$ 0';
     }
 
-    final raw = value.toString();
+    final raw = value.toString().trim();
+    if (raw.isEmpty) {
+      return 'R\$ 0';
+    }
+
     return raw.contains('R\$') ? raw : 'R\$ $raw';
   }
 
@@ -815,8 +1009,41 @@ class HomeController extends ChangeNotifier {
     if (value is num) {
       return value.toDouble();
     }
-
     return double.tryParse(value?.toString() ?? '') ?? 0;
+  }
+
+  String? _sanitizeMediaUrl(dynamic value) {
+    if (value == null) return null;
+
+    var text = value.toString();
+    if (text.trim().isEmpty) return null;
+
+    text = text
+        .replaceAll('\n', '')
+        .replaceAll('\r', '')
+        .replaceAll('\t', '')
+        .trim();
+
+    final match = RegExp(r'https?:\/\/[^\s]+').firstMatch(text);
+    if (match == null) return null;
+
+    final url = match.group(0)?.trim();
+    if (url == null || url.isEmpty) return null;
+
+    final uri = Uri.tryParse(url);
+    if (uri == null || !uri.isAbsolute) return null;
+
+    return url;
+  }
+
+  String? _firstValidMedia(List<dynamic> values) {
+    for (final value in values) {
+      final sanitized = _sanitizeMediaUrl(value);
+      if (sanitized != null) {
+        return sanitized;
+      }
+    }
+    return null;
   }
 
   @override
