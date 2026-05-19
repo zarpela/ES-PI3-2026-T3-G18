@@ -617,38 +617,7 @@ class HomeController extends ChangeNotifier {
         'market/history/${user.uid}',
         options: await _authorizedOptions(),
       );
-
-      final transactions =
-          response.data is Map && response.data['transactions'] is List
-          ? List<Map<String, dynamic>>.from(
-              (response.data['transactions'] as List).map(
-                (item) => Map<String, dynamic>.from(item as Map),
-              ),
-            )
-          : <Map<String, dynamic>>[];
-
-      transactions.sort((left, right) {
-        final leftDate = DateTime.tryParse(
-          (left['createdAt'] ?? '').toString(),
-        );
-        final rightDate = DateTime.tryParse(
-          (right['createdAt'] ?? '').toString(),
-        );
-
-        if (leftDate == null && rightDate == null) {
-          return 0;
-        }
-        if (leftDate == null) {
-          return 1;
-        }
-        if (rightDate == null) {
-          return -1;
-        }
-
-        return rightDate.compareTo(leftDate);
-      });
-
-      recentTransactions = transactions;
+      recentTransactions = _extractTransactionsFromResponse(response.data);
     } on DioException catch (e) {
       debugPrint('HomeController history error: ${e.message}');
       recentTransactions = [];
@@ -688,8 +657,68 @@ class HomeController extends ChangeNotifier {
           total +
           (_asDouble(token['quantity']) * _asDouble(token['averagePrice'])),
     );
-
     walletErrorMessage = null;
+  }
+
+  List<Map<String, dynamic>> _extractTransactionsFromResponse(dynamic raw) {
+    final response = raw is Map
+        ? Map<String, dynamic>.from(raw)
+        : <String, dynamic>{};
+    final rawTransactions = response['transactions'] ?? response['recentTransactions'];
+
+    if (rawTransactions is! List) {
+      return <Map<String, dynamic>>[];
+    }
+
+    final transactions = rawTransactions
+        .whereType<Map>()
+        .map((item) => _normalizeTransaction(Map<String, dynamic>.from(item)))
+        .toList(growable: false);
+
+    transactions.sort((left, right) {
+      final leftDate = DateTime.tryParse((left['createdAt'] ?? '').toString());
+      final rightDate = DateTime.tryParse((right['createdAt'] ?? '').toString());
+
+      if (leftDate == null && rightDate == null) {
+        return 0;
+      }
+      if (leftDate == null) {
+        return 1;
+      }
+      if (rightDate == null) {
+        return -1;
+      }
+
+      return rightDate.compareTo(leftDate);
+    });
+
+    return transactions;
+  }
+
+  Map<String, dynamic> _normalizeTransaction(Map<String, dynamic> transaction) {
+    final type = (transaction['type'] ?? '').toString().trim().toUpperCase();
+
+    return {
+      ...transaction,
+      'type': type,
+      'amount': _asDouble(
+        transaction['amount'] ?? transaction['totalAmount'] ?? transaction['total'],
+      ),
+      'total': _asDouble(
+        transaction['total'] ?? transaction['totalAmount'] ?? transaction['amount'],
+      ),
+      'createdAt': _normalizeIsoDate(transaction['createdAt']),
+    };
+  }
+
+  String? _normalizeIsoDate(dynamic value) {
+    final raw = value?.toString().trim() ?? '';
+    if (raw.isEmpty) {
+      return null;
+    }
+
+    final parsed = DateTime.tryParse(raw);
+    return parsed?.toIso8601String() ?? raw;
   }
 
   void _syncPortfolioHighlights() {

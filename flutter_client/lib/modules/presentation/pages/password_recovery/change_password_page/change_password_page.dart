@@ -23,6 +23,8 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
 
   late final Map<String, dynamic> recoveryData;
   bool isSubmitting = false;
+  String? statusMessage;
+  bool isStatusError = false;
 
   String get email => (recoveryData['email'] ?? '').toString();
   String get code => (recoveryData['code'] ?? '').toString();
@@ -48,15 +50,18 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     }
 
     if (email.isEmpty || code.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Solicite um novo codigo para continuar.'),
-        ),
-      );
+      setState(() {
+        statusMessage = 'Solicite um novo codigo para continuar.';
+        isStatusError = true;
+      });
       return;
     }
 
-    setState(() => isSubmitting = true);
+    setState(() {
+      isSubmitting = true;
+      statusMessage = null;
+      isStatusError = false;
+    });
     final error = await controller.resetPassword(email: email, code: code);
     if (!mounted) {
       return;
@@ -65,15 +70,17 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     setState(() => isSubmitting = false);
 
     if (error != null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error)));
+      setState(() {
+        statusMessage = error;
+        isStatusError = true;
+      });
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Senha redefinida com sucesso.')),
-    );
+    setState(() {
+      statusMessage = 'Senha redefinida com sucesso.';
+      isStatusError = false;
+    });
 
     await Future<void>.delayed(const Duration(milliseconds: 700));
     if (!mounted) {
@@ -145,6 +152,32 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                     hasUpperAndLower: controller.hasUpperAndLower,
                     hasNumberOrSymbol: controller.hasNumberOrSymbol,
                   ),
+                  if (statusMessage != null) ...[
+                    const SizedBox(height: 20),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isStatusError
+                            ? const Color(0xFFFFE7E7)
+                            : const Color(0xFFE9F7EE),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Text(
+                        statusMessage!,
+                        style: TextStyle(
+                          color: isStatusError
+                              ? const Color(0xFF9D1C1C)
+                              : const Color(0xFF1E6B3A),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 32),
                   AuthActionButton(
                     label: 'Redefinir senha',

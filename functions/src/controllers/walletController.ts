@@ -6,9 +6,12 @@ RA: [COLOQUE SEU RA]
 import {Request, Response} from "express";
 import {
   addBalanceToWallet,
+  buyStartupTokens,
   createWallet,
   getWalletByUserId,
+  getWalletTransactionHistory,
   listWalletTokens,
+  sellStartupTokens,
   withdrawBalanceFromWallet,
 } from "../services/walletService";
 
@@ -34,17 +37,29 @@ function getAuthenticatedUserId(res: Response): string {
   return String(res.locals.authenticatedUserId ?? "");
 }
 
+function buildWalletRequest(req: Request, res: Response) {
+  return {
+    ...req.body,
+    ...req.query,
+    userId: String(req.params.userId ?? req.body.userId ?? ""),
+    authenticatedUserId: getAuthenticatedUserId(res),
+  };
+}
+
 export const createWalletHandler = async (req: Request, res: Response) => {
   try {
-    const wallet = await createWallet({
+    const overview = await createWallet({
       ...req.body,
+      ...req.query,
       authenticatedUserId: getAuthenticatedUserId(res),
     });
 
-    return res.status(201).json({
+    return res.status(200).json({
       ok: true,
-      message: "Carteira criada com sucesso.",
-      wallet,
+      message: "Carteira sincronizada com sucesso.",
+      wallet: overview.wallet,
+      tokens: overview.tokens,
+      recentTransactions: overview.recentTransactions,
     });
   } catch (error) {
     console.error(error);
@@ -59,15 +74,14 @@ export const createWalletHandler = async (req: Request, res: Response) => {
 
 export const getWalletHandler = async (req: Request, res: Response) => {
   try {
-    const wallet = await getWalletByUserId({
-      userId: String(req.params.userId ?? ""),
-      authenticatedUserId: getAuthenticatedUserId(res),
-    });
+    const overview = await getWalletByUserId(buildWalletRequest(req, res));
 
     return res.status(200).json({
       ok: true,
       message: "Carteira encontrada com sucesso.",
-      wallet,
+      wallet: overview.wallet,
+      tokens: overview.tokens,
+      recentTransactions: overview.recentTransactions,
     });
   } catch (error) {
     console.error(error);
@@ -80,20 +94,85 @@ export const getWalletHandler = async (req: Request, res: Response) => {
   }
 };
 
-export const addBalanceHandler = async (req: Request, res: Response) => {
+export const depositBalanceHandler = async (req: Request, res: Response) => {
   try {
-    const wallet = await addBalanceToWallet({
-      ...req.body,
-      authenticatedUserId: getAuthenticatedUserId(res),
-    });
+    const overview = await addBalanceToWallet(buildWalletRequest(req, res));
 
     return res.status(200).json({
       ok: true,
-      message: "Saldo adicionado com sucesso.",
-      wallet,
+      message: "Deposito realizado com sucesso.",
+      wallet: overview.wallet,
+      tokens: overview.tokens,
+      recentTransactions: overview.recentTransactions,
     });
   } catch (error) {
     console.error(error);
+
+    return res.status(getErrorStatus(error)).json({
+      ok: false,
+      error: getErrorMessage(error),
+      message: getErrorMessage(error),
+    });
+  }
+};
+
+export const withdrawBalanceHandler = async (req: Request, res: Response) => {
+  try {
+    const overview = await withdrawBalanceFromWallet(buildWalletRequest(req, res));
+
+    return res.status(200).json({
+      ok: true,
+      message: "Saque realizado com sucesso.",
+      wallet: overview.wallet,
+      tokens: overview.tokens,
+      recentTransactions: overview.recentTransactions,
+    });
+  } catch (error) {
+    console.error(error);
+
+    return res.status(getErrorStatus(error)).json({
+      ok: false,
+      error: getErrorMessage(error),
+      message: getErrorMessage(error),
+    });
+  }
+};
+
+export const buyTokensHandler = async (req: Request, res: Response) => {
+  try {
+    const overview = await buyStartupTokens(buildWalletRequest(req, res));
+
+    return res.status(200).json({
+      ok: true,
+      message: "Compra realizada com sucesso.",
+      wallet: overview.wallet,
+      tokens: overview.tokens,
+      recentTransactions: overview.recentTransactions,
+    });
+  } catch (error) {
+    console.error("Erro ao comprar tokens.", error);
+
+    return res.status(getErrorStatus(error)).json({
+      ok: false,
+      error: getErrorMessage(error),
+      message: getErrorMessage(error),
+    });
+  }
+};
+
+export const sellTokensHandler = async (req: Request, res: Response) => {
+  try {
+    const overview = await sellStartupTokens(buildWalletRequest(req, res));
+
+    return res.status(200).json({
+      ok: true,
+      message: "Venda realizada com sucesso.",
+      wallet: overview.wallet,
+      tokens: overview.tokens,
+      recentTransactions: overview.recentTransactions,
+    });
+  } catch (error) {
+    console.error("Erro ao vender tokens.", error);
 
     return res.status(getErrorStatus(error)).json({
       ok: false,
@@ -105,10 +184,7 @@ export const addBalanceHandler = async (req: Request, res: Response) => {
 
 export const listWalletTokensHandler = async (req: Request, res: Response) => {
   try {
-    const tokens = await listWalletTokens({
-      userId: String(req.params.userId ?? ""),
-      authenticatedUserId: getAuthenticatedUserId(res),
-    });
+    const tokens = await listWalletTokens(buildWalletRequest(req, res));
 
     return res.status(200).json({
       ok: true,
@@ -126,20 +202,22 @@ export const listWalletTokensHandler = async (req: Request, res: Response) => {
   }
 };
 
-export const withdrawBalanceHandler = async (req: Request, res: Response) => {
+export const getWalletTransactionHistoryHandler = async (
+  req: Request,
+  res: Response,
+) => {
   try {
-    const wallet = await withdrawBalanceFromWallet({
-      ...req.body,
-      authenticatedUserId: getAuthenticatedUserId(res),
-    });
+    const transactions = await getWalletTransactionHistory(
+      buildWalletRequest(req, res),
+    );
 
     return res.status(200).json({
       ok: true,
-      message: "Saque realizado com sucesso.",
-      wallet,
+      message: "Historico encontrado com sucesso.",
+      transactions,
     });
   } catch (error) {
-    console.error(error);
+    console.error("Erro ao consultar historico da carteira.", error);
 
     return res.status(getErrorStatus(error)).json({
       ok: false,

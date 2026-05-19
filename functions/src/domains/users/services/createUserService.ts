@@ -2,7 +2,7 @@ import type {UserRecord} from "firebase-admin/auth";
 import {createAppError} from "../../../shared/errors";
 import type {CreateUserInput} from "../../../shared/types";
 import {normalizeEmail} from "../../../shared/utils";
-import {createAuthUser, saveUserProfile} from "../repositories/userRepository";
+import {createAuthUser, saveUserProfile, createWallet} from "../repositories/userRepository";
 
 export async function createUser(data: CreateUserInput): Promise<UserRecord> {
   const nome = String(data.nome ?? data.name ?? "").trim();
@@ -35,6 +35,8 @@ export async function createUser(data: CreateUserInput): Promise<UserRecord> {
     email,
     createdAt: new Date(),
   });
+
+  await createWallet(userRecord.uid); // cria carteira associada ao usuário
 
   return userRecord;
 }
