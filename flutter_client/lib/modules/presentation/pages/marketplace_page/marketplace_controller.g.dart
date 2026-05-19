@@ -109,6 +109,18 @@ mixin _$MarketplaceController on _MarketplaceControllerBase, Store {
     return _$fetchSellOrdersAsyncAction.run(() => super.fetchSellOrders());
   }
 
+  late final _$getStartupByIdAsyncAction = AsyncAction(
+    '_MarketplaceControllerBase.getStartupById',
+    context: context,
+  );
+
+  @override
+  Future<Map<String, dynamic>> getStartupById(String startupId) {
+    return _$getStartupByIdAsyncAction.run(
+      () => super.getStartupById(startupId),
+    );
+  }
+
   late final _$buySellOrderAsyncAction = AsyncAction(
     '_MarketplaceControllerBase.buySellOrder',
     context: context,

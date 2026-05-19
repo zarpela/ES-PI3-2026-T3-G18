@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_client/modules/presentation/pages/token_transaction_page/token_transaction_controller.dart';
+import 'package:flutter_client/shared/app_routes.dart';
+import 'package:flutter_modular/flutter_modular.dart';
 
 class StartupDetailsPage extends StatelessWidget {
   final Map<String, dynamic> startup;
@@ -697,6 +700,7 @@ class StartupDetailsPage extends StatelessWidget {
   }
 
   Widget _buildBottomBar(BuildContext context, String name) {
+    final String startupId = startup['id']?.toString() ?? '';
     return Positioned(
       left: 12,
       right: 12,
@@ -721,11 +725,11 @@ class StartupDetailsPage extends StatelessWidget {
                 height: 44,
                 child: ElevatedButton(
                   onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Fluxo de venda em desenvolvimento.'),
-                        behavior: SnackBarBehavior.floating,
-                      ),
+                    Modular.to.pushNamed(AppRoutes.transactionPage, arguments: 
+                      {
+                        "type" :TransactionType.sell,
+                        "id": startupId,
+                      }
                     );
                   },
                   style: ElevatedButton.styleFrom(
@@ -750,14 +754,11 @@ class StartupDetailsPage extends StatelessWidget {
                 height: 44,
                 child: ElevatedButton.icon(
                   onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          'Compra de tokens para $name em desenvolvimento.',
-                        ),
-                        backgroundColor: primary,
-                        behavior: SnackBarBehavior.floating,
-                      ),
+                    Modular.to.pushNamed(AppRoutes.transactionPage, arguments: 
+                      {
+                        "type" :TransactionType.buy,
+                        "id": startupId,
+                      }
                     );
                   },
                   style: ElevatedButton.styleFrom(

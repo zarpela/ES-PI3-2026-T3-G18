@@ -16,6 +16,8 @@ import 'package:flutter_client/modules/presentation/pages/register_page/register
 import 'package:flutter_client/modules/presentation/pages/register_page/register_page.dart';
 import 'package:flutter_client/modules/presentation/pages/startup_details_page/startup_details_page.dart';
 import 'package:flutter_client/modules/presentation/pages/settings_page/settings_page.dart';
+import 'package:flutter_client/modules/presentation/pages/token_transaction_page/token_transaction_controller.dart';
+import 'package:flutter_client/modules/presentation/pages/token_transaction_page/token_transaction_page.dart';
 import 'package:flutter_client/shared/app_routes.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 
@@ -50,6 +52,16 @@ class AppModule extends Module {
     r.child(AppRoutes.changePassword, child: (_) => const ChangePasswordPage());
     r.child(AppRoutes.allInvestments, child: (_) => const AllInvestmentsPage());
     r.child(AppRoutes.marketplace, child: (_) => const MarketplacePage());
+    r.child(
+      AppRoutes.transactionPage,
+      child: (_) {
+        final payload = Modular.args.data as Map<String, dynamic>;
+        final TransactionType type = payload['type'];
+        final String id = payload['id'];
+        return TokenTransactionPage(type: type, id: id);
+      },
+    );
+    r.child(AppRoutes.settings, child: (_) => const SettingsPage());
 
     r.child(
       AppRoutes.startupDetailsPage,

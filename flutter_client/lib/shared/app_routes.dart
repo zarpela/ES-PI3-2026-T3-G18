@@ -12,5 +12,6 @@ class AppRoutes {
   static const String allInvestments = '/all-investments';
   static const String startupDetailsPage = '/startup-details';
   static const String marketplace = '/marketplace';
+  static const String transactionPage = '/transactionPage';
   static const String settings = '/settings';
 }
