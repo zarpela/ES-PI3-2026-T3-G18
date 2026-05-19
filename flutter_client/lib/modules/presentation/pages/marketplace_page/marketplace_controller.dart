@@ -54,7 +54,7 @@ abstract class _MarketplaceControllerBase with Store {
   @action
   void onFilterSelected(MarketplaceFilter filter) => activeFilter = filter;
 
-/*
+
   @action
   Future<void> fetchSellOrders() async {
     try {
@@ -84,64 +84,8 @@ abstract class _MarketplaceControllerBase with Store {
     } finally {
       isLoading = false;
     }
-  }*/
-  @action
-  Future<void> fetchSellOrders() async {
-    isLoading = true;
-    errorMessage = null;
-
-    try {
-      await Future.delayed(const Duration(milliseconds: 500));
-
-      final mockData = [
-        {
-          'id': 'ord_12345',
-          'startupName': 'GreenEnergy Solutions',
-          'sellerName': 'john.smith',
-          'quantity': 150,
-          'price': 125.50,
-        },
-        {
-          'id': 'ord_67890',
-          'startupName': 'AgroTech Brasil',
-          'sellerName': 'bonny.clyde',
-          'quantity': 50,
-          'price': 89.90,
-        },
-        {
-          'id': 'ord_11121',
-          'startupName': 'HealthPlus AI',
-          'sellerName': 'joao.silva',
-          'quantity': 10,
-          'price': 450.00,
-        },
-        {
-          'id': 'ord_31415',
-          'startupName': 'EducaTech Platform',
-          'sellerName': 'maria.souza',
-          'quantity': 500,
-          'price': 15.75,
-        },
-        {
-          'id': 'ord_99999',
-          'startupName': 'Fintech Fácil',
-          'sellerName': 'lucas.dev',
-          'quantity': 1,
-          'price': 1050.00,
-        },
-      ];
-
-      sellOrders.clear();
-      sellOrders.addAll(mockData);
-
-    } catch (e) {
-      debugPrint('MarketplaceController fetch error: $e');
-      errorMessage = 'Erro inesperado ao carregar o balcão de vendas.';
-    } finally {
-      isLoading = false;
-    }
   }
-
+  
   @action
   Future<Map<String, dynamic>> getStartupById(String startupId) async {
     isLoading = true;

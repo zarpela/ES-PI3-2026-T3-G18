@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_client/modules/presentation/components/filter_chip.dart';
+import 'package:flutter_client/modules/presentation/components/home/home_palette.dart';
 
 class AllInvestmentsPage extends StatefulWidget {
   const AllInvestmentsPage({super.key});
@@ -10,10 +11,7 @@ class AllInvestmentsPage extends StatefulWidget {
 
 class _AllInvestmentsPageState extends State<AllInvestmentsPage> {
   static const Color deepText = Color(0xFF241B60);
-  static const Color mutedText = Color(0xFF756E93);
-  static const Color pageBackground = Color(0xFFFCF9FF);
-  static const Color panelBackground = Color(0xFFF4EEFB);
-  static const Color softYellow = Color(0xFFFFDE74);
+
 
   String _selectedFilter =
       'TODOS'; //TODO: trocar pelo selecionado no controller;
@@ -23,7 +21,7 @@ class _AllInvestmentsPageState extends State<AllInvestmentsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: pageBackground,
+      backgroundColor: HomePalette.pageBackground,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -51,9 +49,6 @@ class _AllInvestmentsPageState extends State<AllInvestmentsPage> {
                         _selectedFilter = filter;
                       });
                     },
-                    softYellow: softYellow,
-                    mutedText: mutedText,
-                    panelBackground: panelBackground,
                   ),
                 );
               }).toList(),

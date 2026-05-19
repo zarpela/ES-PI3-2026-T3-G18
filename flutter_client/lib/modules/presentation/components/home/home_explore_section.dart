@@ -192,12 +192,11 @@ class _ExploreFilters extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         children: [
           _FilterChip(
-            label: 'Tudo',
+            label: 'Todos',
             value: 'all',
             count: controller.totalStartups,
             isActive: controller.selectedFilter == 'all',
             onTap: controller.setFilter,
-            activeColor: HomePalette.softYellow,
           ),
           _FilterChip(
             label: 'Startup',
@@ -258,7 +257,6 @@ class _ExploreStageFilters extends StatelessWidget {
             count: controller.stageCount('all'),
             isActive: controller.selectedStageFilter == 'all',
             onTap: controller.setStageFilter,
-            activeColor: HomePalette.softYellow,
           ),
           _FilterChip(
             label: 'Novo',

@@ -1,14 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_client/modules/presentation/components/home/home_palette.dart';
 import 'package:flutter_client/shared/app_routes.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 
 class PortfolioView extends StatelessWidget {
   const PortfolioView({super.key});
-
-  static const Color deepText = Color(0xFF241B60);
-  static const Color mutedText = Color(0xFF756E93);
-  static const Color brandPink = Color(0xFFD4147A);
-  static const Color pageBackground = Color(0xFFFCF9FF);
 
   static const Color colorFintech = Color(0xFFD4147A);
   static const Color colorAgrotech = Color(0xFF8C7311);
@@ -37,7 +33,7 @@ class PortfolioView extends StatelessWidget {
         const Text(
           'PATRIMÔNIO TOTAL',
           style: TextStyle(
-            color: mutedText,
+            color: HomePalette.mutedText,
             fontSize: 11,
             fontWeight: FontWeight.w800,
             letterSpacing: 1.2,
@@ -50,7 +46,7 @@ class PortfolioView extends StatelessWidget {
             const Text(
               'R\$ ***.***,**',
               style: TextStyle(
-                color: deepText,
+                color: HomePalette.deepText,
                 fontSize: 32,
                 fontWeight: FontWeight.w900,
                 letterSpacing: -1,
@@ -62,7 +58,7 @@ class PortfolioView extends StatelessWidget {
               child: Text(
                 '+2,4%',
                 style: TextStyle(
-                  color: brandPink,
+                  color: HomePalette.brandPink,
                   fontSize: 14,
                   fontWeight: FontWeight.w800,
                 ),
@@ -70,7 +66,7 @@ class PortfolioView extends StatelessWidget {
             ),
             const Spacer(),
             IconButton(
-              icon: const Icon(Icons.remove_red_eye_outlined, color: deepText),
+              icon: const Icon(Icons.remove_red_eye_outlined, color: HomePalette.deepText),
               onPressed: () {},
             ),
           ],
@@ -87,7 +83,7 @@ class PortfolioView extends StatelessWidget {
         borderRadius: BorderRadius.circular(32),
         boxShadow: [
           BoxShadow(
-            color: deepText.withValues(alpha: 0.04),
+            color: HomePalette.deepText.withValues(alpha: 0.04),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -102,12 +98,12 @@ class PortfolioView extends StatelessWidget {
               Text(
                 'Composição',
                 style: TextStyle(
-                  color: deepText,
+                  color: HomePalette.deepText,
                   fontSize: 18,
                   fontWeight: FontWeight.w800,
                 ),
               ),
-              Icon(Icons.pie_chart_outline_rounded, color: brandPink),
+              Icon(Icons.pie_chart_outline_rounded, color: HomePalette.brandPink),
             ],
           ),
           const SizedBox(height: 24),
@@ -126,7 +122,7 @@ class PortfolioView extends StatelessWidget {
                             'SETORES',
                             style: TextStyle(
                               fontSize: 10,
-                              color: mutedText,
+                              color: HomePalette.mutedText,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -134,7 +130,7 @@ class PortfolioView extends StatelessWidget {
                             '3',
                             style: TextStyle(
                               fontSize: 24,
-                              color: deepText,
+                              color: HomePalette.deepText,
                               fontWeight: FontWeight.w900,
                             ),
                           ),
@@ -219,7 +215,7 @@ class PortfolioView extends StatelessWidget {
             icon: Icons.calendar_month_outlined,
             title: 'PROVENTOS',
             value: 'R\$ ***',
-            iconColor: mutedText,
+            iconColor: HomePalette.mutedText,
           ),
         ),
       ],
@@ -230,7 +226,7 @@ class PortfolioView extends StatelessWidget {
     required IconData icon,
     required String title,
     required String value,
-    Color iconColor = brandPink,
+    Color iconColor = HomePalette.brandPink,
   }) {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -239,7 +235,7 @@ class PortfolioView extends StatelessWidget {
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: deepText.withValues(alpha: 0.03),
+            color: HomePalette.deepText.withValues(alpha: 0.03),
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),
@@ -254,7 +250,7 @@ class PortfolioView extends StatelessWidget {
             title,
             style: const TextStyle(
               fontSize: 10,
-              color: mutedText,
+              color: HomePalette.mutedText,
               fontWeight: FontWeight.w800,
               letterSpacing: 0.5,
             ),
@@ -264,7 +260,7 @@ class PortfolioView extends StatelessWidget {
             value,
             style: const TextStyle(
               fontSize: 22,
-              color: deepText,
+              color: HomePalette.deepText,
               fontWeight: FontWeight.w900,
             ),
           ),
@@ -285,7 +281,7 @@ class PortfolioView extends StatelessWidget {
               'Seus Investimentos',
               style: TextStyle(
                 fontSize: 22,
-                color: deepText,
+                color: HomePalette.deepText,
                 fontWeight: FontWeight.w900,
               ),
             ),
@@ -297,7 +293,7 @@ class PortfolioView extends StatelessWidget {
                 'Ver todos',
                 style: TextStyle(
                   fontSize: 13,
-                  color: brandPink,
+                  color: HomePalette.brandPink,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -348,9 +344,9 @@ class PortfolioView extends StatelessWidget {
     bool rendimentoNegativo = false,
     bool rendimentoNeutro = false,
   }) {
-    Color corRendimento = brandPink;
+    Color corRendimento = HomePalette.brandPink;
     if (rendimentoNegativo) corRendimento = const Color(0xFFD93B3B);
-    if (rendimentoNeutro) corRendimento = mutedText;
+    if (rendimentoNeutro) corRendimento = HomePalette.mutedText;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -360,7 +356,7 @@ class PortfolioView extends StatelessWidget {
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: deepText.withValues(alpha: 0.03),
+            color: HomePalette.deepText.withValues(alpha: 0.03),
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),
@@ -374,7 +370,7 @@ class PortfolioView extends StatelessWidget {
               color: const Color(0xFFF9F5FF),
               borderRadius: BorderRadius.circular(16),
             ),
-            child: Icon(icon, color: deepText, size: 24),
+            child: Icon(icon, color: HomePalette.deepText, size: 24),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -384,7 +380,7 @@ class PortfolioView extends StatelessWidget {
                 Text(
                   nome,
                   style: const TextStyle(
-                    color: deepText,
+                    color: HomePalette.deepText,
                     fontSize: 16,
                     fontWeight: FontWeight.w800,
                   ),
@@ -393,7 +389,7 @@ class PortfolioView extends StatelessWidget {
                 Text(
                   subtitulo,
                   style: const TextStyle(
-                    color: mutedText,
+                    color: HomePalette.mutedText,
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.5,
@@ -408,7 +404,7 @@ class PortfolioView extends StatelessWidget {
               Text(
                 valor,
                 style: const TextStyle(
-                  color: deepText,
+                  color: HomePalette.deepText,
                   fontSize: 16,
                   fontWeight: FontWeight.w800,
                 ),
@@ -460,7 +456,7 @@ class _LegendItem extends StatelessWidget {
               title,
               style: const TextStyle(
                 fontSize: 10,
-                color: PortfolioView.mutedText,
+                color: HomePalette.mutedText,
                 fontWeight: FontWeight.w800,
                 letterSpacing: 0.5,
               ),
@@ -469,7 +465,7 @@ class _LegendItem extends StatelessWidget {
               value,
               style: const TextStyle(
                 fontSize: 14,
-                color: PortfolioView.deepText,
+                color: HomePalette.deepText,
                 fontWeight: FontWeight.w900,
               ),
             ),

@@ -1,5 +1,6 @@
 //feito por marcelo
 import 'package:flutter/material.dart';
+import 'package:flutter_client/modules/presentation/components/filter_chip.dart';
 import 'package:flutter_client/modules/presentation/components/marketplace/buy_bottom_sheet.dart';
 import 'package:flutter_client/modules/presentation/components/marketplace/offer_card_widget.dart';
 import 'package:flutter_client/modules/presentation/pages/marketplace_page/marketplace_controller.dart';
@@ -210,8 +211,6 @@ class _FilterChips extends StatelessWidget {
 
   const _FilterChips({required this.controller});
 
-  static const _primaryColor = Color(0xFFD4147A);
-
   @override
   Widget build(BuildContext context) {
     return Observer(
@@ -223,33 +222,10 @@ class _FilterChips extends StatelessWidget {
               final isActive = controller.activeFilter == filter;
               return Padding(
                 padding: const EdgeInsets.only(right: 8),
-                child: GestureDetector(
+                child: CustomFilterChip(
+                  label: filter.label,
+                  isActive: isActive,
                   onTap: () => controller.onFilterSelected(filter),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isActive
-                          ? _primaryColor
-                          : const Color(0xFFEAE5FF),
-                      borderRadius: BorderRadius.circular(99),
-                    ),
-                    child: Text(
-                      filter.label,
-                      style: TextStyle(
-                        color: isActive
-                            ? Colors.white
-                            : const Color(0xFF584048),
-                        fontWeight: isActive
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ),
                 ),
               );
             }).toList(),
