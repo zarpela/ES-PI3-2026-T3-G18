@@ -1090,7 +1090,10 @@ class _StartupDetailsPageState extends State<StartupDetailsPage> {
   }
 
   Widget buildBottomBar(BuildContext context) {
-    final String startupId = startup['id']?.toString() ?? '';
+    final startupData = fullStartup ?? widget.startup;
+    final String startupId =
+        '${startupData['id'] ?? startupData['docId'] ?? startupData['startupId'] ?? ''}'
+            .trim();
     return Positioned(
       left: 12,
       right: 12,

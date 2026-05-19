@@ -1,6 +1,8 @@
 //feito por marcelo
 import 'package:flutter/material.dart';
 import 'package:flutter_mobx/flutter_mobx.dart';
+import 'package:flutter_modular/flutter_modular.dart';
+import 'package:flutter_client/modules/presentation/pages/home_page/home_controller.dart';
 import 'token_transaction_controller.dart'; 
 
 class TokenTransactionPage extends StatefulWidget {
@@ -26,6 +28,7 @@ class _TokenTransactionPageState extends State<TokenTransactionPage> {
   void initState() {
     super.initState();
     _controller = TokenTransactionController(transactionType: widget.type);
+    _controller.loadAssetData(widget.id);
   }
 
   bool get isBuy => widget.type == TransactionType.buy;
@@ -155,12 +158,16 @@ class _TokenTransactionPageState extends State<TokenTransactionPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'Imóvel Solar Residencial',
-                              style: TextStyle(
-                                color: darkText,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w800,
+                            Observer(
+                              builder: (_) => Text(
+                                _controller.assetName.isNotEmpty
+                                    ? _controller.assetName
+                                    : 'Ativo',
+                                style: const TextStyle(
+                                  color: darkText,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w800,
+                                ),
                               ),
                             ),
                             const SizedBox(height: 2),
@@ -379,25 +386,69 @@ class _TokenTransactionPageState extends State<TokenTransactionPage> {
             child: SizedBox(
               width: double.infinity,
               height: 56,
-              child: ElevatedButton(
-                onPressed: () {
-                  // Lógica de confirmação aqui
+              child: Observer(
+                builder: (_) {
+                  return ElevatedButton(
+                    onPressed: (_controller.isLoading || _controller.isSubmitting)
+                        ? null
+                        : () async {
+                            final ok = await _controller.submit(widget.id);
+
+                            if (!context.mounted) return;
+
+                            if (ok) {
+                              await Modular.get<HomeController>().refreshWallet();
+                              if (!context.mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    isBuy
+                                        ? 'Compra realizada com sucesso!'
+                                        : 'Venda realizada com sucesso!',
+                                  ),
+                                  backgroundColor: Colors.green,
+                                ),
+                              );
+                              Navigator.of(context).maybePop();
+                              return;
+                            }
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  _controller.errorMessage ??
+                                      'Nao foi possivel completar a operacao.',
+                                ),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryPink,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(28),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: _controller.isSubmitting
+                        ? const SizedBox(
+                            height: 24,
+                            width: 24,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : Text(
+                            isBuy ? 'Confirmar Compra' : 'Confirmar Venda',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                  );
                 },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: primaryPink,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(28),
-                  ),
-                  elevation: 0,
-                ),
-                child: Text(
-                  isBuy ? 'Confirmar Compra' : 'Confirmar Venda',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
               ),
             ),
           ),

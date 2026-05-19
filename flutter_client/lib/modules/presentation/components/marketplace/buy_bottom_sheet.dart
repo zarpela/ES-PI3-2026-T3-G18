@@ -1,6 +1,7 @@
 //feito por marcelo
 import 'package:flutter/material.dart';
 import 'package:flutter_client/modules/presentation/pages/marketplace_page/marketplace_controller.dart';
+import 'package:flutter_client/modules/presentation/pages/home_page/home_controller.dart';
 import 'package:flutter_mobx/flutter_mobx.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 
@@ -59,12 +60,13 @@ class _BuyBottomSheetContentState extends State<_BuyBottomSheetContent> {
 
   Future<void> _handleBuy() async {
     try {
-      final payload = {
-        'orderId': widget.offerId,
-        'quantity': _quantity,
-      };
+      await _controller.buyTokens(
+        startupId: widget.offerId,
+        quantity: _quantity,
+        price: widget.pricePerToken,
+      );
 
-      await _controller.buySellOrder(payload);
+      await Modular.get<HomeController>().refreshWallet();
 
       if (!mounted) return;
       

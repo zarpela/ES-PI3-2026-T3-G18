@@ -35,6 +35,24 @@ mixin _$TokenTransactionController on _TokenTransactionControllerBase, Store {
     });
   }
 
+  late final _$isSubmittingAtom = Atom(
+    name: '_TokenTransactionControllerBase.isSubmitting',
+    context: context,
+  );
+
+  @override
+  bool get isSubmitting {
+    _$isSubmittingAtom.reportRead();
+    return super.isSubmitting;
+  }
+
+  @override
+  set isSubmitting(bool value) {
+    _$isSubmittingAtom.reportWrite(value, super.isSubmitting, () {
+      super.isSubmitting = value;
+    });
+  }
+
   late final _$assetNameAtom = Atom(
     name: '_TokenTransactionControllerBase.assetName',
     context: context,
@@ -133,14 +151,42 @@ mixin _$TokenTransactionController on _TokenTransactionControllerBase, Store {
     );
   }
 
+  late final _$errorMessageAtom = Atom(
+    name: '_TokenTransactionControllerBase.errorMessage',
+    context: context,
+  );
+
+  @override
+  String? get errorMessage {
+    _$errorMessageAtom.reportRead();
+    return super.errorMessage;
+  }
+
+  @override
+  set errorMessage(String? value) {
+    _$errorMessageAtom.reportWrite(value, super.errorMessage, () {
+      super.errorMessage = value;
+    });
+  }
+
   late final _$loadAssetDataAsyncAction = AsyncAction(
     '_TokenTransactionControllerBase.loadAssetData',
     context: context,
   );
 
   @override
-  Future<void> loadAssetData(String assetId) {
-    return _$loadAssetDataAsyncAction.run(() => super.loadAssetData(assetId));
+  Future<void> loadAssetData(String startupId) {
+    return _$loadAssetDataAsyncAction.run(() => super.loadAssetData(startupId));
+  }
+
+  late final _$submitAsyncAction = AsyncAction(
+    '_TokenTransactionControllerBase.submit',
+    context: context,
+  );
+
+  @override
+  Future<bool> submit(String startupId) {
+    return _$submitAsyncAction.run(() => super.submit(startupId));
   }
 
   late final _$_TokenTransactionControllerBaseActionController =
@@ -188,11 +234,13 @@ mixin _$TokenTransactionController on _TokenTransactionControllerBase, Store {
   String toString() {
     return '''
 isLoading: ${isLoading},
+isSubmitting: ${isSubmitting},
 assetName: ${assetName},
 quantity: ${quantity},
 pricePerToken: ${pricePerToken},
 availableFiatBalance: ${availableFiatBalance},
 availableTokenBalance: ${availableTokenBalance},
+errorMessage: ${errorMessage},
 totalValue: ${totalValue}
     ''';
   }

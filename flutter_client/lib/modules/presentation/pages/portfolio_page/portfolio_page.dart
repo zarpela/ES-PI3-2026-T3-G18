@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_client/modules/presentation/components/home/home_palette.dart';
+import 'package:flutter_client/modules/presentation/pages/home_page/home_controller.dart';
+import 'package:flutter_client/modules/presentation/pages/token_transaction_page/token_transaction_controller.dart';
 import 'package:flutter_client/shared/app_routes.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 
 class PortfolioView extends StatelessWidget {
-  const PortfolioView({super.key});
+  const PortfolioView({required this.controller, super.key});
+
+  final HomeController controller;
 
   static const Color colorFintech = Color(0xFFD4147A);
   static const Color colorAgrotech = Color(0xFF8C7311);
@@ -12,10 +16,13 @@ class PortfolioView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final invested = controller.investedBalance ?? 0;
+    final totalPatrimonio = controller.availableBalance + invested;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildPatrimonioHero(),
+        _buildPatrimonioHero(totalPatrimonio),
         const SizedBox(height: 24),
         _buildComposicaoCard(),
         const SizedBox(height: 16),
@@ -26,7 +33,13 @@ class PortfolioView extends StatelessWidget {
     );
   }
 
-  Widget _buildPatrimonioHero() {
+  Widget _buildPatrimonioHero(double totalPatrimonio) {
+    final returnPercent = controller.estimatedReturnPercent;
+    final sign = (returnPercent ?? 0) >= 0 ? '+' : '';
+    final returnLabel = returnPercent == null
+        ? '--'
+        : '$sign${returnPercent.toStringAsFixed(1).replaceAll('.', ',')}%';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -43,9 +56,11 @@ class PortfolioView extends StatelessWidget {
         Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            const Text(
-              'R\$ ***.***,**',
-              style: TextStyle(
+            Text(
+              controller.isBalanceVisible
+                  ? controller.formatCurrencyAmount(totalPatrimonio)
+                  : 'R\$ ******',
+              style: const TextStyle(
                 color: HomePalette.deepText,
                 fontSize: 32,
                 fontWeight: FontWeight.w900,
@@ -53,11 +68,11 @@ class PortfolioView extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            const Padding(
-              padding: EdgeInsets.only(bottom: 6),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
               child: Text(
-                '+2,4%',
-                style: TextStyle(
+                returnLabel,
+                style: const TextStyle(
                   color: HomePalette.brandPink,
                   fontSize: 14,
                   fontWeight: FontWeight.w800,
@@ -66,8 +81,11 @@ class PortfolioView extends StatelessWidget {
             ),
             const Spacer(),
             IconButton(
-              icon: const Icon(Icons.remove_red_eye_outlined, color: HomePalette.deepText),
-              onPressed: () {},
+              icon: const Icon(
+                Icons.remove_red_eye_outlined,
+                color: HomePalette.deepText,
+              ),
+              onPressed: controller.toggleBalanceVisibility,
             ),
           ],
         ),
@@ -76,6 +94,12 @@ class PortfolioView extends StatelessWidget {
   }
 
   Widget _buildComposicaoCard() {
+    final tokens = controller.walletTokens;
+    final sectors = tokens
+        .map((token) => _sectorForToken(token).toLowerCase())
+        .where((sector) => sector.isNotEmpty)
+        .toSet();
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -92,9 +116,9 @@ class PortfolioView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
+            children: [
               Text(
                 'Composição',
                 style: TextStyle(
@@ -114,11 +138,11 @@ class PortfolioView extends StatelessWidget {
                 height: 120,
                 child: Stack(
                   children: [
-                    const Center(
+                    Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text(
+                          const Text(
                             'SETORES',
                             style: TextStyle(
                               fontSize: 10,
@@ -127,8 +151,8 @@ class PortfolioView extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            '3',
-                            style: TextStyle(
+                            '${sectors.length}',
+                            style: const TextStyle(
                               fontSize: 24,
                               color: HomePalette.deepText,
                               fontWeight: FontWeight.w900,
@@ -172,23 +196,11 @@ class PortfolioView extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _LegendItem(
-                      color: colorFintech,
-                      title: 'FINTECH',
-                      value: '45%',
-                    ),
+                    _LegendItem(color: colorFintech, title: 'FINTECH', value: '--'),
                     SizedBox(height: 12),
-                    _LegendItem(
-                      color: colorAgrotech,
-                      title: 'AGROTECH',
-                      value: '25%',
-                    ),
+                    _LegendItem(color: colorAgrotech, title: 'AGROTECH', value: '--'),
                     SizedBox(height: 12),
-                    _LegendItem(
-                      color: colorHealthtech,
-                      title: 'HEALTHTECH',
-                      value: '30%',
-                    ),
+                    _LegendItem(color: colorHealthtech, title: 'HEALTHTECH', value: '--'),
                   ],
                 ),
               ),
@@ -206,15 +218,19 @@ class PortfolioView extends StatelessWidget {
           child: _buildMetricaCard(
             icon: Icons.trending_up_rounded,
             title: 'RENTABILIDADE',
-            value: '+**,*%',
+            value: controller.estimatedReturnPercent == null
+                ? '--'
+                : '${controller.estimatedReturnPercent!.toStringAsFixed(1).replaceAll('.', ',')}%',
           ),
         ),
         const SizedBox(width: 16),
         Expanded(
           child: _buildMetricaCard(
-            icon: Icons.calendar_month_outlined,
-            title: 'PROVENTOS',
-            value: 'R\$ ***',
+            icon: Icons.savings_outlined,
+            title: 'INVESTIDO',
+            value: controller.investedBalance == null
+                ? 'R\$ --'
+                : controller.formatCurrencyAmount(controller.investedBalance!),
             iconColor: HomePalette.mutedText,
           ),
         ),
@@ -270,6 +286,8 @@ class PortfolioView extends StatelessWidget {
   }
 
   Widget _buildListaInvestimentos() {
+    final tokens = controller.walletTokens;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -277,7 +295,7 @@ class PortfolioView extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Text(
+            const Text(
               'Seus Investimentos',
               style: TextStyle(
                 fontSize: 22,
@@ -286,9 +304,7 @@ class PortfolioView extends StatelessWidget {
               ),
             ),
             GestureDetector(
-              onTap: () {
-                Modular.to.pushNamed(AppRoutes.allInvestments);
-              },
+              onTap: () => Modular.to.pushNamed(AppRoutes.allInvestments),
               child: const Text(
                 'Ver todos',
                 style: TextStyle(
@@ -301,37 +317,59 @@ class PortfolioView extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 20),
-        _buildInvestimentoTile(
-          icon: Icons.account_balance_rounded,
-          nome: 'Vitality.',
-          subtitulo: 'HEALTHTECH • *** COTAS',
-          valor: 'R\$ **.***',
-          rendimento: '+**,*%',
-        ),
-        _buildInvestimentoTile(
-          icon: Icons.agriculture_rounded,
-          nome: 'AgroMais',
-          subtitulo: 'AGROTECH • ** COTAS',
-          valor: 'R\$ **.***',
-          rendimento: '+*,*%',
-        ),
-        _buildInvestimentoTile(
-          icon: Icons.medical_services_outlined,
-          nome: 'Locus.ai',
-          subtitulo: 'AI • ** COTAS',
-          valor: 'R\$ **.***',
-          rendimento: '0.0%',
-          rendimentoNeutro: true,
-        ),
-        _buildInvestimentoTile(
-          icon: Icons.credit_card_rounded,
-          nome: 'StudyFlow',
-          subtitulo: 'EDTECH • ** COTAS',
-          valor: 'R\$ **.***',
-          rendimento: '-*,*%',
-          rendimentoNegativo: true,
-        ),
+        if (controller.isWalletLoading && tokens.isEmpty)
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 28),
+              child: CircularProgressIndicator(color: HomePalette.brandPink),
+            ),
+          )
+        else if (tokens.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Text(
+              'Você ainda não possui tokens.',
+              style: TextStyle(
+                color: HomePalette.mutedText.withValues(alpha: 0.9),
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          )
+        else
+          ...tokens.map(_buildTokenTile),
       ],
+    );
+  }
+
+  Widget _buildTokenTile(Map<String, dynamic> token) {
+    final startupId = (token['startupId'] ?? '').toString().trim();
+    final startup = _findStartupById(startupId);
+    final sector = _sectorForToken(token);
+    final name = (token['startupName'] ?? startup?['name'] ?? startupId).toString();
+    final quantity = _asInt(token['quantity']);
+    final averagePrice = _asDouble(token['averagePrice']);
+    final currentPrice = _calculateTokenPrice(startup);
+    final returnPercent = (averagePrice > 0 && currentPrice > 0)
+        ? ((currentPrice / averagePrice) - 1) * 100
+        : 0.0;
+
+    final totalValue = quantity * (currentPrice > 0 ? currentPrice : averagePrice);
+
+    final rendimentoNeutro = returnPercent.abs() <= 0.05;
+    final rendimentoNegativo = returnPercent < -0.05;
+
+    return _buildInvestimentoTile(
+      icon: _iconForSector(sector),
+      nome: name,
+      subtitulo: '${sector.toUpperCase()} • $quantity TOKENS',
+      valor: controller.formatCurrencyAmount(totalValue),
+      rendimento:
+          '${returnPercent >= 0 ? '+' : ''}${returnPercent.toStringAsFixed(1).replaceAll('.', ',')}%',
+      rendimentoNegativo: rendimentoNegativo,
+      rendimentoNeutro: rendimentoNeutro,
+      onComprar: () => _openTransaction(startupId, TransactionType.buy),
+      onVender: () => _openTransaction(startupId, TransactionType.sell),
     );
   }
 
@@ -341,6 +379,8 @@ class PortfolioView extends StatelessWidget {
     required String subtitulo,
     required String valor,
     required String rendimento,
+    required VoidCallback onComprar,
+    required VoidCallback onVender,
     bool rendimentoNegativo = false,
     bool rendimentoNeutro = false,
   }) {
@@ -395,9 +435,60 @@ class PortfolioView extends StatelessWidget {
                     letterSpacing: 0.5,
                   ),
                 ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: onVender,
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: HomePalette.brandPink,
+                          side: BorderSide(
+                            color: HomePalette.brandPink.withValues(alpha: 0.25),
+                            width: 1.5,
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                        ),
+                        child: const Text(
+                          'Vender',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: onComprar,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: HomePalette.brandPink,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                        ),
+                        child: const Text(
+                          'Comprar',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
+          const SizedBox(width: 14),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
@@ -423,6 +514,66 @@ class PortfolioView extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  void _openTransaction(String startupId, TransactionType type) {
+    if (startupId.isEmpty) return;
+    Modular.to.pushNamed(
+      AppRoutes.transactionPage,
+      arguments: {
+        'type': type,
+        'id': startupId,
+      },
+    );
+  }
+
+  String _sectorForToken(Map<String, dynamic> token) {
+    final startupId = (token['startupId'] ?? '').toString().trim();
+    final startup = _findStartupById(startupId);
+    return (startup?['sector'] ?? '').toString();
+  }
+
+  Map<String, dynamic>? _findStartupById(String startupId) {
+    if (startupId.isEmpty) return null;
+    for (final startup in controller.allStartups) {
+      final id = (startup['id'] ?? '').toString().trim();
+      if (id == startupId) return startup;
+    }
+    return null;
+  }
+
+  double _calculateTokenPrice(Map<String, dynamic>? startup) {
+    if (startup == null) return 0.0;
+    final emittedTokens = _asDouble(startup['totalEmittedTokens']);
+    final targetCapital = _asDouble(startup['targetCapital']);
+
+    if (emittedTokens > 0 && targetCapital > 0) {
+      final price = targetCapital / emittedTokens;
+      if (price.isFinite && price > 0) {
+        return price;
+      }
+    }
+
+    return 0.0;
+  }
+
+  IconData _iconForSector(String sector) {
+    final normalized = sector.trim().toLowerCase();
+    if (normalized.contains('agro')) return Icons.agriculture_rounded;
+    if (normalized.contains('health')) return Icons.health_and_safety_outlined;
+    if (normalized.contains('fin')) return Icons.account_balance_rounded;
+    return Icons.business_center_outlined;
+  }
+
+  double _asDouble(dynamic value) {
+    if (value is num) return value.toDouble();
+    return double.tryParse(value?.toString() ?? '') ?? 0.0;
+  }
+
+  int _asInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '') ?? 0;
   }
 }
 

@@ -157,7 +157,7 @@ class _HomePageState extends State<HomePage> {
         );
 
       case HomeSection.portfolio:
-        return const PortfolioView();
+        return PortfolioView(controller: controller);
     }
   }
 

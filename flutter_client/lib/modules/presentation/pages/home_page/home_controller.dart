@@ -62,6 +62,9 @@ class HomeController extends ChangeNotifier {
 
   int get totalStartups => _allStartups.length;
 
+  List<Map<String, dynamic>> get allStartups =>
+      List<Map<String, dynamic>>.unmodifiable(_allStartups);
+
   int get openRounds => _allStartups.where((s) {
     final stage = (s['stage'] ?? '').toString().trim();
     return stage.isNotEmpty;
@@ -296,6 +299,14 @@ class HomeController extends ChangeNotifier {
 
   Future<void> refresh() async {
     await load();
+  }
+
+  Future<void> refreshWallet() async {
+    walletErrorMessage = null;
+    isWalletLoading = true;
+    notifyListeners();
+
+    await _loadWallet();
   }
 
   Future<String> addBalance(double amount) async {
