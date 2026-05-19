@@ -8,10 +8,8 @@ import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-
 class HomeController extends ChangeNotifier {
-  HomeController(this._dio, [FirebaseAuth? auth])
-    : _auth = auth {
+  HomeController(this._dio, [FirebaseAuth? auth]) : _auth = auth {
     // Escuta mudanças de autenticação — quando o uid muda (novo login),
     // carrega automaticamente os dados do novo usuário
     _authSub = this.auth.authStateChanges().listen((user) {
@@ -49,6 +47,7 @@ class HomeController extends ChangeNotifier {
   String? errorMessage;
   String? walletErrorMessage;
   String selectedFilter = 'all';
+  String selectedStageFilter = 'all';
   String selectedSort = 'relevance';
   double? investedBalance;
   double? estimatedReturnPercent;
@@ -228,10 +227,10 @@ class HomeController extends ChangeNotifier {
     investedBalance = null;
     estimatedReturnPercent = null;
     selectedFilter = 'all';
+    selectedStageFilter = 'all';
     selectedSort = 'relevance';
     notifyListeners();
   }
-
 
   Future<void> load() async {
     errorMessage = null;
@@ -244,17 +243,12 @@ class HomeController extends ChangeNotifier {
     localProfilePhotoBytes = null;
     notifyListeners();
 
-    await Future.wait([
-      _loadProfilePhoto(),
-      _loadStartups(),
-      _loadWallet(),
-    ]);
+    await Future.wait([_loadProfilePhoto(), _loadStartups(), _loadWallet()]);
   }
 
   Future<void> refresh() async {
     await load();
   }
-
 
   Future<String> addBalance(double amount) async {
     final user = currentUser;
@@ -313,6 +307,11 @@ class HomeController extends ChangeNotifier {
     _applyFilters();
   }
 
+  void setStageFilter(String value) {
+    selectedStageFilter = value;
+    _applyFilters();
+  }
+
   void setSort(String value) {
     selectedSort = value;
     _applyFilters();
@@ -320,15 +319,31 @@ class HomeController extends ChangeNotifier {
 
   void resetFilters() {
     selectedFilter = 'all';
+    selectedStageFilter = 'all';
     selectedSort = 'relevance';
     searchController.clear();
     _applyFilters();
   }
 
   int sectorCount(String sector) {
+    if (sector == 'all') {
+      return _allStartups.length;
+    }
+
     return _allStartups.where((s) {
-      final current = (s['sector'] ?? '').toString().trim().toLowerCase();
+      final current = _normalizeSector((s['sector'] ?? '').toString());
       return current == sector;
+    }).length;
+  }
+
+  int stageCount(String stage) {
+    if (stage == 'all') {
+      return _allStartups.length;
+    }
+
+    return _allStartups.where((s) {
+      final current = _normalizeStageFromStartup(s);
+      return current == stage;
     }).length;
   }
 
@@ -347,11 +362,11 @@ class HomeController extends ChangeNotifier {
 
     try {
       final token = await user.getIdToken();
-      
+
       // O ?uid=${user.uid} força urls únicas por usuário
       // e impede o cache indevido entre contas diferentes.
       final response = await _dio.get<List<int>>(
-        'profile-photo?uid=${user.uid}&t=${DateTime.now().millisecondsSinceEpoch}', 
+        'profile-photo?uid=${user.uid}&t=${DateTime.now().millisecondsSinceEpoch}',
         options: Options(
           headers: {'Authorization': 'Bearer $token'},
           responseType: ResponseType.bytes,
@@ -501,7 +516,8 @@ class HomeController extends ChangeNotifier {
         'market/history/${user.uid}',
         options: await _authorizedOptions(),
       );
-      final transactions = response.data is Map && response.data['transactions'] is List
+      final transactions =
+          response.data is Map && response.data['transactions'] is List
           ? List<Map<String, dynamic>>.from(
               (response.data['transactions'] as List).map(
                 (item) => Map<String, dynamic>.from(item as Map),
@@ -654,7 +670,8 @@ class HomeController extends ChangeNotifier {
           .toString()
           .toLowerCase();
       final tagline = (startup['tagline'] ?? '').toString().toLowerCase();
-      final sector = (startup['sector'] ?? '').toString().trim().toLowerCase();
+      final sector = _normalizeSector((startup['sector'] ?? '').toString());
+      final stage = _normalizeStageFromStartup(startup);
 
       final matchesQuery =
           query.isEmpty ||
@@ -663,8 +680,10 @@ class HomeController extends ChangeNotifier {
           tagline.contains(query);
 
       final matchesFilter = selectedFilter == 'all' || sector == selectedFilter;
+      final matchesStage =
+          selectedStageFilter == 'all' || stage == selectedStageFilter;
 
-      return matchesQuery && matchesFilter;
+      return matchesQuery && matchesFilter && matchesStage;
     }).toList();
 
     switch (selectedSort) {
@@ -703,20 +722,70 @@ class HomeController extends ChangeNotifier {
   String _normalizeSector(String value) {
     final lower = value.trim().toLowerCase();
 
-    switch (lower) {
-      case 'agrotech':
-      case 'agtech':
-        return 'agtech';
-      case 'fintech':
-        return 'fintech';
-      case 'health':
-      case 'healthtech':
-        return 'healthtech';
-      case 'edtech':
-        return 'edtech';
-      default:
-        return lower;
+    final sanitized = lower
+        .replaceAll('-', ' ')
+        .replaceAll('_', ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+
+    if (sanitized.contains('agtech') || sanitized.contains('agro')) {
+      return 'agtech';
     }
+
+    if (sanitized.contains('fintech') || sanitized.contains('finance')) {
+      return 'fintech';
+    }
+
+    if (sanitized.contains('healthtech') || sanitized.contains('health')) {
+      return 'healthtech';
+    }
+
+    if (sanitized.contains('edtech') || sanitized.contains('education')) {
+      return 'edtech';
+    }
+
+    if (sanitized.contains('startup')) {
+      return 'startup';
+    }
+
+    return 'startup';
+  }
+
+  String _normalizeStageFromStartup(Map<String, dynamic> startup) {
+    final rawStage = (startup['stage'] ?? '').toString().trim().toLowerCase();
+    final rawDescription = (startup['description'] ?? '')
+        .toString()
+        .trim()
+        .toLowerCase();
+    final rawSector = (startup['sector'] ?? '').toString().trim().toLowerCase();
+    final rawName = (startup['name'] ?? '').toString().trim().toLowerCase();
+
+    final combined = '$rawStage $rawDescription $rawSector $rawName'
+        .replaceAll('_', ' ')
+        .replaceAll('-', ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+
+    if (combined.contains('expansao') ||
+        combined.contains('expansão') ||
+        combined.contains('em expansao') ||
+        combined.contains('em expansão') ||
+        combined.contains('series b') ||
+        combined.contains('serie b') ||
+        combined.contains('growth')) {
+      return 'em_expansao';
+    }
+
+    if (combined.contains('operacao') ||
+        combined.contains('operação') ||
+        combined.contains('em operacao') ||
+        combined.contains('em operação') ||
+        combined.contains('series a') ||
+        combined.contains('serie a')) {
+      return 'em_operacao';
+    }
+
+    return 'novo';
   }
 
   String _formatRaised(dynamic value) {
