@@ -25,3 +25,4 @@ export const api = onRequest(
 );
 
 export * from "./domains/startups";
+export * from "./domains/exchange";
