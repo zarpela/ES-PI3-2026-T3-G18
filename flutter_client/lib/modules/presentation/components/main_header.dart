@@ -1,4 +1,6 @@
+//feito por marcelo, abdallah, gabriel
 import 'package:flutter/material.dart';
+import 'package:flutter_client/modules/presentation/components/home/home_palette.dart';
 import 'package:flutter_client/modules/presentation/pages/home_page/home_controller.dart';
 
 class MainHeader extends StatelessWidget {
@@ -7,9 +9,6 @@ class MainHeader extends StatelessWidget {
   final HomeController controller;
   final VoidCallback? onProfileTap;
 
-  static const Color pageBackground = Color(0xFFFCF9FF);
-  static const Color brandPink = Color(0xFFD4147A);
-  static const Color deepText = Color(0xFF241B60);
 
   @override
   Widget build(BuildContext context) {
@@ -54,7 +53,7 @@ class MainHeader extends StatelessWidget {
                               child: Text(
                                 controller.userInitials,
                                 style: const TextStyle(
-                                  color: deepText,
+                                  color: HomePalette.deepText,
                                   fontSize: 12,
                                   fontWeight: FontWeight.w800,
                                 ),
@@ -78,7 +77,7 @@ class MainHeader extends StatelessWidget {
           const Text(
             'MesclaInvest',
             style: TextStyle(
-              color: brandPink,
+              color: HomePalette.brandPink,
               fontSize: 21,
               fontWeight: FontWeight.w800,
             ),

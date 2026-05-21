@@ -1,3 +1,4 @@
+// feito por abdallah, pedro, marcelo
 import 'package:flutter/material.dart';
 import 'package:flutter_client/modules/presentation/components/home/home_bottom_navigation.dart';
 import 'package:flutter_client/modules/presentation/components/home/home_explore_section.dart';
@@ -156,7 +157,7 @@ class _HomePageState extends State<HomePage> {
         );
 
       case HomeSection.portfolio:
-        return const PortfolioView();
+        return PortfolioView(controller: controller);
     }
   }
 

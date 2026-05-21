@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_client/modules/presentation/components/home/home_header.dart';
 import 'package:flutter_client/modules/presentation/components/home/home_palette.dart';
 import 'package:flutter_client/modules/presentation/pages/home_page/home_controller.dart';
+import 'package:flutter_client/shared/app_routes.dart';
+import 'package:flutter_modular/flutter_modular.dart';
 
 class HomeExploreSection extends StatelessWidget {
   const HomeExploreSection({
@@ -118,21 +120,27 @@ class _ExploreHero extends StatelessWidget {
           style: TextStyle(fontSize: 13, color: HomePalette.mutedText),
         ),
         const SizedBox(height: 12),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-          decoration: BoxDecoration(
-            color: HomePalette.activeNavBackground,
-            borderRadius: BorderRadius.circular(999),
-          ),
-          child: Text(
-            '$totalStartups oportunidades carregadas',
-            style: const TextStyle(
-              color: HomePalette.brandPink,
+        ElevatedButton(
+            onPressed: () => Modular.to.pushNamed(AppRoutes.marketplace),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: HomePalette.brandPink,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(999),
+              ),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 20,
+              ),
+            ),
+            child: const Text(
+              "Compre de outros usuários",
+              style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w700,
+              ),
             ),
           ),
-        ),
       ],
     );
   }
@@ -185,12 +193,11 @@ class _ExploreFilters extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         children: [
           _FilterChip(
-            label: 'Tudo',
+            label: 'Todos',
             value: 'all',
             count: controller.totalStartups,
             isActive: controller.selectedFilter == 'all',
             onTap: controller.setFilter,
-            activeColor: HomePalette.softYellow,
           ),
           _FilterChip(
             label: 'Startup',
@@ -251,7 +258,6 @@ class _ExploreStageFilters extends StatelessWidget {
             count: controller.stageCount('all'),
             isActive: controller.selectedStageFilter == 'all',
             onTap: controller.setStageFilter,
-            activeColor: HomePalette.softYellow,
           ),
           _FilterChip(
             label: 'Novo',

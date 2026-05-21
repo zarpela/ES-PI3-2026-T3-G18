@@ -1,3 +1,4 @@
+//feito por abdallah, gabriel e marcelo
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_client/modules/presentation/components/auth/auth_action_button.dart';
@@ -55,7 +56,7 @@ class _LoginPageState extends State<LoginPage> {
           ),
           const SizedBox(height: 64),
           const AuthSectionHeader(
-            title: 'Ola!',
+            title: 'Olá!',
             subtitle: 'Bem-vindo de volta ao futuro dos seus\ninvestimentos.',
             titleColor: Color(0xFF170B58),
             subtitleColor: Color(0xFF584048),

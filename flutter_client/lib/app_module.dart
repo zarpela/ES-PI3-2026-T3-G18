@@ -7,6 +7,8 @@ import 'package:flutter_client/modules/presentation/pages/home_page/home_control
 import 'package:flutter_client/modules/presentation/pages/home_page/home_page.dart';
 import 'package:flutter_client/modules/presentation/pages/login_page/login_controller.dart';
 import 'package:flutter_client/modules/presentation/pages/login_page/login_page.dart';
+import 'package:flutter_client/modules/presentation/pages/marketplace_page/marketplace_controller.dart';
+import 'package:flutter_client/modules/presentation/pages/marketplace_page/marketplace_page.dart';
 import 'package:flutter_client/modules/presentation/pages/password_recovery/change_password_page/change_password_controller.dart';
 import 'package:flutter_client/modules/presentation/pages/password_recovery/change_password_page/change_password_page.dart';
 import 'package:flutter_client/modules/presentation/pages/password_recovery/forgot_password_page/forgot_password_page.dart';
@@ -14,6 +16,8 @@ import 'package:flutter_client/modules/presentation/pages/register_page/register
 import 'package:flutter_client/modules/presentation/pages/register_page/register_page.dart';
 import 'package:flutter_client/modules/presentation/pages/startup_details_page/startup_details_page.dart';
 import 'package:flutter_client/modules/presentation/pages/settings_page/settings_page.dart';
+import 'package:flutter_client/modules/presentation/pages/token_transaction_page/token_transaction_controller.dart';
+import 'package:flutter_client/modules/presentation/pages/token_transaction_page/token_transaction_page.dart';
 import 'package:flutter_client/shared/app_routes.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 
@@ -35,6 +39,7 @@ class AppModule extends Module {
     i.addLazySingleton(() => HomeController(i()));
     i.addSingleton(() => ChangePasswordController(i()));
     i.addSingleton(() => RegisterController(i()));
+    i.addLazySingleton(() => MarketplaceController());
   }
 
   @override
@@ -46,6 +51,17 @@ class AppModule extends Module {
     r.child(AppRoutes.forgotPassword, child: (_) => const ForgotPasswordPage());
     r.child(AppRoutes.changePassword, child: (_) => const ChangePasswordPage());
     r.child(AppRoutes.allInvestments, child: (_) => const AllInvestmentsPage());
+    r.child(AppRoutes.marketplace, child: (_) => const MarketplacePage());
+    r.child(
+      AppRoutes.transactionPage,
+      child: (_) {
+        final payload = Modular.args.data as Map<String, dynamic>;
+        final TransactionType type = payload['type'];
+        final String id = payload['id'];
+        return TokenTransactionPage(type: type, id: id);
+      },
+    );
+    r.child(AppRoutes.settings, child: (_) => const SettingsPage());
 
     r.child(
       AppRoutes.startupDetailsPage,

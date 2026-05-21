@@ -1,6 +1,9 @@
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
+import 'package:flutter_client/modules/presentation/pages/token_transaction_page/token_transaction_controller.dart';
+import 'package:flutter_client/shared/app_routes.dart';
+import 'package:flutter_modular/flutter_modular.dart';
 
 class StartupDetailsPage extends StatefulWidget {
   final Map<String, dynamic> startup;
@@ -1087,6 +1090,10 @@ class _StartupDetailsPageState extends State<StartupDetailsPage> {
   }
 
   Widget buildBottomBar(BuildContext context) {
+    final startupData = fullStartup ?? widget.startup;
+    final String startupId =
+        '${startupData['id'] ?? startupData['docId'] ?? startupData['startupId'] ?? ''}'
+            .trim();
     return Positioned(
       left: 12,
       right: 12,
@@ -1110,7 +1117,14 @@ class _StartupDetailsPageState extends State<StartupDetailsPage> {
               child: SizedBox(
                 height: 44,
                 child: ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Modular.to.pushNamed(AppRoutes.transactionPage, arguments: 
+                      {
+                        "type" :TransactionType.sell,
+                        "id": startupId,
+                      }
+                    );
+                  },
                   style: ElevatedButton.styleFrom(
                     elevation: 0,
                     backgroundColor: const Color(0xFFE9E1F3),
@@ -1132,7 +1146,14 @@ class _StartupDetailsPageState extends State<StartupDetailsPage> {
               child: SizedBox(
                 height: 44,
                 child: ElevatedButton.icon(
-                  onPressed: () {},
+                  onPressed: () {
+                    Modular.to.pushNamed(AppRoutes.transactionPage, arguments: 
+                      {
+                        "type" :TransactionType.buy,
+                        "id": startupId,
+                      }
+                    );
+                  },
                   style: ElevatedButton.styleFrom(
                     elevation: 0,
                     backgroundColor: primary,
