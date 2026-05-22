@@ -1,5 +1,6 @@
 //feito por marcelo
 import 'package:dio/dio.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mobx/mobx.dart';
 
 part 'change_password_controller.g.dart';
@@ -112,6 +113,25 @@ abstract class _ChangePasswordControllerBase with Store {
       return 'Nao foi possivel redefinir a senha.';
     } catch (_) {
       return 'Nao foi possivel redefinir a senha.';
+    }
+  }
+
+  // Feito por Abdallah - RA: 25018711
+  Future<String?> changePasswordLoggedIn() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        return 'Usuario nao autenticado.';
+      }
+      await user.updatePassword(password);
+      return null;
+    } on FirebaseAuthException catch (error) {
+      if (error.code == 'requires-recent-login') {
+        return 'Por seguranca, voce precisa fazer login novamente antes de alterar a senha.';
+      }
+      return error.message ?? 'Nao foi possivel alterar a senha.';
+    } catch (_) {
+      return 'Nao foi possivel alterar a senha.';
     }
   }
 }
