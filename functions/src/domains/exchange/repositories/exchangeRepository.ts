@@ -7,7 +7,7 @@ import { Wallet } from "../../users/types";
 import { StartupDoc } from "../../startups/types";
 import { SellOrder, Token, TokenMetrics, UserInvestment, UserInvestmentsSummary } from "../types";
 
-const walletCol = db.collection("wallets");
+const walletCol = db.collection("wallet");
 const startupCol = db.collection("startups");
 const sellOrdersCol = db.collection("sellOrders");
 
