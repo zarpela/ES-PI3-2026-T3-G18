@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_client/modules/presentation/components/auth/auth_action_button.dart';
 import 'package:flutter_client/modules/presentation/components/auth/auth_input_field.dart';
@@ -49,7 +50,11 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
       return;
     }
 
-    if (email.isEmpty || code.isEmpty) {
+    // Feito por Abdallah - RA: 25018711
+    final currentUser = FirebaseAuth.instance.currentUser;
+    final isLoggedIn = currentUser != null;
+
+    if (!isLoggedIn && (email.isEmpty || code.isEmpty)) {
       setState(() {
         statusMessage = 'Solicite um novo codigo para continuar.';
         isStatusError = true;
@@ -62,7 +67,14 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
       statusMessage = null;
       isStatusError = false;
     });
-    final error = await controller.resetPassword(email: email, code: code);
+
+    final String? error;
+    if (isLoggedIn) {
+      error = await controller.changePasswordLoggedIn();
+    } else {
+      error = await controller.resetPassword(email: email, code: code);
+    }
+
     if (!mounted) {
       return;
     }
@@ -78,7 +90,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     }
 
     setState(() {
-      statusMessage = 'Senha redefinida com sucesso.';
+      statusMessage = isLoggedIn ? 'Senha alterada com sucesso.' : 'Senha redefinida com sucesso.';
       isStatusError = false;
     });
 
@@ -87,7 +99,11 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
       return;
     }
 
-    Modular.to.navigate(AppRoutes.login);
+    if (isLoggedIn) {
+      Modular.to.pop();
+    } else {
+      Modular.to.navigate(AppRoutes.login);
+    }
   }
 
   @override
