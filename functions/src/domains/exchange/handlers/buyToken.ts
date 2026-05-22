@@ -4,7 +4,7 @@ import { HttpsError, onCall } from "firebase-functions/v2/https";
 import { buyTokens } from "../repositories/exchangeRepository";
 
 /**
- * Padronização do request
+ * Corpo esperado em request.data para compra direta de tokens de uma startup.
  */
 type BuyTokensRequest = {
     startupId?: string;
@@ -12,12 +12,31 @@ type BuyTokensRequest = {
 }
 
 /**
- * Função callable para comprar tokens.
+ * Callable responsável por comprar tokens diretamente da startup.
  *
- * @param request - Solicitação do cliente contendo os dados de compra.
- *   - data.startupId: ID da startup cujos tokens serão comprados.
- *   - data.amount: Quantidade de tokens a comprar.
- * @returns Retorna mensagem de sucesso e os dados da compra.
+ * Fluxo principal:
+ * - exige usuário autenticado, usado como comprador;
+ * - recebe a startup alvo e a quantidade de tokens em `request.data`;
+ * - valida se `startupId` é string e se `amount` é número maior que zero;
+ * - executa a compra no repositório, debitando o saldo da carteira,
+ *   atualizando ou criando o token do usuário e ajustando os dados da startup.
+ *
+ * @param request - Solicitação callable do Firebase.
+ * @param request.auth.uid - ID do usuário autenticado que realiza a compra.
+ * @param request.data.startupId - ID da startup cujos tokens serão comprados.
+ * @param request.data.amount - Quantidade de tokens que o usuário deseja comprar.
+ *
+ * @returns Objeto confirmado para o cliente após a compra:
+ * {
+ *   message: "Compra realizada com sucesso.",
+ *   data: {
+ *     startupId: string,
+ *     amount: number
+ *   }
+ * }
+ *
+ * @throws HttpsError("unauthenticated") quando não houver usuário autenticado.
+ * @throws HttpsError("invalid-argument") quando `startupId` ou `amount` forem inválidos.
  */
 export const buyToken = onCall(
     { region: "southamerica-east1" },

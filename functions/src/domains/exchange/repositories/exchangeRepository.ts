@@ -72,6 +72,17 @@ export async function buyTokens(
 
     const newAveragePrice = (currentPrice*currentAmount + totalPrice) / (currentAmount + amount);
 
+    // calculo de valorização
+    const liquidity = Math.max(startup.raisedCapital, 1000);
+    const impact = totalPrice / liquidity;
+
+    // limita a variação
+    const maxImpact = 0.05;
+    const clampedImpact = Math.min(impact, maxImpact);
+
+    // novo valor do token
+    const newTokenPrice = startup.tokenPrice * (1 + clampedImpact);
+
     // atualiza carteira
     transaction.update(walletRef, {
         balance: wallet.balance - totalPrice,
@@ -81,7 +92,7 @@ export async function buyTokens(
     // atualiza token
     transaction.set(tokenRef, {
         amount: currentAmount + amount,
-        averagePrice: newAveragePrice,
+        averagePrice: Number(newAveragePrice.toFixed(2)),
         lastUpdated: Timestamp.now(),
     }, { merge: true } // merge para não sobrescrever caso já tenha tokens
     );
@@ -90,6 +101,7 @@ export async function buyTokens(
     transaction.update(startupRef, {
         raisedCapital: startup.raisedCapital + totalPrice,
         totalEmittedTokens: startup.totalEmittedTokens + amount,
+        tokenPrice: Number(newTokenPrice.toFixed(2)),
     });
 
   });
@@ -156,15 +168,34 @@ export async function sellTokens(
                 {amount: remaining, 
                 lastUpdated: Timestamp.now(),});
         }
+        // impacto negativo no preço
+        const totalPrice = startup.tokenPrice * amount;
+        const liquidity = Math.max(startup.raisedCapital, 1000);
+        const impact = totalPrice / liquidity;
 
+        // limita variacao
+        const maxImpact = 0.05;
+        const clampedImpact = Math.min(impact, maxImpact);
+
+        // novo preço do token
+        const newTokenPrice = startup.tokenPrice * (1 - clampedImpact);
+        
+        // evita preço negativo/zero
+        const safeTokenPrice = Math.max(newTokenPrice, 0.01);
+
+        // atualiza startup
+        transaction.update(startupRef, {
+            tokenPrice: Number(safeTokenPrice.toFixed(2)),
+        });
+        
         const order: SellOrder = {
             id: orderRef.id,
             ownerId: uid,
             startupId,
             startupName: startup.name,
             amount,
-            pricePerToken,
-            averagePrice: token.averagePrice,
+            pricePerToken: Number(pricePerToken.toFixed(2)),
+            averagePrice: Number(token.averagePrice.toFixed(2)),
             createdAt:Timestamp.now(),
             status: "open",
         };
@@ -217,12 +248,21 @@ export async function buySellOrder(
 
         // busca ordem
         const orderSnap = await transaction.get(orderRef);
-
+        
         if (!orderSnap.exists) {
             throw new HttpsError("not-found","Ordem não encontrada.");
         }
-
+        
         const order = orderSnap.data() as SellOrder;
+
+        // a ordem armazena o id da startup a qual pertence
+        const startupRef = startupCol.doc(order.startupId);
+        const startupSnap = await transaction.get(startupRef);
+        if (!startupSnap.exists) {
+            throw new HttpsError("not-found", "Startup não encontrada.");
+        }
+        
+
 
         // ordem precisa estar aberta
         if (order.status !== "open") {
@@ -275,7 +315,10 @@ export async function buySellOrder(
         }
 
         // novo preço médio
-        const newAveragePrice =(currentAveragePrice*currentAmount+totalPrice) / (currentAmount+order.amount);
+        const denominator = currentAmount + order.amount; // Evitar comportamento indesejado
+        const newAveragePrice = denominator > 0
+            ? Number(((currentAveragePrice * currentAmount+ totalPrice) / denominator).toFixed(2))
+            : 0;
 
         // desconta comprador
         transaction.update(buyerWalletRef,
@@ -286,6 +329,13 @@ export async function buySellOrder(
         transaction.update(sellerWalletRef,
             { balance: sellerWallet.balance + totalPrice, lastUpdated: Timestamp.now(),}
         );
+
+        const startup = startupSnap.data() as StartupDoc;
+        const liquidity = Math.max(startup.raisedCapital, 1000);
+        const impact = totalPrice / liquidity;
+        const maxImpact = 0.05;
+        const clampedImpact = Math.min(impact, maxImpact);
+        const newTokenPrice = (startup.tokenPrice * (1 + clampedImpact));
 
         // adiciona tokens comprador
         transaction.set(buyerTokenRef,
@@ -299,6 +349,10 @@ export async function buySellOrder(
 
         // finaliza ordem
         transaction.update(orderRef, {status: "completed",});
+
+        transaction.update(startupRef, {
+            tokenPrice: Number(newTokenPrice.toFixed(2)),
+        });
     });
 }
 
