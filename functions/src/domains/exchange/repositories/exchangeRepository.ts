@@ -2,7 +2,7 @@
 
 import { Timestamp } from "firebase-admin/firestore";
 import { db } from "../../../shared/firebase";
-import { HttpsError } from "firebase-functions/https";
+import { HttpsError } from "firebase-functions/v2/https";
 import { Wallet } from "../../users/types";
 import { StartupDoc } from "../../startups/types";
 import { SellOrder, Token, TokenMetrics, UserInvestment, UserInvestmentsSummary } from "../types";

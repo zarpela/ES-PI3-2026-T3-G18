@@ -3,7 +3,7 @@
 
 import type {UserRecord} from "firebase-admin/auth";
 import {FieldValue} from "firebase-admin/firestore";
-import {HttpsError} from "firebase-functions/https";
+import {HttpsError} from "firebase-functions/v2/https";
 import {auth, db} from "../../../shared/firebase";
 import {Wallet} from "../types";
 

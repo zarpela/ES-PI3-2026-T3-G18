@@ -186,6 +186,28 @@ export async function getPrivateQuestions(
 }
 
 /**
+ * Retorna o histórico de preços de uma startup a partir de uma data.
+ */
+export async function getTokenPriceHistory(
+    startupId: string,
+    startDate: Date
+): Promise<TokenPriceHistory[]> {
+    try {
+        const snapshot = await db
+            .collection("startups")
+            .doc(startupId)
+            .collection("tokenPriceHistory")
+            .where("createdAt", ">=", admin.firestore.Timestamp.fromDate(startDate))
+            .orderBy("createdAt", "asc")
+            .get();
+
+        return snapshot.docs.map((doc) => doc.data() as TokenPriceHistory);
+    } catch (e) {
+        throw new HttpsError("internal", "Erro ao buscar histórico de preços.");
+    }
+}
+
+/**
  * Salva o histórico ed valorização do token
  * vai ser chamado em /schedule a cada 4h, começando 00:00
  */
