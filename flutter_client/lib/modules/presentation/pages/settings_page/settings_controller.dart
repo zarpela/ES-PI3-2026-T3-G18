@@ -30,6 +30,9 @@ class SettingsController extends ChangeNotifier {
   bool isUploadingPhoto = false;
   String? _firestoreName;
 
+  bool mfaEnabled = false;
+  bool isUpdatingMfa = false;
+
   User? get currentUser => _auth.currentUser;
 
   String get userLabel {
@@ -54,6 +57,16 @@ class SettingsController extends ChangeNotifier {
   }
 
   ImageProvider? get profileImage => _homeController.profileImage;
+
+  String _parseApiMessage(dynamic data, {required String fallback}) {
+    if (data is Map) {
+      final message = data['message'];
+      if (message is String && message.trim().isNotEmpty) {
+        return message;
+      }
+    }
+    return fallback;
+  }
 
   /// Busca o nome do usuário na coleção 'users' do Firestore.
   Future<void> loadUserName() async {
@@ -157,6 +170,62 @@ class SettingsController extends ChangeNotifier {
       return false;
     } finally {
       isUploadingPhoto = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> loadMfaStatus() async {
+    final token = await currentUser?.getIdToken();
+    if (token == null) return;
+
+    try {
+      // Busca no backend (Firestore) se o usuario tem MFA habilitado.
+      final response = await _dio.get(
+        '/mfa/status',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+
+      final data = response.data;
+      mfaEnabled = data is Map ? data['enabled'] == true : false;
+      notifyListeners();
+    } catch (error) {
+      debugPrint('SettingsController loadMfaStatus error: $error');
+    }
+  }
+
+  Future<bool> setMfaEnabled(bool enabled) async {
+    final token = await currentUser?.getIdToken();
+    if (token == null) return false;
+
+    // Otimista: atualiza o switch imediatamente e reverte se o backend falhar.
+    final previous = mfaEnabled;
+    mfaEnabled = enabled;
+    isUpdatingMfa = true;
+    notifyListeners();
+
+    try {
+      // Persiste no backend para garantir que o login saiba se deve exigir MFA.
+      await _dio.post(
+        enabled ? '/mfa/enable' : '/mfa/disable',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return true;
+    } on DioException catch (e) {
+      // Falhou no backend: desfaz a mudança local para manter consistencia.
+      mfaEnabled = previous;
+      debugPrint(
+        _parseApiMessage(
+          e.response?.data,
+          fallback: 'Erro ao atualizar MFA.',
+        ),
+      );
+      return false;
+    } catch (error) {
+      mfaEnabled = previous;
+      debugPrint('SettingsController setMfaEnabled error: $error');
+      return false;
+    } finally {
+      isUpdatingMfa = false;
       notifyListeners();
     }
   }

@@ -11,6 +11,14 @@ export type StoredResetCode = {
   updatedAt?: string;
 };
 
+export type StoredMfaCode = {
+  code: string;
+  email: string;
+  expiresAt: string;
+  uid: string;
+  updatedAt?: string;
+};
+
 export type CreateUserInput = {
   cpf?: string;
   email?: string;

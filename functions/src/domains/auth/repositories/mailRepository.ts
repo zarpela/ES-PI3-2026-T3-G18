@@ -53,3 +53,43 @@ export async function sendPasswordResetEmail(
 
   return true;
 }
+
+export async function sendMfaLoginCodeEmail(
+  to: string,
+  code: string,
+): Promise<boolean> {
+  const localMailConfig = loadLocalMailConfig();
+  const mailUser = process.env.MAIL_USER || localMailConfig.mailUser;
+  const mailPass = process.env.MAIL_PASS || localMailConfig.mailPass;
+
+  if (!mailUser || !mailPass) {
+    logger.warn(
+      "MAIL_USER/MAIL_PASS nao configurados. O envio de e-mail de MFA nao foi realizado.",
+    );
+    return false;
+  }
+
+  const transporter = nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 587,
+    secure: false,
+    auth: {
+      user: mailUser,
+      pass: mailPass,
+    },
+  });
+
+  await transporter.sendMail({
+    from: `"MesclaInvest" <${mailUser}>`,
+    to,
+    subject: "Codigo de verificacao (2 etapas)",
+    html: `
+      <h2>Autenticacao em duas etapas</h2>
+      <p>Use o codigo abaixo para concluir o login:</p>
+      <h1 style="letter-spacing:4px">${code}</h1>
+      <p>Se voce nao reconhece essa tentativa, altere sua senha.</p>
+    `,
+  });
+
+  return true;
+}

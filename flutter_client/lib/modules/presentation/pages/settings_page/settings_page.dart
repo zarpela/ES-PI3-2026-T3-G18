@@ -22,8 +22,6 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   late final SettingsController _controller;
 
-  bool _mfaEnabled = false;
-
   @override
   void initState() {
     super.initState();
@@ -31,6 +29,7 @@ class _SettingsPageState extends State<SettingsPage> {
     _controller = SettingsController(homeController);
     _controller.addListener(_refresh);
     _controller.loadUserName();
+    _controller.loadMfaStatus();
   }
 
   @override
@@ -188,9 +187,22 @@ class _SettingsPageState extends State<SettingsPage> {
                 iconColor: HomePalette.brandPink,
                 label: 'Autenticação multifator',
                 trailing: CupertinoSwitch(
-                  value: _mfaEnabled,
+                  value: _controller.mfaEnabled,
                   activeColor: HomePalette.brandPink,
-                  onChanged: (v) => setState(() => _mfaEnabled = v),
+                  onChanged: _controller.isUpdatingMfa
+                      ? null
+                      : (v) async {
+                          final success = await _controller.setMfaEnabled(v);
+                          if (!mounted) return;
+
+                          _showSnackBar(
+                            success
+                                ? (v
+                                      ? 'Autenticação multifator ativada.'
+                                      : 'Autenticação multifator desativada.')
+                                : 'Erro ao atualizar autenticação multifator.',
+                          );
+                        },
                 ),
               ),
               const _SettingsDivider(),

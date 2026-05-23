@@ -10,3 +10,4 @@ node_modules/
 *.local
 
 serviceAccount.json
+local-mail.config.json

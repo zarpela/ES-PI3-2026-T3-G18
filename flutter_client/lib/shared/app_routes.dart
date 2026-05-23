@@ -9,6 +9,7 @@ class AppRoutes {
   static const String register = '/register';
   static const String forgotPassword = '/forgot-password';
   static const String changePassword = '/change-password';
+  static const String mfaVerify = '/mfa-verify';
   static const String allInvestments = '/all-investments';
   static const String startupDetailsPage = '/startup-details';
   static const String marketplace = '/marketplace';
