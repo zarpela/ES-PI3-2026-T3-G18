@@ -19,6 +19,7 @@ type UserProfilePayload = {
   cpf: string;
   createdAt: Date;
   email: string;
+  mfaEnabled?: boolean;
   nome: string;
   telefone: string;
 };
