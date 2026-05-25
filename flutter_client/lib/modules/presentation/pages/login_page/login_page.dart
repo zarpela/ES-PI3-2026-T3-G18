@@ -1,9 +1,11 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_client/core/app_session.dart';
 import 'package:flutter_client/modules/presentation/components/auth/auth_action_button.dart';
 import 'package:flutter_client/modules/presentation/components/auth/auth_input_field.dart';
 import 'package:flutter_client/modules/presentation/components/auth/auth_page_scaffold.dart';
 import 'package:flutter_client/modules/presentation/components/auth/auth_section_header.dart';
+import 'package:flutter_client/modules/presentation/components/auth/login_mfa_verification_dialog.dart';
 import 'package:flutter_client/modules/presentation/pages/home_page/home_controller.dart';
 import 'package:flutter_client/modules/presentation/pages/login_page/login_controller.dart';
 import 'package:flutter_client/shared/app_illustrations.dart';
@@ -21,15 +23,59 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final LoginController controller = Modular.get<LoginController>();
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!AppSession.instance.isAccessGranted &&
+          controller.auth.currentUser != null) {
+        controller.auth.signOut();
+      }
+    });
+  }
+
   Future<void> _handleLogin() async {
     final success = await controller.login();
     if (!mounted || !success) {
       return;
     }
 
-    // Força o reload do HomeController para o novo usuário —
-    // necessário porque o _HomePageState é singleton e o initState
-    // não é chamado de novo ao navegar de volta para /home
+    if (controller.isAwaitingMfa) {
+      final verified = await _showMfaDialog();
+      if (!mounted) {
+        return;
+      }
+
+      if (!verified) {
+        await controller.cancelPendingMfa();
+        if (mounted) {
+          setState(() {});
+        }
+        return;
+      }
+    }
+
+    _completeLogin();
+  }
+
+  Future<bool> _showMfaDialog() async {
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) {
+        return LoginMfaVerificationDialog(
+          email: controller.pendingMfaEmail,
+          onValidateCode: controller.verifyLoginMfaCode,
+          onResendCode: controller.resendLoginMfaCode,
+        );
+      },
+    );
+
+    return result ?? false;
+  }
+
+  void _completeLogin() {
+    // Forca o reload do HomeController para o novo usuario.
     Modular.get<HomeController>().load();
     Modular.to.navigate(AppRoutes.home);
   }
@@ -75,7 +121,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   AuthInputField(
                     label: 'SENHA',
-                    hint: '••••••••',
+                    hint: '********',
                     obscureText: controller.obscurePassword,
                     onChanged: controller.setPassword,
                     textColor: const Color(0xFF584048),

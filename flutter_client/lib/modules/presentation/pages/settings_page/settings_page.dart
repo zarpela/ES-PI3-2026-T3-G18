@@ -9,7 +9,6 @@ import 'package:flutter_client/shared/app_routes.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:image_picker/image_picker.dart';
 
-
 enum PhotoAction { camera, gallery, remove }
 
 class SettingsPage extends StatefulWidget {
@@ -21,8 +20,6 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   late final SettingsController _controller;
-
-  bool _mfaEnabled = false;
 
   @override
   void initState() {
@@ -44,6 +41,19 @@ class _SettingsPageState extends State<SettingsPage> {
     if (mounted) setState(() {});
   }
 
+  Future<void> _onMfaChanged(bool enabled) async {
+    final success = await _controller.updateMfa(enabled);
+    if (!mounted) return;
+
+    _showSnackBar(
+      success
+          ? enabled
+                ? 'Autenticacao multifator ativada com sucesso.'
+                : 'Autenticacao multifator desativada com sucesso.'
+          : 'Erro ao atualizar autenticacao multifator.',
+    );
+  }
+
   Future<void> _onPhotoTap() async {
     final hasPhoto = _controller.profileImage != null;
     final action = await _showPhotoSourceSheet(hasPhoto: hasPhoto);
@@ -60,7 +70,9 @@ class _SettingsPageState extends State<SettingsPage> {
             : 'Erro ao remover a foto. Tente novamente.',
       );
     } else {
-      final source = action == PhotoAction.camera ? ImageSource.camera : ImageSource.gallery;
+      final source = action == PhotoAction.camera
+          ? ImageSource.camera
+          : ImageSource.gallery;
       success = await _controller.pickAndUploadPhoto(source);
       if (!mounted) return;
       _showSnackBar(
@@ -188,9 +200,9 @@ class _SettingsPageState extends State<SettingsPage> {
                 iconColor: HomePalette.brandPink,
                 label: 'Autenticação multifator',
                 trailing: CupertinoSwitch(
-                  value: _mfaEnabled,
-                  activeColor: HomePalette.brandPink,
-                  onChanged: (v) => setState(() => _mfaEnabled = v),
+                  value: _controller.mfaEnabled,
+                  activeTrackColor: HomePalette.brandPink,
+                  onChanged: _controller.isUpdatingMfa ? null : _onMfaChanged,
                 ),
               ),
               const _SettingsDivider(),
@@ -252,83 +264,86 @@ class _AvatarSection extends StatelessWidget {
               height: 64,
               child: Stack(
                 children: [
-                Container(
-                  width: 64,
-                  height: 64,
-                  padding: const EdgeInsets.all(2.5),
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [HomePalette.brandPink, HomePalette.brandPurple],
-                    ),
-                  ),
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
+                  Container(
+                    width: 64,
+                    height: 64,
+                    padding: const EdgeInsets.all(2.5),
+                    decoration: const BoxDecoration(
                       shape: BoxShape.circle,
-                      color: Colors.white,
-                      image: profileImage != null
-                          ? DecorationImage(
-                              image: profileImage!,
-                              fit: BoxFit.cover,
-                            )
-                          : null,
+                      gradient: LinearGradient(
+                        colors: [
+                          HomePalette.brandPink,
+                          HomePalette.brandPurple,
+                        ],
+                      ),
                     ),
-                    child: profileImage == null
-                        ? Center(
-                            child: Text(
-                              userInitials,
-                              style: const TextStyle(
-                                color: HomePalette.deepText,
-                                fontSize: 20,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
-                          )
-                        : null,
-                  ),
-                ),
-                if (isLoading)
-                  Positioned.fill(
                     child: DecoratedBox(
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.black.withOpacity(0.35),
+                        color: Colors.white,
+                        image: profileImage != null
+                            ? DecorationImage(
+                                image: profileImage!,
+                                fit: BoxFit.cover,
+                              )
+                            : null,
                       ),
-                      child: const Center(
-                        child: SizedBox(
-                          width: 22,
-                          height: 22,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.5,
-                            color: Colors.white,
+                      child: profileImage == null
+                          ? Center(
+                              child: Text(
+                                userInitials,
+                                style: const TextStyle(
+                                  color: HomePalette.deepText,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                            )
+                          : null,
+                    ),
+                  ),
+                  if (isLoading)
+                    Positioned.fill(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.black.withValues(alpha: 0.35),
+                        ),
+                        child: const Center(
+                          child: SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                if (!isLoading)
-                  Positioned(
-                    right: 0,
-                    bottom: 0,
-                    child: Container(
-                      width: 20,
-                      height: 20,
-                      decoration: BoxDecoration(
-                        color: HomePalette.brandPink,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: HomePalette.panel,
-                          width: 2,
+                  if (!isLoading)
+                    Positioned(
+                      right: 0,
+                      bottom: 0,
+                      child: Container(
+                        width: 20,
+                        height: 20,
+                        decoration: BoxDecoration(
+                          color: HomePalette.brandPink,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: HomePalette.panel,
+                            width: 2,
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.photo_camera_rounded,
+                          size: 10,
+                          color: Colors.white,
                         ),
                       ),
-                      child: const Icon(
-                        Icons.photo_camera_rounded,
-                        size: 10,
-                        color: Colors.white,
-                      ),
                     ),
-                  ),
-              ],
+                ],
               ),
             ),
           ),
@@ -513,7 +528,7 @@ class _SettingsTile extends StatelessWidget {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: iconColor.withOpacity(0.12),
+                color: iconColor.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(icon, color: iconColor, size: 18),
