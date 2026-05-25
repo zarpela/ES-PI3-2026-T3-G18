@@ -37,6 +37,20 @@ mixin _$RegisterController on _RegisterControllerBase, Store {
     () => super.isFormValid,
     name: '_RegisterControllerBase.isFormValid',
   )).value;
+  Computed<bool>? _$isPhoneValidComputed;
+
+  @override
+  bool get isPhoneValid => (_$isPhoneValidComputed ??= Computed<bool>(
+    () => super.isPhoneValid,
+    name: '_RegisterControllerBase.isPhoneValid',
+  )).value;
+  Computed<bool>? _$isDocumentValidComputed;
+
+  @override
+  bool get isDocumentValid => (_$isDocumentValidComputed ??= Computed<bool>(
+    () => super.isDocumentValid,
+    name: '_RegisterControllerBase.isDocumentValid',
+  )).value;
 
   late final _$fullNameAtom = Atom(
     name: '_RegisterControllerBase.fullName',
@@ -295,7 +309,9 @@ errorMessage: ${errorMessage},
 hasMinLength: ${hasMinLength},
 hasUpperAndLower: ${hasUpperAndLower},
 hasNumberOrSymbol: ${hasNumberOrSymbol},
-isFormValid: ${isFormValid}
+isFormValid: ${isFormValid},
+isPhoneValid: ${isPhoneValid},
+isDocumentValid: ${isDocumentValid}
     ''';
   }
 }

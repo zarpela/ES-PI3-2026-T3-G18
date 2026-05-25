@@ -66,7 +66,7 @@ class _RegisterPageState extends State<RegisterPage> {
           const AuthSectionHeader(
             title: 'Crie sua conta',
             subtitle:
-                'Sua jornada para um futuro financeiro\nprospero comeca agora. Preencha os\ndetalhes abaixo.',
+                'Sua jornada para um futuro financeiro\nprospero comeca agora. Preencha todos os\ndetalhes abaixo.',
             titleColor: Color(0xFF201A1B),
             subtitleColor: Color(0xFF514347),
           ),
@@ -75,7 +75,7 @@ class _RegisterPageState extends State<RegisterPage> {
               return Column(
                 children: [
                   AuthInputField(
-                    label: 'NOME COMPLETO',
+                    label: 'NOME COMPLETO *',
                     hint: 'Como no seu RG ou CNH',
                     keyboardType: TextInputType.name,
                     onChanged: controller.setFullName,
@@ -84,7 +84,18 @@ class _RegisterPageState extends State<RegisterPage> {
                     hintColor: const Color(0x80514347),
                   ),
                   AuthInputField(
-                    label: 'TELEFONE',
+                    label: 'CPF *',
+                    hint: '000.000.000-00',
+                    keyboardType: TextInputType.number,
+                    onChanged: controller.setDocument,
+                    labelColor: const Color(0xFF514347),
+                    fillColor: const Color(0xFFFBF1F2),
+                    hintColor: const Color(0x80514347),
+                  ),
+                  if(controller.document.isNotEmpty && !controller.isDocumentValid && controller.document.replaceAll(RegExp(r'[^0-9]'), '').length >= 10)
+                    const Text("CPF Inválido", style: TextStyle(color: Colors.red)),
+                  AuthInputField(
+                    label: 'TELEFONE *',
                     hint: '(00) 0 0000-0000',
                     keyboardType: TextInputType.phone,
                     onChanged: controller.setPhone,
@@ -92,8 +103,20 @@ class _RegisterPageState extends State<RegisterPage> {
                     fillColor: const Color(0xFFFBF1F2),
                     hintColor: const Color(0x80514347),
                   ),
+                  if (controller.phone.isNotEmpty && !controller.isPhoneValid)
+                    const Padding(
+                      padding: EdgeInsets.only(bottom: 12.0),
+                      child: Text(
+                        "Telefone Inválido",
+                        style: TextStyle(
+                          color: Colors.red,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
                   AuthInputField(
-                    label: 'E-MAIL',
+                    label: 'E-MAIL *',
                     hint: 'seuemail@exemplo.com',
                     keyboardType: TextInputType.emailAddress,
                     onChanged: controller.setEmail,
@@ -102,7 +125,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     hintColor: const Color(0x80514347),
                   ),
                   AuthInputField(
-                    label: 'SENHA',
+                    label: 'SENHA *',
                     hint: '••••••••',
                     obscureText: controller.obscurePassword,
                     onChanged: controller.setPassword,
@@ -124,16 +147,6 @@ class _RegisterPageState extends State<RegisterPage> {
                     hasMinLength: controller.hasMinLength,
                     hasUpperAndLower: controller.hasUpperAndLower,
                     hasNumberOrSymbol: controller.hasNumberOrSymbol,
-                  ),
-                  const SizedBox(height: 24),
-                  AuthInputField(
-                    label: 'CPF',
-                    hint: '000.000.000-00',
-                    keyboardType: TextInputType.number,
-                    onChanged: controller.setDocument,
-                    labelColor: const Color(0xFF514347),
-                    fillColor: const Color(0xFFFBF1F2),
-                    hintColor: const Color(0x80514347),
                   ),
                   const SizedBox(height: 16),
                   AuthActionButton(
