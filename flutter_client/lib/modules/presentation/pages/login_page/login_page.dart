@@ -1,5 +1,6 @@
 //feito por abdallah, gabriel e marcelo
 import 'package:dio/dio.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -63,43 +64,64 @@ class _LoginPageState extends State<LoginPage> {
 
     final dio = Modular.get<Dio>();
 
+    final uid = user?.uid;
+    if (uid == null) {
+      await FirebaseAuth.instance.signOut();
+      if (!mounted) return;
+      _showSnack('Nao foi possivel validar sua sessao. Tente novamente.');
+      return;
+    }
+
+    // Consulta o status do MFA direto do Firestore (doc do proprio usuario).
+    // Se o documento nao existir ou a leitura falhar (permissoes, rede, etc.),
+    // assume que MFA esta desabilitado para nao bloquear o login de quem nunca
+    // ativou o recurso.
+    bool mfaEnabled = false;
     try {
-      // Consulta o status do MFA no backend (Firestore).
-      final response = await dio.get(
-        '/mfa/status',
-        options: Options(headers: {'Authorization': 'Bearer $token'}),
-      );
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .get();
+      mfaEnabled = userDoc.data()?['mfaEnabled'] == true;
+    } catch (_) {
+      // Falha ao ler Firestore: mantém mfaEnabled = false (padrao).
+    }
 
-      final data = response.data;
-      final enabled = data is Map ? data['enabled'] == true : false;
+    if (mfaEnabled) {
+      final email = user?.email?.trim();
 
-      if (enabled) {
-        // Dispara o envio do codigo para o e-mail cadastrado e navega para a tela
-        // de verificacao. O usuario so entra na home apos confirmar o codigo.
+      if (email == null || email.isEmpty) {
+        await FirebaseAuth.instance.signOut();
+        if (!mounted) return;
+        _showSnack('Usuario nao possui e-mail cadastrado.');
+        return;
+      }
+
+      // Dispara o envio do codigo para o e-mail cadastrado e navega para a tela
+      // de verificacao. O usuario so entra na home apos confirmar o codigo.
+      try {
         await dio.post(
           '/mfa/request-code',
           options: Options(headers: {'Authorization': 'Bearer $token'}),
         );
-
+      } on DioException catch (e) {
+        final message = _parseApiMessage(
+          e.response?.data,
+          fallback: 'Erro ao enviar codigo de verificacao.',
+        );
+        await FirebaseAuth.instance.signOut();
         if (!mounted) return;
-        Modular.to.navigate(AppRoutes.mfaVerify);
+        _showSnack(message);
+        return;
+      } catch (_) {
+        await FirebaseAuth.instance.signOut();
+        if (!mounted) return;
+        _showSnack('Erro ao enviar codigo de verificacao. Tente novamente.');
         return;
       }
-    } on DioException catch (e) {
-      final message = _parseApiMessage(
-        e.response?.data,
-        fallback: 'Erro ao verificar autenticacao em duas etapas.',
-      );
-      // Falhou em checar/solicitar MFA: faz logout para evitar acesso sem validacao.
-      await FirebaseAuth.instance.signOut();
+
       if (!mounted) return;
-      _showSnack(message);
-      return;
-    } catch (_) {
-      // Mesmo comportamento para erros nao esperados.
-      await FirebaseAuth.instance.signOut();
-      if (!mounted) return;
-      _showSnack('Erro ao verificar autenticacao em duas etapas.');
+      Modular.to.navigate(AppRoutes.mfaVerify);
       return;
     }
 
