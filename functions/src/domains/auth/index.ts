@@ -1,8 +1,10 @@
 import express from "express";
-import {forgotPasswordHandler} from "./handlers/forgotPasswordHandler";
-import {resetPasswordHandler} from "./handlers/resetPasswordHandler";
-import {verifyResetCodeHandler} from "./handlers/verifyResetCodeHandler";
 import {requireAuthenticatedUser} from "../../middlewares/authMiddleware";
+import {forgotPasswordHandler} from "./handlers/forgotPasswordHandler";
+import {requestLoginMfaHandler} from "./handlers/requestLoginMfaHandler";
+import {resetPasswordHandler} from "./handlers/resetPasswordHandler";
+import {verifyLoginMfaHandler} from "./handlers/verifyLoginMfaHandler";
+import {verifyResetCodeHandler} from "./handlers/verifyResetCodeHandler";
 import {getMfaStatusHandler} from "./handlers/getMfaStatusHandler";
 import {enableMfaHandler} from "./handlers/enableMfaHandler";
 import {disableMfaHandler} from "./handlers/disableMfaHandler";
@@ -12,7 +14,9 @@ import {verifyMfaLoginCodeHandler} from "./handlers/verifyMfaLoginCodeHandler";
 const router = express.Router();
 
 router.post("/forgot-password", forgotPasswordHandler);
+router.post("/request-login-mfa", requireAuthenticatedUser, requestLoginMfaHandler);
 router.post("/verify-reset-code", verifyResetCodeHandler);
+router.post("/verify-login-mfa", requireAuthenticatedUser, verifyLoginMfaHandler);
 router.post("/reset-password", resetPasswordHandler);
 
 router.get("/mfa/status", requireAuthenticatedUser, getMfaStatusHandler);

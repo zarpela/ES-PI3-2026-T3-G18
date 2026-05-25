@@ -1,13 +1,12 @@
 //feito por abdallah, gabriel e marcelo
-import 'package:dio/dio.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_client/core/app_session.dart';
 import 'package:flutter_client/modules/presentation/components/auth/auth_action_button.dart';
 import 'package:flutter_client/modules/presentation/components/auth/auth_input_field.dart';
 import 'package:flutter_client/modules/presentation/components/auth/auth_page_scaffold.dart';
 import 'package:flutter_client/modules/presentation/components/auth/auth_section_header.dart';
+import 'package:flutter_client/modules/presentation/components/auth/login_mfa_verification_dialog.dart';
 import 'package:flutter_client/modules/presentation/pages/home_page/home_controller.dart';
 import 'package:flutter_client/modules/presentation/pages/login_page/login_controller.dart';
 import 'package:flutter_client/shared/app_illustrations.dart';
@@ -25,20 +24,15 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final LoginController controller = Modular.get<LoginController>();
 
-  void _showSnack(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
-  }
-
-  String _parseApiMessage(dynamic data, {required String fallback}) {
-    if (data is Map) {
-      final message = data['message'];
-      if (message is String && message.trim().isNotEmpty) {
-        return message;
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!AppSession.instance.isAccessGranted &&
+          controller.auth.currentUser != null) {
+        controller.auth.signOut();
       }
-    }
-    return fallback;
+    });
   }
 
   Future<void> _handleLogin() async {
@@ -47,84 +41,42 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    // A partir daqui o usuario ja autenticou no FirebaseAuth.
-    // Antes de liberar acesso ao app, consultamos o backend para saber se o
-    // MFA esta habilitado; se estiver, exigimos o codigo enviado por e-mail.
-    final user = FirebaseAuth.instance.currentUser;
-    final token = await user?.getIdToken();
-
-    if (!mounted) return;
-
-    if (token == null) {
-      await FirebaseAuth.instance.signOut();
-      if (!mounted) return;
-      _showSnack('Nao foi possivel validar sua sessao. Tente novamente.');
-      return;
-    }
-
-    final dio = Modular.get<Dio>();
-
-    final uid = user?.uid;
-    if (uid == null) {
-      await FirebaseAuth.instance.signOut();
-      if (!mounted) return;
-      _showSnack('Nao foi possivel validar sua sessao. Tente novamente.');
-      return;
-    }
-
-    // Consulta o status do MFA direto do Firestore (doc do proprio usuario).
-    // Se o documento nao existir ou a leitura falhar (permissoes, rede, etc.),
-    // assume que MFA esta desabilitado para nao bloquear o login de quem nunca
-    // ativou o recurso.
-    bool mfaEnabled = false;
-    try {
-      final userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid)
-          .get();
-      mfaEnabled = userDoc.data()?['mfaEnabled'] == true;
-    } catch (_) {
-      // Falha ao ler Firestore: mantém mfaEnabled = false (padrao).
-    }
-
-    if (mfaEnabled) {
-      final email = user?.email?.trim();
-
-      if (email == null || email.isEmpty) {
-        await FirebaseAuth.instance.signOut();
-        if (!mounted) return;
-        _showSnack('Usuario nao possui e-mail cadastrado.');
+    if (controller.isAwaitingMfa) {
+      final verified = await _showMfaDialog();
+      if (!mounted) {
         return;
       }
 
-      // Dispara o envio do codigo para o e-mail cadastrado e navega para a tela
-      // de verificacao. O usuario so entra na home apos confirmar o codigo.
-      try {
-        await dio.post(
-          '/mfa/request-code',
-          options: Options(headers: {'Authorization': 'Bearer $token'}),
-        );
-      } on DioException catch (e) {
-        final message = _parseApiMessage(
-          e.response?.data,
-          fallback: 'Erro ao enviar codigo de verificacao.',
-        );
-        await FirebaseAuth.instance.signOut();
-        if (!mounted) return;
-        _showSnack(message);
-        return;
-      } catch (_) {
-        await FirebaseAuth.instance.signOut();
-        if (!mounted) return;
-        _showSnack('Erro ao enviar codigo de verificacao. Tente novamente.');
+      if (!verified) {
+        await controller.cancelPendingMfa();
+        if (mounted) {
+          setState(() {});
+        }
         return;
       }
-
-      if (!mounted) return;
-      Modular.to.navigate(AppRoutes.mfaVerify);
-      return;
     }
 
+    _completeLogin();
+  }
+
+  Future<bool> _showMfaDialog() async {
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) {
+        return LoginMfaVerificationDialog(
+          email: controller.pendingMfaEmail,
+          onValidateCode: controller.verifyLoginMfaCode,
+          onResendCode: controller.resendLoginMfaCode,
+        );
+      },
+    );
+
+    return result ?? false;
+  }
+
+  void _completeLogin() {
+    // Forca o reload do HomeController para o novo usuario.
     Modular.get<HomeController>().load();
     Modular.to.navigate(AppRoutes.home);
   }
@@ -150,7 +102,7 @@ class _LoginPageState extends State<LoginPage> {
           ),
           const SizedBox(height: 64),
           const AuthSectionHeader(
-            title: 'Olá!',
+            title: 'OlÃ¡!',
             subtitle: 'Bem-vindo de volta ao futuro dos seus\ninvestimentos.',
             titleColor: Color(0xFF170B58),
             subtitleColor: Color(0xFF584048),
@@ -170,7 +122,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   AuthInputField(
                     label: 'SENHA',
-                    hint: '••••••••',
+                    hint: '********',
                     obscureText: controller.obscurePassword,
                     onChanged: controller.setPassword,
                     textColor: const Color(0xFF584048),

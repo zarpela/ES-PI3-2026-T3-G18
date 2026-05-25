@@ -1,14 +1,13 @@
 // feito por Gabriel Scolfaro
 
-import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_client/modules/presentation/components/home/home_palette.dart';
 import 'package:flutter_client/modules/presentation/pages/home_page/home_controller.dart';
 import 'package:flutter_client/modules/presentation/pages/settings_page/settings_controller.dart';
 import 'package:flutter_client/shared/app_routes.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:image_picker/image_picker.dart';
-
 
 enum PhotoAction { camera, gallery, remove }
 
@@ -29,7 +28,6 @@ class _SettingsPageState extends State<SettingsPage> {
     _controller = SettingsController(homeController);
     _controller.addListener(_refresh);
     _controller.loadUserName();
-    _controller.loadMfaStatus();
   }
 
   @override
@@ -41,6 +39,19 @@ class _SettingsPageState extends State<SettingsPage> {
 
   void _refresh() {
     if (mounted) setState(() {});
+  }
+
+  Future<void> _onMfaChanged(bool enabled) async {
+    final success = await _controller.updateMfa(enabled);
+    if (!mounted) return;
+
+    _showSnackBar(
+      success
+          ? enabled
+                ? 'Autenticacao multifator ativada com sucesso.'
+                : 'Autenticacao multifator desativada com sucesso.'
+          : 'Erro ao atualizar autenticacao multifator.',
+    );
   }
 
   Future<void> _onPhotoTap() async {
@@ -59,7 +70,9 @@ class _SettingsPageState extends State<SettingsPage> {
             : 'Erro ao remover a foto. Tente novamente.',
       );
     } else {
-      final source = action == PhotoAction.camera ? ImageSource.camera : ImageSource.gallery;
+      final source = action == PhotoAction.camera
+          ? ImageSource.camera
+          : ImageSource.gallery;
       success = await _controller.pickAndUploadPhoto(source);
       if (!mounted) return;
       _showSnackBar(
@@ -161,7 +174,7 @@ class _SettingsPageState extends State<SettingsPage> {
         elevation: 0,
         leading: const BackButton(color: HomePalette.deepText),
         title: const Text(
-          'Configurações',
+          'Configuracoes',
           style: TextStyle(
             color: HomePalette.deepText,
             fontWeight: FontWeight.w800,
@@ -185,24 +198,11 @@ class _SettingsPageState extends State<SettingsPage> {
               _SettingsTile(
                 icon: Icons.shield_outlined,
                 iconColor: HomePalette.brandPink,
-                label: 'Autenticação multifator',
+                label: 'Autenticacao multifator',
                 trailing: CupertinoSwitch(
                   value: _controller.mfaEnabled,
-                  activeColor: HomePalette.brandPink,
-                  onChanged: _controller.isUpdatingMfa
-                      ? null
-                      : (v) async {
-                          final success = await _controller.setMfaEnabled(v);
-                          if (!mounted) return;
-
-                          _showSnackBar(
-                            success
-                                ? (v
-                                      ? 'Autenticação multifator ativada.'
-                                      : 'Autenticação multifator desativada.')
-                                : 'Erro ao atualizar autenticação multifator.',
-                          );
-                        },
+                  activeTrackColor: HomePalette.brandPink,
+                  onChanged: _controller.isUpdatingMfa ? null : _onMfaChanged,
                 ),
               ),
               const _SettingsDivider(),
@@ -226,10 +226,6 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 }
-
-// ---------------------------------------------------------------------------
-// Avatar
-// ---------------------------------------------------------------------------
 
 class _AvatarSection extends StatelessWidget {
   const _AvatarSection({
@@ -264,83 +260,86 @@ class _AvatarSection extends StatelessWidget {
               height: 64,
               child: Stack(
                 children: [
-                Container(
-                  width: 64,
-                  height: 64,
-                  padding: const EdgeInsets.all(2.5),
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [HomePalette.brandPink, HomePalette.brandPurple],
-                    ),
-                  ),
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
+                  Container(
+                    width: 64,
+                    height: 64,
+                    padding: const EdgeInsets.all(2.5),
+                    decoration: const BoxDecoration(
                       shape: BoxShape.circle,
-                      color: Colors.white,
-                      image: profileImage != null
-                          ? DecorationImage(
-                              image: profileImage!,
-                              fit: BoxFit.cover,
-                            )
-                          : null,
+                      gradient: LinearGradient(
+                        colors: [
+                          HomePalette.brandPink,
+                          HomePalette.brandPurple,
+                        ],
+                      ),
                     ),
-                    child: profileImage == null
-                        ? Center(
-                            child: Text(
-                              userInitials,
-                              style: const TextStyle(
-                                color: HomePalette.deepText,
-                                fontSize: 20,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
-                          )
-                        : null,
-                  ),
-                ),
-                if (isLoading)
-                  Positioned.fill(
                     child: DecoratedBox(
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.black.withOpacity(0.35),
+                        color: Colors.white,
+                        image: profileImage != null
+                            ? DecorationImage(
+                                image: profileImage!,
+                                fit: BoxFit.cover,
+                              )
+                            : null,
                       ),
-                      child: const Center(
-                        child: SizedBox(
-                          width: 22,
-                          height: 22,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.5,
-                            color: Colors.white,
+                      child: profileImage == null
+                          ? Center(
+                              child: Text(
+                                userInitials,
+                                style: const TextStyle(
+                                  color: HomePalette.deepText,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                            )
+                          : null,
+                    ),
+                  ),
+                  if (isLoading)
+                    Positioned.fill(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.black.withValues(alpha: 0.35),
+                        ),
+                        child: const Center(
+                          child: SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                if (!isLoading)
-                  Positioned(
-                    right: 0,
-                    bottom: 0,
-                    child: Container(
-                      width: 20,
-                      height: 20,
-                      decoration: BoxDecoration(
-                        color: HomePalette.brandPink,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: HomePalette.panel,
-                          width: 2,
+                  if (!isLoading)
+                    Positioned(
+                      right: 0,
+                      bottom: 0,
+                      child: Container(
+                        width: 20,
+                        height: 20,
+                        decoration: BoxDecoration(
+                          color: HomePalette.brandPink,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: HomePalette.panel,
+                            width: 2,
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.photo_camera_rounded,
+                          size: 10,
+                          color: Colors.white,
                         ),
                       ),
-                      child: const Icon(
-                        Icons.photo_camera_rounded,
-                        size: 10,
-                        color: Colors.white,
-                      ),
                     ),
-                  ),
-              ],
+                ],
               ),
             ),
           ),
@@ -360,10 +359,6 @@ class _AvatarSection extends StatelessWidget {
     );
   }
 }
-
-// ---------------------------------------------------------------------------
-// Bottom sheet de seleção de foto
-// ---------------------------------------------------------------------------
 
 class _PhotoSourceSheet extends StatelessWidget {
   const _PhotoSourceSheet({required this.hasPhoto});
@@ -409,7 +404,6 @@ class _PhotoSourceSheet extends StatelessWidget {
             label: 'Escolher da galeria',
             onTap: () => Navigator.pop(context, PhotoAction.gallery),
           ),
-          // Só exibe a opção de remover se o usuário tiver foto
           if (hasPhoto) ...[
             const SizedBox(height: 12),
             _PhotoSourceOption(
@@ -476,10 +470,6 @@ class _PhotoSourceOption extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Card de configurações
-// ---------------------------------------------------------------------------
-
 class _SettingsCard extends StatelessWidget {
   const _SettingsCard({required this.children});
 
@@ -525,7 +515,7 @@ class _SettingsTile extends StatelessWidget {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: iconColor.withOpacity(0.12),
+                color: iconColor.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(icon, color: iconColor, size: 18),
@@ -560,10 +550,6 @@ class _SettingsDivider extends StatelessWidget {
     );
   }
 }
-
-// ---------------------------------------------------------------------------
-// Botão de sair
-// ---------------------------------------------------------------------------
 
 class _SignOutButton extends StatelessWidget {
   const _SignOutButton({required this.onTap});
