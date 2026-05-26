@@ -127,7 +127,7 @@ class HomeEmptyHistoryCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Sem movimentacoes por enquanto',
+            'Sem movimentações por enquanto',
             style: TextStyle(
               color: HomePalette.deepText,
               fontSize: 16,
@@ -136,7 +136,7 @@ class HomeEmptyHistoryCard extends StatelessWidget {
           ),
           SizedBox(height: 6),
           Text(
-            'Os ultimos depositos, saques e investimentos vao aparecer aqui.',
+            'Os últimos depósitos, saques e investimentos vão aparecer aqui.',
             style: TextStyle(
               color: HomePalette.mutedText,
               fontSize: 13,
@@ -184,7 +184,7 @@ String _transactionTitle(Map<String, dynamic> transaction) {
   switch ((transaction['type'] ?? '').toString()) {
     case 'DEPOSIT':
     case 'ADD_BALANCE':
-      return 'Deposito';
+      return 'Depósito';
     case 'WITHDRAW':
     case 'WITHDRAW_BALANCE':
       return 'Saque';
@@ -205,7 +205,7 @@ String _transactionTitle(Map<String, dynamic> transaction) {
     case 'CREATE_WALLET':
       return 'Carteira criada';
     default:
-      return 'Movimentacao';
+      return 'Movimentação';
   }
 }
 

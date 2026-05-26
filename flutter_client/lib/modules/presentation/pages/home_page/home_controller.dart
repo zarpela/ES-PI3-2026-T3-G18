@@ -104,7 +104,7 @@ class HomeController extends ChangeNotifier {
       return email.split('@').first;
     }
 
-    return 'Usuario';
+    return 'Usuário';
   }
 
   String get greetingLabel {
@@ -226,7 +226,7 @@ class HomeController extends ChangeNotifier {
       return tagline;
     }
 
-    return 'Conheca a oportunidade em destaque disponível na plataforma.';
+    return 'Conheça a oportunidade em destaque disponível na plataforma.';
   }
 
   String? mediaFromStartup(Map<String, dynamic> startup, List<String> keys) {
@@ -332,7 +332,7 @@ class HomeController extends ChangeNotifier {
   Future<String> addBalance(double amount) async {
     final user = currentUser;
     if (user == null) {
-      throw Exception('Usuario nao autenticado.');
+      throw Exception('Usuário não autenticado.');
     }
 
     try {
@@ -345,7 +345,7 @@ class HomeController extends ChangeNotifier {
       _applyWalletData(response.data);
       await _loadWalletHistory();
       notifyListeners();
-      return 'Deposito realizado com sucesso.';
+      return 'Depósito realizado com sucesso.';
     } on DioException catch (error) {
       throw Exception(_extractWalletError(error));
     }
@@ -354,7 +354,7 @@ class HomeController extends ChangeNotifier {
   Future<String> withdrawBalance(double amount) async {
     final user = currentUser;
     if (user == null) {
-      throw Exception('Usuario nao autenticado.');
+      throw Exception('Usuário não autenticado.');
     }
 
     if (amount > availableBalance) {
@@ -499,12 +499,12 @@ class HomeController extends ChangeNotifier {
       debugPrint(
         'FirebaseFunctionsException: code=${e.code}, message=${e.message}, details=${e.details}',
       );
-      errorMessage = 'Nao foi possivel carregar as startups.';
+      errorMessage = 'Não foi possível carregar as startups.';
       _allStartups = [];
       startups = [];
     } catch (e) {
       debugPrint('HomeController startup error: $e');
-      errorMessage = 'Erro inesperado ao carregar o catalogo.';
+      errorMessage = 'Erro inesperado ao carregar o catálogo.';
       _allStartups = [];
       startups = [];
     } finally {
@@ -610,7 +610,7 @@ class HomeController extends ChangeNotifier {
         walletErrorMessage = _extractWalletError(e);
       } catch (e) {
         debugPrint('HomeController unexpected wallet error: $e');
-        walletErrorMessage = 'Nao foi possivel carregar a carteira.';
+        walletErrorMessage = 'Não foi possível carregar a carteira.';
       }
     } finally {
       _syncPortfolioHighlights();
@@ -633,7 +633,7 @@ class HomeController extends ChangeNotifier {
       walletErrorMessage = _extractWalletError(e);
     } catch (e) {
       debugPrint('HomeController unexpected wallet creation error: $e');
-      walletErrorMessage = 'Nao foi possivel preparar a carteira.';
+      walletErrorMessage = 'Não foi possível preparar a carteira.';
     }
   }
 
@@ -832,7 +832,7 @@ class HomeController extends ChangeNotifier {
       }
     }
 
-    return 'Nao foi possivel carregar a carteira.';
+    return 'Não foi possível carregar a carteira.';
   }
 
   void _applyFilters({bool notify = true}) {

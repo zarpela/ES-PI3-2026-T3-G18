@@ -248,7 +248,7 @@ class _MarketplacePageState extends State<MarketplacePage> {
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
-              decoration: const InputDecoration(labelText: 'Preco unitario'),
+              decoration: const InputDecoration(labelText: 'Preço unitário'),
             ),
           ],
         ),
@@ -273,7 +273,7 @@ class _MarketplacePageState extends State<MarketplacePage> {
                   price <= 0) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Informe quantidade e preco validos.'),
+                    content: Text('Informe quantidade e preço válidos.'),
                     backgroundColor: Colors.red,
                   ),
                 );

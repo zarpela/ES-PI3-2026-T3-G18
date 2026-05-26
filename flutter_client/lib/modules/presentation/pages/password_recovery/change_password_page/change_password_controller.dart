@@ -102,17 +102,17 @@ abstract class _ChangePasswordControllerBase with Store {
       if (error.type == DioExceptionType.connectionTimeout ||
           error.type == DioExceptionType.receiveTimeout ||
           error.type == DioExceptionType.sendTimeout) {
-        return 'A solicitacao demorou demais. Tente novamente.';
+        return 'A solicitação demorou demais. Tente novamente.';
       }
 
       if (error.type == DioExceptionType.connectionError ||
           error.type == DioExceptionType.unknown) {
-        return 'Nao foi possivel conectar ao servidor. Verifique a API e tente novamente.';
+        return 'Não foi possível conectar ao servidor. Verifique a API e tente novamente.';
       }
 
-      return 'Nao foi possivel redefinir a senha.';
+      return 'Não foi possível redefinir a senha.';
     } catch (_) {
-      return 'Nao foi possivel redefinir a senha.';
+      return 'Não foi possível redefinir a senha.';
     }
   }
 
@@ -121,17 +121,17 @@ abstract class _ChangePasswordControllerBase with Store {
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) {
-        return 'Usuario nao autenticado.';
+        return 'Usuário não autenticado.';
       }
       await user.updatePassword(password);
       return null;
     } on FirebaseAuthException catch (error) {
       if (error.code == 'requires-recent-login') {
-        return 'Por seguranca, voce precisa fazer login novamente antes de alterar a senha.';
+        return 'Por segurança, você precisa fazer login novamente antes de alterar a senha.';
       }
-      return error.message ?? 'Nao foi possivel alterar a senha.';
+      return error.message ?? 'Não foi possível alterar a senha.';
     } catch (_) {
-      return 'Nao foi possivel alterar a senha.';
+      return 'Não foi possível alterar a senha.';
     }
   }
 }

@@ -432,7 +432,7 @@ class _ErrorCard extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           const Text(
-            'Nao foi possivel carregar o destaque.',
+            'Não foi possível carregar o destaque.',
             textAlign: TextAlign.center,
             style: TextStyle(
               color: HomePalette.deepText,

@@ -72,7 +72,7 @@ abstract class _TokenTransactionControllerBase with Store {
     try {
       final user = _auth.currentUser;
       if (user == null) {
-        throw Exception('Usuario nao autenticado.');
+        throw Exception('Usuário não autenticado.');
       }
 
       final token = await user.getIdToken();
@@ -124,7 +124,7 @@ abstract class _TokenTransactionControllerBase with Store {
       quantity = 1;
     } catch (e) {
       debugPrint('TokenTransactionController loadAssetData error: $e');
-      errorMessage = 'Nao foi possivel carregar os dados do ativo.';
+      errorMessage = 'Não foi possível carregar os dados do ativo.';
     } finally {
       isLoading = false;
     }
@@ -138,12 +138,12 @@ abstract class _TokenTransactionControllerBase with Store {
     try {
       final user = _auth.currentUser;
       if (user == null) {
-        errorMessage = 'Usuario nao autenticado.';
+        errorMessage = 'Usuário não autenticado.';
         return false;
       }
 
       if (quantity <= 0) {
-        errorMessage = 'Quantidade invalida.';
+        errorMessage = 'Quantidade inválida.';
         return false;
       }
 
@@ -203,7 +203,7 @@ abstract class _TokenTransactionControllerBase with Store {
       return false;
     } catch (e) {
       debugPrint('TokenTransactionController submit error: $e');
-      errorMessage = 'Erro inesperado ao processar a transacao.';
+      errorMessage = 'Erro inesperado ao processar a transação.';
       return false;
     } finally {
       isSubmitting = false;
@@ -307,6 +307,6 @@ abstract class _TokenTransactionControllerBase with Store {
       }
     }
 
-    return 'Nao foi possivel completar a operacao.';
+    return 'Não foi possível completar a operação.';
   }
 }

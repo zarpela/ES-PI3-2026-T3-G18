@@ -76,7 +76,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _completeLogin() {
-    // Forca o reload do HomeController para o novo usuario.
+    // Força o reload do HomeController para o novo usuário.
     Modular.get<HomeController>().load();
     Modular.to.navigate(AppRoutes.home);
   }
@@ -196,7 +196,7 @@ class _LoginPageState extends State<LoginPage> {
                   fontWeight: FontWeight.w500,
                 ),
                 children: [
-                  const TextSpan(text: 'Ainda nao tem uma conta? '),
+                  const TextSpan(text: 'Ainda não tem uma conta? '),
                   TextSpan(
                     text: 'Registre-se',
                     style: const TextStyle(

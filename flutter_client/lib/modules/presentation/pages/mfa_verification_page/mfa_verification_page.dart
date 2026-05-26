@@ -42,9 +42,9 @@ class _MfaVerificationPageState extends State<MfaVerificationPage> {
   }
 
   void _showSnack(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _onVerify() async {
@@ -64,7 +64,9 @@ class _MfaVerificationPageState extends State<MfaVerificationPage> {
     if (!mounted) return;
 
     _showSnack(
-      success ? 'Codigo reenviado.' : (_controller.errorMessage ?? 'Erro ao reenviar codigo.'),
+      success
+          ? 'Código reenviado.'
+          : (_controller.errorMessage ?? 'Erro ao reenviar código.'),
     );
   }
 
@@ -96,7 +98,7 @@ class _MfaVerificationPageState extends State<MfaVerificationPage> {
           const SizedBox(height: 64),
           const AuthSectionHeader(
             title: 'Verifique seu login',
-            subtitle: 'Enviamos um codigo de 6 digitos\npara seu e-mail.',
+            subtitle: 'Enviamos um código de 6 dígitos\npara seu e-mail.',
             titleColor: Color(0xFF170B58),
             subtitleColor: Color(0xFF584048),
             titleFontSize: 34,
@@ -123,14 +125,11 @@ class _MfaVerificationPageState extends State<MfaVerificationPage> {
               ),
             ),
           AuthActionButton(
-            label: 'Confirmar codigo',
+            label: 'Confirmar código',
             onPressed: _onVerify,
             isEnabled: _controller.isCodeValid,
             isLoading: _controller.isLoading,
-            gradientColors: const [
-              Color(0xFFD4147A),
-              Color(0xFFAE1465),
-            ],
+            gradientColors: const [Color(0xFFD4147A), Color(0xFFAE1465)],
             disabledGradientColors: const [
               Color(0xFFE4B3CF),
               Color(0xFFD4B1C6),
@@ -144,7 +143,7 @@ class _MfaVerificationPageState extends State<MfaVerificationPage> {
                 foregroundColor: const Color(0xFFC71E74),
               ),
               child: const Text(
-                'Reenviar codigo',
+                'Reenviar código',
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
               ),
             ),

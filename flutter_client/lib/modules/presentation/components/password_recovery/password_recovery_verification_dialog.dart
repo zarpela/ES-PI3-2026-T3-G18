@@ -43,7 +43,7 @@ class _PasswordRecoveryVerificationDialogState
 
     if (code.length != 6) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Digite o codigo com 6 digitos.')),
+        const SnackBar(content: Text('Digite o código com 6 dígitos.')),
       );
       return;
     }
@@ -120,7 +120,7 @@ class _PasswordRecoveryVerificationDialogState
             ),
             const SizedBox(height: 24),
             const Text(
-              'Digite o codigo',
+              'Digite o código',
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.w900,
@@ -129,7 +129,7 @@ class _PasswordRecoveryVerificationDialogState
             ),
             const SizedBox(height: 12),
             const Text(
-              'Enviamos um codigo de verificacao para o\nseu e-mail cadastrado. Por favor, insira os\n6 digitos abaixo.',
+              'Enviamos um código de verificação para o\nseu e-mail cadastrado. Por favor, insira os\n6 dígitos abaixo.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,

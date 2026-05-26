@@ -89,7 +89,7 @@ class HomeExploreSection extends StatelessWidget {
                 if (startupId.trim().isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('Startup invalida para investimento.'),
+                      content: Text('Startup inválida para investimento.'),
                       behavior: SnackBarBehavior.floating,
                     ),
                   );
@@ -383,7 +383,7 @@ class _StartupCard extends StatelessWidget {
     final investment = fakeTicketByStage((startup['stage'] ?? '').toString());
     final roi = startupRoiLabel(startup);
     final name = (startup['name'] ?? 'Startup').toString();
-    final description = (startup['description'] ?? 'Sem descricao informada.')
+    final description = (startup['description'] ?? 'Sem descrição informada.')
         .toString();
 
     return Padding(
@@ -535,7 +535,7 @@ class _StartupCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 12),
                       const Text(
-                        'CAPTACAO',
+                        'CAPTAÇÃO',
                         style: TextStyle(
                           fontSize: 9,
                           fontWeight: FontWeight.w800,
@@ -744,7 +744,7 @@ class _ExploreErrorState extends StatelessWidget {
             ),
             const SizedBox(height: 14),
             const Text(
-              'Erro ao carregar catalogo',
+              'Erro ao carregar catálogo',
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.w800,
@@ -753,7 +753,7 @@ class _ExploreErrorState extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              message ?? 'Nao foi possivel carregar as startups.',
+              message ?? 'Não foi possível carregar as startups.',
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontSize: 13,
@@ -893,7 +893,7 @@ String fakeTicketByStage(String stage) {
 String startupRoiLabel(Map<String, dynamic> startup) {
   final roi = (startup['roi'] ?? '').toString().trim();
   if (roi.isEmpty) {
-    return 'Potencial em analise';
+    return 'Potencial em análise';
   }
   return roi;
 }

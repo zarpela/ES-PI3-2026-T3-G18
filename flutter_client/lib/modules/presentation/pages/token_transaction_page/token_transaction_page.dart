@@ -551,7 +551,7 @@ class _TokenTransactionPageState extends State<TokenTransactionPage> {
                               SnackBar(
                                 content: Text(
                                   _controller.errorMessage ??
-                                      'Nao foi possivel completar a operacao.',
+                                      'Não foi possível completar a operação.',
                                 ),
                                 backgroundColor: Colors.red,
                               ),

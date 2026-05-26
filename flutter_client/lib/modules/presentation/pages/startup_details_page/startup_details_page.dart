@@ -1288,11 +1288,11 @@ class _StartupDetailsPageState extends State<StartupDetailsPage> {
     // Abdallah El-Khatib
     final question =
         (item['question'] ?? item['text'])?.toString() ??
-        'Pergunta nao informada';
+        'Pergunta não informada';
     final author =
         (item['authorName'] ?? item['authorUid'] ?? item['authorId'])
             ?.toString() ??
-        'Usuario nao informado';
+        'Usuário não informado';
     final date = item['createdAt']?.toString() ?? '--/--/----';
 
     final answerMap = item['answer'];

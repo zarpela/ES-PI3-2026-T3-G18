@@ -21,9 +21,9 @@ extension MarketplaceFilterLabel on MarketplaceFilter {
       case MarketplaceFilter.nova:
         return 'Nova';
       case MarketplaceFilter.emOperacao:
-        return 'Em operacao';
+        return 'Em operação';
       case MarketplaceFilter.emExpansao:
-        return 'Em expansao';
+        return 'Em expansão';
     }
   }
 
@@ -97,7 +97,7 @@ abstract class _MarketplaceControllerBase with Store {
     try {
       final user = _auth.currentUser;
       if (user == null) {
-        throw Exception('Usuario nao autenticado.');
+        throw Exception('Usuário não autenticado.');
       }
 
       final idToken = await user.getIdToken();
@@ -192,7 +192,7 @@ abstract class _MarketplaceControllerBase with Store {
       debugPrint(
         'FirebaseFunctionsException (getStartupById): code=${e.code}, message=${e.message}',
       );
-      errorMessage = 'Nao foi possivel carregar os detalhes da startup.';
+      errorMessage = 'Não foi possível carregar os detalhes da startup.';
       throw Exception(errorMessage);
     } catch (e) {
       debugPrint('MarketplaceController getStartupById error: $e');
@@ -214,7 +214,7 @@ abstract class _MarketplaceControllerBase with Store {
     try {
       final user = _auth.currentUser;
       if (user == null) {
-        throw Exception('Usuario nao autenticado.');
+        throw Exception('Usuário não autenticado.');
       }
 
       final token = await user.getIdToken();
@@ -248,7 +248,7 @@ abstract class _MarketplaceControllerBase with Store {
     try {
       final user = _auth.currentUser;
       if (user == null) {
-        throw Exception('Usuario nao autenticado.');
+        throw Exception('Usuário não autenticado.');
       }
 
       final token = await user.getIdToken();
@@ -285,7 +285,7 @@ abstract class _MarketplaceControllerBase with Store {
     try {
       final user = _auth.currentUser;
       if (user == null) {
-        throw Exception('Usuario nao autenticado.');
+        throw Exception('Usuário não autenticado.');
       }
 
       final token = await user.getIdToken();
@@ -339,6 +339,6 @@ abstract class _MarketplaceControllerBase with Store {
       }
     }
 
-    return 'Nao foi possivel completar a operacao.';
+    return 'Não foi possível completar a operação.';
   }
 }

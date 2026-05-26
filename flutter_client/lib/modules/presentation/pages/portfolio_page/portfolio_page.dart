@@ -26,7 +26,7 @@ class _PortfolioViewState extends State<PortfolioView> {
   final List<_PortfolioPeriod> _periods = const [
     _PortfolioPeriod('DIA', 'daily'),
     _PortfolioPeriod('SEM', 'weekly'),
-    _PortfolioPeriod('MES', 'monthly'),
+    _PortfolioPeriod('MÊS', 'monthly'),
     _PortfolioPeriod('6M', '6months'),
     _PortfolioPeriod('YTD', 'ytd'),
   ];
@@ -73,14 +73,14 @@ class _PortfolioViewState extends State<PortfolioView> {
       if (!mounted) return;
       setState(() {
         _chartError = e.code == 'internal'
-            ? 'Nao foi possivel carregar o grafico agora.'
-            : e.message ?? 'Nao foi possivel carregar o grafico.';
+            ? 'Não foi possível carregar o gráfico agora.'
+            : e.message ?? 'Não foi possível carregar o gráfico.';
         _isChartLoading = false;
       });
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _chartError = 'Erro inesperado ao carregar o grafico.';
+        _chartError = 'Erro inesperado ao carregar o gráfico.';
         _isChartLoading = false;
       });
     }
@@ -112,7 +112,7 @@ class _PortfolioViewState extends State<PortfolioView> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'PATRIMONIO TOTAL',
+          'PATRIMÔNIO TOTAL',
           style: TextStyle(
             color: HomePalette.mutedText,
             fontSize: 11,
@@ -231,7 +231,7 @@ class _PortfolioViewState extends State<PortfolioView> {
     if (_points.isEmpty) {
       return const Center(
         child: Text(
-          'Ainda nao ha dados suficientes para exibir o grafico.',
+          'Ainda não há dados suficientes para exibir o gráfico.',
           textAlign: TextAlign.center,
           style: TextStyle(
             color: HomePalette.mutedText,
@@ -386,7 +386,7 @@ class _PortfolioViewState extends State<PortfolioView> {
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 18),
             child: Text(
-              'Voce ainda nao possui tokens.',
+              'Você ainda não possui tokens.',
               style: TextStyle(
                 color: HomePalette.mutedText,
                 fontSize: 13,

@@ -167,7 +167,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
                 children: [
                   const TextSpan(
-                    text: 'Ao clicar em cadastrar, voce concorda com nossos\n',
+                    text: 'Ao clicar em cadastrar, você concorda com nossos\n',
                   ),
                   TextSpan(
                     text: 'Termos de Uso',
