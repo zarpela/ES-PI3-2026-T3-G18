@@ -26,6 +26,7 @@ dependencies:
   path_provider: ^2.1.5
   firebase_storage: ^13.3.0
   video_player: ^2.10.0
+  fl_chart: ^1.2.0
 
 dev_dependencies:
   flutter_test:
