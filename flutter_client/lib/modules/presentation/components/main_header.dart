@@ -9,13 +9,12 @@ class MainHeader extends StatelessWidget {
   final HomeController controller;
   final VoidCallback? onProfileTap;
 
-
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 48,
+      height: 54,
       child: Stack(
-        alignment: Alignment.center,
+        alignment: Alignment.centerLeft,
         children: [
           Align(
             alignment: Alignment.centerLeft,
@@ -65,21 +64,27 @@ class MainHeader extends StatelessWidget {
                   Positioned(
                     right: -2,
                     bottom: -2,
-                    child: Container(
-                      width: 18,
-                      height: 18
-                    ),
+                    child: const SizedBox(width: 18, height: 18),
                   ),
                 ],
               ),
             ),
           ),
-          const Text(
-            'MesclaInvest',
-            style: TextStyle(
-              color: HomePalette.brandPink,
-              fontSize: 21,
-              fontWeight: FontWeight.w800,
+          Positioned.fill(
+            left: 58,
+            right: 0,
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                controller.greetingLabel,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: HomePalette.deepText,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
             ),
           ),
         ],

@@ -47,6 +47,13 @@ type BuyMarketplaceOfferInput = WalletAccessInput & {
   quantity?: number | string;
 };
 
+type UpdateMarketplaceOfferInput = WalletAccessInput & {
+  offerId?: string;
+  quantity?: number | string;
+  unitPrice?: number | string;
+  price?: number | string;
+};
+
 type MarketplaceOffersInput = {
   stage?: string;
   startupId?: string;
@@ -87,7 +94,8 @@ type WalletTransactionType =
   | "SELL_OFFER_CREATED"
   | "BUY_MARKETPLACE"
   | "SELL_MARKETPLACE"
-  | "OFFER_CANCELLED";
+  | "OFFER_CANCELLED"
+  | "OFFER_UPDATED";
 
 type WalletTransactionDocument = {
   balanceAfter: number;
@@ -939,7 +947,36 @@ async function syncWalletSummary(userId: string): Promise<void> {
       document.data() as Partial<WalletHoldingDocument>,
     ),
   );
-  const summary = calculateWalletSummary(normalizedHoldings);
+  const normalizedWithOfficialPrices = await Promise.all(
+    normalizedHoldings.map(async (holding) => {
+      try {
+        const startupData = await getStartupDataOrThrow(holding.startupId);
+        const officialUnitPrice = resolveOfficialStartupUnitPrice(startupData);
+        const refreshed = buildHoldingDocument({
+          userId,
+          startupId: holding.startupId,
+          startupName: holding.startupName,
+          startupSymbol: holding.startupSymbol,
+          quantity: holding.quantity,
+          reservedQuantity: holding.reservedQuantity,
+          averagePrice: holding.averagePrice,
+          currentPrice: officialUnitPrice,
+        });
+
+        await getWalletHoldingRef(userId, holding.startupId)
+          .set(refreshed, {merge: true});
+
+        return normalizeWalletHoldingDocument(
+          holding.startupId,
+          userId,
+          refreshed,
+        );
+      } catch {
+        return holding;
+      }
+    }),
+  );
+  const summary = calculateWalletSummary(normalizedWithOfficialPrices);
 
   await walletRef.set({
     totalInvested: summary.totalInvested,
@@ -1067,6 +1104,10 @@ function resolveStartupUnitPrice(
   }
 
   return 1;
+}
+
+function resolveOfficialStartupUnitPrice(startupData: StartupRecord): number {
+  return resolveStartupUnitPrice(startupData);
 }
 
 function resolvePrimaryAvailableQuantity(
@@ -1484,6 +1525,7 @@ export const createSellOffer = async (data: SellOfferInput) => {
     data.startupSymbol,
     startupData,
   );
+  const officialUnitPrice = resolveOfficialStartupUnitPrice(startupData);
   const sellerName = await resolveUserName(userId);
   const walletRef = getWalletRef(userId);
   const holdingRef = getWalletHoldingRef(userId, startupId);
@@ -1530,7 +1572,7 @@ export const createSellOffer = async (data: SellOfferInput) => {
       quantity: holding.quantity,
       reservedQuantity,
       averagePrice: holding.averagePrice,
-      currentPrice: unitPrice,
+      currentPrice: officialUnitPrice,
     }));
     transaction.set(offerRef, buildOfferDocument({
       offerId: offerRef.id,
@@ -1648,6 +1690,7 @@ export const buyMarketplaceOffer = async (data: BuyMarketplaceOfferInput) => {
   const buyerWalletRef = getWalletRef(buyerId);
   const buyerTransactionRef = getWalletTransactionsRef(buyerId).doc();
   let sellerIdForSummary = "";
+  let officialUnitPrice = 0;
 
   await db.runTransaction(async (transaction) => {
     const offerSnapshot = await transaction.get(offerRef);
@@ -1673,6 +1716,8 @@ export const buyMarketplaceOffer = async (data: BuyMarketplaceOfferInput) => {
       throw createServiceError(400, "Quantidade maior que a oferta disponivel.");
     }
 
+    const startupData = await getStartupDataOrThrow(offer.startupId);
+    officialUnitPrice = resolveOfficialStartupUnitPrice(startupData);
     const sellerId = offer.sellerId;
     sellerIdForSummary = sellerId;
     const sellerWalletRef = getWalletRef(sellerId);
@@ -1772,7 +1817,7 @@ export const buyMarketplaceOffer = async (data: BuyMarketplaceOfferInput) => {
       quantity: buyerTokensAfter,
       reservedQuantity: buyerReservedQuantity,
       averagePrice: buyerUpdatedAveragePrice,
-      currentPrice: offer.unitPrice,
+      currentPrice: officialUnitPrice,
     }));
 
     if (sellerTokensAfter <= 0) {
@@ -1788,7 +1833,7 @@ export const buyMarketplaceOffer = async (data: BuyMarketplaceOfferInput) => {
         quantity: sellerTokensAfter,
         reservedQuantity: sellerReservedAfter,
         averagePrice: sellerHolding.averagePrice,
-        currentPrice: offer.unitPrice,
+        currentPrice: officialUnitPrice,
       }));
     }
 
@@ -1848,6 +1893,245 @@ export const buyMarketplaceOffer = async (data: BuyMarketplaceOfferInput) => {
   ]);
 
   return buildWalletOverview(buyerId, historyLimit);
+};
+
+export const cancelMarketplaceOffer = async (data: WalletAccessInput & {
+  offerId?: string;
+}) => {
+  const userId = resolveAuthorizedUserId(data);
+  const offerId = normalizeString(data.offerId);
+  const historyLimit = parseHistoryLimit(data.historyLimit);
+
+  if (!offerId) {
+    throw createServiceError(400, "offerId e obrigatorio.");
+  }
+
+  const offerRef = getMarketplaceOfferRef(offerId);
+  const walletRef = getWalletRef(userId);
+  const transactionRef = getWalletTransactionsRef(userId).doc();
+
+  await db.runTransaction(async (transaction) => {
+    const offerSnapshot = await transaction.get(offerRef);
+
+    if (!offerSnapshot.exists) {
+      throw createServiceError(404, "Oferta nao encontrada.");
+    }
+
+    const offer = normalizeOfferDocument(
+      offerSnapshot.id,
+      offerSnapshot.data() as Partial<MarketplaceOfferDocument>,
+    );
+
+    if (offer.sellerId !== userId) {
+      throw createServiceError(403, "Apenas o dono pode cancelar esta oferta.");
+    }
+
+    if (offer.status !== "open" && offer.status !== "partial") {
+      throw createServiceError(400, "Oferta nao pode mais ser cancelada.");
+    }
+
+    const [walletSnapshot, holdingSnapshot, startupData] = await Promise.all([
+      transaction.get(walletRef),
+      transaction.get(getWalletHoldingRef(userId, offer.startupId)),
+      getStartupDataOrThrow(offer.startupId),
+    ]);
+
+    if (!walletSnapshot.exists) {
+      throw createServiceError(404, "Carteira nao encontrada para o usuario informado.");
+    }
+
+    if (!holdingSnapshot.exists) {
+      throw createServiceError(400, "Tokens reservados nao encontrados.");
+    }
+
+    const wallet = normalizeWalletDocument(
+      userId,
+      walletSnapshot.data() as Partial<WalletDocument>,
+    );
+    const holding = normalizeWalletHoldingDocument(
+      offer.startupId,
+      userId,
+      holdingSnapshot.data() as Partial<WalletHoldingDocument>,
+    );
+    const releasedQuantity = Math.min(
+      holding.reservedQuantity,
+      offer.remainingQuantity,
+    );
+
+    transaction.set(getWalletHoldingRef(userId, offer.startupId), buildHoldingDocument({
+      userId,
+      startupId: holding.startupId,
+      startupName: holding.startupName || offer.startupName,
+      startupSymbol: holding.startupSymbol ||
+        deriveStartupSymbol(offer.startupId, offer.startupName),
+      quantity: holding.quantity,
+      reservedQuantity: holding.reservedQuantity - releasedQuantity,
+      averagePrice: holding.averagePrice,
+      currentPrice: resolveOfficialStartupUnitPrice(startupData),
+    }));
+    transaction.set(offerRef, {
+      status: "cancelled",
+      remainingQuantity: 0,
+      updatedAt: FieldValue.serverTimestamp(),
+    }, {merge: true});
+    transaction.set(transactionRef, buildTransactionDocument({
+      userId,
+      type: "OFFER_CANCELLED",
+      startupId: offer.startupId,
+      startupName: offer.startupName,
+      startupSymbol: holding.startupSymbol ||
+        deriveStartupSymbol(offer.startupId, offer.startupName),
+      quantity: releasedQuantity,
+      unitPrice: offer.unitPrice,
+      totalValue: roundCurrency(releasedQuantity * offer.unitPrice),
+      balanceBefore: wallet.balance,
+      balanceAfter: wallet.balance,
+      tokensBefore: holding.quantity,
+      tokensAfter: holding.quantity,
+      offerId,
+      status: "cancelled",
+      description: `Oferta publica de venda cancelada para ${offer.startupName}`,
+    }));
+  });
+
+  await syncWalletSummary(userId);
+  return buildWalletOverview(userId, historyLimit);
+};
+
+export const updateMarketplaceOffer = async (
+  data: UpdateMarketplaceOfferInput,
+) => {
+  const userId = resolveAuthorizedUserId(data);
+  const offerId = normalizeString(data.offerId);
+  const nextUnitPriceRaw = data.unitPrice ?? data.price;
+  const hasNextPrice = nextUnitPriceRaw !== undefined;
+  const hasNextQuantity = data.quantity !== undefined;
+  const nextUnitPrice = hasNextPrice ?
+    parsePositiveCurrency(nextUnitPriceRaw, "unitPrice") :
+    null;
+  const nextQuantity = hasNextQuantity ?
+    parsePositiveQuantity(data.quantity, "quantity") :
+    null;
+  const historyLimit = parseHistoryLimit(data.historyLimit);
+
+  if (!offerId) {
+    throw createServiceError(400, "offerId e obrigatorio.");
+  }
+
+  if (!hasNextPrice && !hasNextQuantity) {
+    throw createServiceError(400, "Informe preco ou quantidade para alterar.");
+  }
+
+  const offerRef = getMarketplaceOfferRef(offerId);
+  const walletRef = getWalletRef(userId);
+  const transactionRef = getWalletTransactionsRef(userId).doc();
+
+  await db.runTransaction(async (transaction) => {
+    const offerSnapshot = await transaction.get(offerRef);
+
+    if (!offerSnapshot.exists) {
+      throw createServiceError(404, "Oferta nao encontrada.");
+    }
+
+    const offer = normalizeOfferDocument(
+      offerSnapshot.id,
+      offerSnapshot.data() as Partial<MarketplaceOfferDocument>,
+    );
+
+    if (offer.sellerId !== userId) {
+      throw createServiceError(403, "Apenas o dono pode alterar esta oferta.");
+    }
+
+    if (offer.status !== "open" && offer.status !== "partial") {
+      throw createServiceError(400, "Oferta nao pode mais ser alterada.");
+    }
+
+    const [walletSnapshot, holdingSnapshot, startupData] = await Promise.all([
+      transaction.get(walletRef),
+      transaction.get(getWalletHoldingRef(userId, offer.startupId)),
+      getStartupDataOrThrow(offer.startupId),
+    ]);
+
+    if (!walletSnapshot.exists) {
+      throw createServiceError(404, "Carteira nao encontrada para o usuario informado.");
+    }
+
+    if (!holdingSnapshot.exists) {
+      throw createServiceError(400, "Tokens reservados nao encontrados.");
+    }
+
+    const wallet = normalizeWalletDocument(
+      userId,
+      walletSnapshot.data() as Partial<WalletDocument>,
+    );
+    const holding = normalizeWalletHoldingDocument(
+      offer.startupId,
+      userId,
+      holdingSnapshot.data() as Partial<WalletHoldingDocument>,
+    );
+    const soldQuantity = offer.quantity - offer.remainingQuantity;
+    const updatedQuantity = nextQuantity ?? offer.quantity;
+
+    if (updatedQuantity < soldQuantity) {
+      throw createServiceError(400, "Quantidade menor que os tokens ja vendidos.");
+    }
+
+    const reservedDelta = updatedQuantity - offer.quantity;
+    const newReservedQuantity = holding.reservedQuantity + reservedDelta;
+
+    if (newReservedQuantity < 0 || newReservedQuantity > holding.quantity) {
+      throw createServiceError(400, "Quantidade de tokens insuficiente.");
+    }
+
+    const updatedUnitPrice = nextUnitPrice ?? offer.unitPrice;
+    const updatedRemainingQuantity = updatedQuantity - soldQuantity;
+    const updatedStatus: MarketplaceOfferStatus =
+      updatedRemainingQuantity === 0 ? "closed" :
+        soldQuantity > 0 ? "partial" : "open";
+
+    transaction.set(getWalletHoldingRef(userId, offer.startupId), buildHoldingDocument({
+      userId,
+      startupId: holding.startupId,
+      startupName: holding.startupName || offer.startupName,
+      startupSymbol: holding.startupSymbol ||
+        deriveStartupSymbol(offer.startupId, offer.startupName),
+      quantity: holding.quantity,
+      reservedQuantity: newReservedQuantity,
+      averagePrice: holding.averagePrice,
+      currentPrice: resolveOfficialStartupUnitPrice(startupData),
+    }));
+    transaction.set(offerRef, {
+      quantity: updatedQuantity,
+      remainingQuantity: updatedRemainingQuantity,
+      unitPrice: updatedUnitPrice,
+      pricePerToken: updatedUnitPrice,
+      price: updatedUnitPrice,
+      totalValue: roundCurrency(updatedQuantity * updatedUnitPrice),
+      status: updatedStatus,
+      updatedAt: FieldValue.serverTimestamp(),
+    }, {merge: true});
+    transaction.set(transactionRef, buildTransactionDocument({
+      userId,
+      type: "OFFER_UPDATED",
+      startupId: offer.startupId,
+      startupName: offer.startupName,
+      startupSymbol: holding.startupSymbol ||
+        deriveStartupSymbol(offer.startupId, offer.startupName),
+      quantity: updatedQuantity,
+      unitPrice: updatedUnitPrice,
+      totalValue: roundCurrency(updatedQuantity * updatedUnitPrice),
+      balanceBefore: wallet.balance,
+      balanceAfter: wallet.balance,
+      tokensBefore: holding.quantity,
+      tokensAfter: holding.quantity,
+      offerId,
+      status: updatedStatus,
+      description: `Oferta publica de venda alterada para ${offer.startupName}`,
+    }));
+  });
+
+  await syncWalletSummary(userId);
+  return buildWalletOverview(userId, historyLimit);
 };
 
 export const listWalletTokens = async (data: WalletAccessInput) => {

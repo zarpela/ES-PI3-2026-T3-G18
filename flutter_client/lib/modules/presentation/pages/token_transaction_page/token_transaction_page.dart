@@ -472,7 +472,7 @@ class _TokenTransactionPageState extends State<TokenTransactionPage> {
                                   content: Text(
                                     isBuy
                                         ? 'Compra realizada com sucesso!'
-                                        : 'Venda realizada com sucesso!',
+                                        : 'Oferta de venda criada com sucesso!',
                                   ),
                                   backgroundColor: Colors.green,
                                 ),

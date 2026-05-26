@@ -42,12 +42,13 @@ class _AllInvestmentsPageState extends State<AllInvestmentsPage> {
   Widget build(BuildContext context) {
     final tokens = controller.walletTokens;
 
-    final sectors = tokens
-        .map((token) => _sectorForToken(token).trim())
-        .where((sector) => sector.isNotEmpty)
-        .toSet()
-        .toList()
-      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    final sectors =
+        tokens
+            .map((token) => _sectorForToken(token).trim())
+            .where((sector) => sector.isNotEmpty)
+            .toSet()
+            .toList()
+          ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
 
     final filters = <String>['TODOS', ...sectors.map((s) => s.toUpperCase())];
 
@@ -93,7 +94,9 @@ class _AllInvestmentsPageState extends State<AllInvestmentsPage> {
               builder: (_) {
                 if (controller.isWalletLoading && tokens.isEmpty) {
                   return const Center(
-                    child: CircularProgressIndicator(color: HomePalette.brandPink),
+                    child: CircularProgressIndicator(
+                      color: HomePalette.brandPink,
+                    ),
                   );
                 }
 
@@ -129,28 +132,28 @@ class _AllInvestmentsPageState extends State<AllInvestmentsPage> {
     final startup = _findStartupById(startupId);
     final sector = _sectorForToken(token);
     final stage = (startup?['stage'] ?? '').toString().replaceAll('_', ' ');
-    final name = (token['startupName'] ?? startup?['name'] ?? startupId).toString();
+    final name = (token['startupName'] ?? startup?['name'] ?? startupId)
+        .toString();
 
     final quantity = _asInt(token['quantity']);
     final averagePrice = _asDouble(token['averagePrice']);
     final currentPrice = _calculateTokenPrice(startup);
 
-    final usedPrice = currentPrice > 0 ? currentPrice : averagePrice;
-    final totalValue = quantity * usedPrice;
-    final returnPercent = (averagePrice > 0 && currentPrice > 0)
-        ? ((currentPrice / averagePrice) - 1) * 100
-        : 0.0;
+    final totalValue = _asDouble(token['currentValue']) > 0
+        ? _asDouble(token['currentValue'])
+        : quantity * (currentPrice > 0 ? currentPrice : averagePrice);
+    final returnPercent = _asDouble(token['profitLossPercent']);
 
     final isPositive = returnPercent >= 0;
-    final sign = returnPercent >= 0 ? '+' : '';
-    final rendimento =
-        '$sign${returnPercent.toStringAsFixed(1).replaceAll('.', ',')}%';
+    final rendimento = _formatPercent(returnPercent);
 
     return _InvestmentCard(
       logoText: sector.isNotEmpty ? sector.substring(0, 1).toUpperCase() : 'T',
       nome: name,
       setor: sector.isEmpty ? 'TOKENS' : sector.toUpperCase(),
-      ticker: stage.isEmpty ? '$quantity TOKENS' : '${stage.toUpperCase()} • $quantity TOKENS',
+      ticker: stage.isEmpty
+          ? '$quantity TOKENS'
+          : '${stage.toUpperCase()} • $quantity TOKENS',
       valor: controller.formatCurrencyAmount(totalValue),
       rendimento: rendimento,
       isPositive: isPositive,
@@ -163,10 +166,7 @@ class _AllInvestmentsPageState extends State<AllInvestmentsPage> {
     if (startupId.isEmpty) return;
     Modular.to.pushNamed(
       AppRoutes.transactionPage,
-      arguments: {
-        'type': type,
-        'id': startupId,
-      },
+      arguments: {'type': type, 'id': startupId},
     );
   }
 
@@ -210,6 +210,15 @@ class _AllInvestmentsPageState extends State<AllInvestmentsPage> {
     if (value is num) return value.toInt();
     return int.tryParse(value?.toString() ?? '') ?? 0;
   }
+
+  String _formatPercent(double value) {
+    if (!value.isFinite || value.abs() > 1000) {
+      return '--';
+    }
+
+    final normalized = value.toStringAsFixed(2).replaceAll('.', ',');
+    return '${value >= 0 ? '+' : ''}$normalized%';
+  }
 }
 
 class _InvestmentCard extends StatelessWidget {
@@ -237,10 +246,12 @@ class _InvestmentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color trendColor =
-        isPositive ? const Color(0xFF27AE60) : const Color(0xFFD93B3B);
-    final IconData trendIcon =
-        isPositive ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded;
+    final Color trendColor = isPositive
+        ? const Color(0xFF27AE60)
+        : const Color(0xFFD93B3B);
+    final IconData trendIcon = isPositive
+        ? Icons.arrow_upward_rounded
+        : Icons.arrow_downward_rounded;
     const Color deepText = Color(0xFF241B60);
     const Color mutedText = Color(0xFF756E93);
     const Color brandPink = Color(0xFFD4147A);
@@ -289,9 +300,11 @@ class _InvestmentCard extends StatelessWidget {
                   children: [
                     Text(
                       nome,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         color: deepText,
-                        fontSize: 18,
+                        fontSize: 17,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
@@ -308,33 +321,43 @@ class _InvestmentCard extends StatelessWidget {
                   ],
                 ),
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    valor,
-                    style: const TextStyle(
-                      color: deepText,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Icon(trendIcon, color: trendColor, size: 12),
-                      const SizedBox(width: 2),
-                      Text(
-                        rendimento,
-                        style: TextStyle(
-                          color: trendColor,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
-                        ),
+              const SizedBox(width: 10),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 112),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      valor,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: deepText,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
                       ),
-                    ],
-                  ),
-                ],
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(trendIcon, color: trendColor, size: 12),
+                        const SizedBox(width: 2),
+                        Flexible(
+                          child: Text(
+                            rendimento,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: trendColor,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ],
           ),

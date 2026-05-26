@@ -72,7 +72,9 @@ class _PortfolioViewState extends State<PortfolioView> {
     } on FirebaseFunctionsException catch (e) {
       if (!mounted) return;
       setState(() {
-        _chartError = e.message ?? 'Nao foi possivel carregar o grafico.';
+        _chartError = e.code == 'internal'
+            ? 'Nao foi possivel carregar o grafico agora.'
+            : e.message ?? 'Nao foi possivel carregar o grafico.';
         _isChartLoading = false;
       });
     } catch (e) {
@@ -106,10 +108,6 @@ class _PortfolioViewState extends State<PortfolioView> {
         ? _asDouble(wallet['portfolioTotal'])
         : widget.controller.availableBalance +
               _asDouble(wallet['totalCurrentValue']);
-    final returnPercent = _asDouble(wallet['totalProfitLossPercent']);
-    final returnLabel =
-        '${returnPercent >= 0 ? '+' : ''}${returnPercent.toStringAsFixed(1).replaceAll('.', ',')}%';
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -135,19 +133,6 @@ class _PortfolioViewState extends State<PortfolioView> {
                   color: HomePalette.deepText,
                   fontSize: 30,
                   fontWeight: FontWeight.w900,
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: Text(
-                returnLabel,
-                style: TextStyle(
-                  color: returnPercent >= 0
-                      ? const Color(0xFF27AE60)
-                      : const Color(0xFFD93B3B),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
                 ),
               ),
             ),
@@ -246,7 +231,7 @@ class _PortfolioViewState extends State<PortfolioView> {
     if (_points.isEmpty) {
       return const Center(
         child: Text(
-          'Sem dados de portfolio para o periodo.',
+          'Ainda nao ha dados suficientes para exibir o grafico.',
           textAlign: TextAlign.center,
           style: TextStyle(
             color: HomePalette.mutedText,
@@ -340,8 +325,7 @@ class _PortfolioViewState extends State<PortfolioView> {
           child: _MetricaCard(
             icon: Icons.trending_up_rounded,
             title: 'RENTABILIDADE',
-            value:
-                '${_asDouble(wallet['totalProfitLossPercent']).toStringAsFixed(1).replaceAll('.', ',')}%',
+            value: _formatPercent(_asDouble(wallet['totalProfitLossPercent'])),
             iconColor: HomePalette.brandPink,
           ),
         ),
@@ -443,101 +427,134 @@ class _PortfolioViewState extends State<PortfolioView> {
           ),
         ],
       ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF7EEF7),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Icon(_iconForSector(sector), color: HomePalette.deepText),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: HomePalette.deepText,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final compact = constraints.maxWidth < 330;
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF7EEF7),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Icon(
+                      _iconForSector(sector),
+                      color: HomePalette.deepText,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${sector.toUpperCase()} - $quantity TOKENS',
-                  style: const TextStyle(
-                    color: HomePalette.mutedText,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () =>
-                            _openTransaction(startupId, TransactionType.sell),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: HomePalette.brandPink,
-                          side: BorderSide(
-                            color: HomePalette.brandPink.withValues(
-                              alpha: 0.25,
-                            ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: HomePalette.deepText,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
                           ),
                         ),
-                        child: const Text('Vender'),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () =>
-                            _openTransaction(startupId, TransactionType.buy),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: HomePalette.brandPink,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
+                        const SizedBox(height: 4),
+                        Text(
+                          '${sector.toUpperCase()} - $quantity TOKENS',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: HomePalette.mutedText,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
-                        child: const Text('Comprar'),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: compact ? 104 : 124),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          widget.controller.formatCurrencyAmount(currentValue),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: HomePalette.deepText,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _formatPercent(profitPercent),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: isNegative
+                                ? const Color(0xFFD93B3B)
+                                : const Color(0xFF27AE60),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () =>
+                          _openTransaction(startupId, TransactionType.sell),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: HomePalette.brandPink,
+                        side: BorderSide(
+                          color: HomePalette.brandPink.withValues(alpha: 0.25),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      child: const Text(
+                        'Vender',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 10),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                widget.controller.formatCurrencyAmount(currentValue),
-                style: const TextStyle(
-                  color: HomePalette.deepText,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '${profitPercent >= 0 ? '+' : ''}${profitPercent.toStringAsFixed(1).replaceAll('.', ',')}%',
-                style: TextStyle(
-                  color: isNegative
-                      ? const Color(0xFFD93B3B)
-                      : const Color(0xFF27AE60),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () =>
+                          _openTransaction(startupId, TransactionType.buy),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: HomePalette.brandPink,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      child: const Text(
+                        'Comprar',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
-          ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -595,6 +612,15 @@ class _PortfolioViewState extends State<PortfolioView> {
     if (value is int) return value;
     if (value is num) return value.toInt();
     return int.tryParse(value?.toString() ?? '') ?? 0;
+  }
+
+  String _formatPercent(double value) {
+    if (!value.isFinite || value.abs() > 1000) {
+      return '--';
+    }
+
+    final normalized = value.toStringAsFixed(2).replaceAll('.', ',');
+    return '${value >= 0 ? '+' : ''}$normalized%';
   }
 }
 

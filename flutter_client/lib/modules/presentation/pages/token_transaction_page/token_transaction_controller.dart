@@ -103,7 +103,9 @@ abstract class _TokenTransactionControllerBase with Store {
         orElse: () => <String, dynamic>{},
       );
 
-      availableTokenBalance = _asInt(ownedToken['quantity']);
+      availableTokenBalance = _asInt(
+        ownedToken['availableQuantity'] ?? ownedToken['quantity'],
+      );
       final averagePrice = _asDouble(ownedToken['averagePrice']);
 
       final startup = await _fetchStartupById(startupId);
@@ -117,9 +119,7 @@ abstract class _TokenTransactionControllerBase with Store {
         fallback: initialPricePerToken ?? averagePrice,
       );
 
-      pricePerToken = transactionType == TransactionType.sell
-          ? (averagePrice > 0 ? averagePrice : tokenPrice)
-          : tokenPrice;
+      pricePerToken = tokenPrice;
 
       quantity = 1;
     } catch (e) {

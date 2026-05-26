@@ -7,9 +7,11 @@ import {Request, Response} from "express";
 import {
   buyOffer,
   buyTokens,
+  cancelOffer,
   getMarketplaceOffers,
   getWalletTransactionHistory,
   sellTokens,
+  updateOffer,
 } from "../services/marketService";
 
 function getErrorStatus(error: unknown): number {
@@ -128,6 +130,66 @@ export const buyMarketplaceOfferHandler = async (req: Request, res: Response) =>
     });
   } catch (error) {
     console.error("Erro ao comprar oferta do marketplace.", error);
+
+    return res.status(getErrorStatus(error)).json({
+      ok: false,
+      error: getErrorMessage(error),
+      message: getErrorMessage(error),
+    });
+  }
+};
+
+// Abdallah El-Khatib
+export const cancelMarketplaceOfferHandler = async (
+  req: Request,
+  res: Response,
+) => {
+  try {
+    const overview = await cancelOffer({
+      ...req.body,
+      offerId: String(req.params.offerId ?? req.body.offerId ?? ""),
+      authenticatedUserId: getAuthenticatedUserId(res),
+    });
+
+    return res.status(200).json({
+      ok: true,
+      message: "Oferta cancelada com sucesso.",
+      wallet: overview.wallet,
+      tokens: overview.tokens,
+      recentTransactions: overview.recentTransactions,
+    });
+  } catch (error) {
+    console.error("Erro ao cancelar oferta do marketplace.", error);
+
+    return res.status(getErrorStatus(error)).json({
+      ok: false,
+      error: getErrorMessage(error),
+      message: getErrorMessage(error),
+    });
+  }
+};
+
+// Abdallah El-Khatib
+export const updateMarketplaceOfferHandler = async (
+  req: Request,
+  res: Response,
+) => {
+  try {
+    const overview = await updateOffer({
+      ...req.body,
+      offerId: String(req.params.offerId ?? req.body.offerId ?? ""),
+      authenticatedUserId: getAuthenticatedUserId(res),
+    });
+
+    return res.status(200).json({
+      ok: true,
+      message: "Oferta alterada com sucesso.",
+      wallet: overview.wallet,
+      tokens: overview.tokens,
+      recentTransactions: overview.recentTransactions,
+    });
+  } catch (error) {
+    console.error("Erro ao alterar oferta do marketplace.", error);
 
     return res.status(getErrorStatus(error)).json({
       ok: false,

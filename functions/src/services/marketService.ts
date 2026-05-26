@@ -8,9 +8,11 @@ RA: [SEU RA]
 import {
   buyMarketplaceOffer,
   buyStartupTokens,
+  cancelMarketplaceOffer,
   createSellOffer,
   getWalletTransactionHistory,
   listMarketplaceOffers,
+  updateMarketplaceOffer,
 } from "./walletService";
 
 type MarketOperationInput = {
@@ -49,5 +51,13 @@ export const getMarketplaceOffers = async (data: MarketOffersInput = {}) =>
 export const buyOffer = async (data: MarketOperationInput) =>
   buyMarketplaceOffer(data);
 
-export {getWalletTransactionHistory};
+export const cancelOffer = async (data: MarketOperationInput) =>
+  cancelMarketplaceOffer(data);
 
+export const updateOffer = async (data: MarketOperationInput) =>
+  updateMarketplaceOffer({
+    ...data,
+    unitPrice: data.unitPrice ?? data.price,
+  });
+
+export {getWalletTransactionHistory};

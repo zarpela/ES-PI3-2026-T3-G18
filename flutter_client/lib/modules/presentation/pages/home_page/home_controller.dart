@@ -107,6 +107,15 @@ class HomeController extends ChangeNotifier {
     return 'Usuario';
   }
 
+  String get greetingLabel {
+    final displayName = currentUser?.displayName?.trim() ?? '';
+    if (displayName.isNotEmpty) {
+      return 'Ol\u00e1, ${displayName.split(RegExp(r'\s+')).first}!';
+    }
+
+    return 'Ol\u00e1!';
+  }
+
   String get userInitials {
     final parts = userLabel
         .split(RegExp(r'\s+'))
@@ -178,7 +187,11 @@ class HomeController extends ChangeNotifier {
     }
 
     final value = estimatedReturnPercent ?? 0;
-    final normalized = value.toStringAsFixed(1).replaceAll('.', ',');
+    if (value.abs() > 1000) {
+      return '';
+    }
+
+    final normalized = value.toStringAsFixed(2).replaceAll('.', ',');
     final sign = value >= 0 ? '+' : '';
     // Abdallah El-Khatib
     return '$sign$normalized%';
@@ -1002,7 +1015,7 @@ class HomeController extends ChangeNotifier {
   }
 
   String _formatPercent(double value) {
-    final normalized = value.toStringAsFixed(1).replaceAll('.', ',');
+    final normalized = value.toStringAsFixed(2).replaceAll('.', ',');
     return '${value >= 0 ? '+' : ''}$normalized%';
   }
 

@@ -78,6 +78,8 @@ abstract class _MarketplaceControllerBase with Store {
   @observable
   String? errorMessage;
 
+  String get currentUserId => _auth.currentUser?.uid ?? '';
+
   @action
   void onSearchChanged(String value) => searchQuery = value;
 
@@ -139,6 +141,8 @@ abstract class _MarketplaceControllerBase with Store {
           return <String, dynamic>{
             'id': offerId,
             'offerId': offerId,
+            'ownerId': offer['ownerId'] ?? offer['sellerId'] ?? '',
+            'sellerId': offer['sellerId'] ?? offer['ownerId'] ?? '',
             'startupId': startupId,
             'startupName': startupName,
             'title': startupName,
@@ -222,6 +226,8 @@ abstract class _MarketplaceControllerBase with Store {
           headers: token == null ? null : {'Authorization': 'Bearer $token'},
         ),
       );
+
+      await fetchSellOrders();
     } on DioException catch (e) {
       debugPrint('MarketplaceController buyOffer Dio error: ${e.message}');
       errorMessage = _extractDioError(e);
@@ -229,6 +235,77 @@ abstract class _MarketplaceControllerBase with Store {
     } catch (e) {
       debugPrint('MarketplaceController buyOffer error: $e');
       errorMessage = 'Erro inesperado ao processar a compra.';
+      rethrow;
+    } finally {
+      isLoading = false;
+    }
+  }
+
+  Future<void> cancelOffer({required String offerId}) async {
+    isLoading = true;
+    errorMessage = null;
+
+    try {
+      final user = _auth.currentUser;
+      if (user == null) {
+        throw Exception('Usuario nao autenticado.');
+      }
+
+      final token = await user.getIdToken();
+
+      await _dio.delete(
+        'market/offers/$offerId',
+        options: Options(
+          headers: token == null ? null : {'Authorization': 'Bearer $token'},
+        ),
+      );
+
+      await fetchSellOrders();
+    } on DioException catch (e) {
+      debugPrint('MarketplaceController cancelOffer Dio error: ${e.message}');
+      errorMessage = _extractDioError(e);
+      rethrow;
+    } catch (e) {
+      debugPrint('MarketplaceController cancelOffer error: $e');
+      errorMessage = 'Erro inesperado ao cancelar a oferta.';
+      rethrow;
+    } finally {
+      isLoading = false;
+    }
+  }
+
+  Future<void> updateOffer({
+    required String offerId,
+    required int quantity,
+    required double price,
+  }) async {
+    isLoading = true;
+    errorMessage = null;
+
+    try {
+      final user = _auth.currentUser;
+      if (user == null) {
+        throw Exception('Usuario nao autenticado.');
+      }
+
+      final token = await user.getIdToken();
+
+      await _dio.patch(
+        'market/offers/$offerId',
+        data: {'quantity': quantity, 'price': price},
+        options: Options(
+          headers: token == null ? null : {'Authorization': 'Bearer $token'},
+        ),
+      );
+
+      await fetchSellOrders();
+    } on DioException catch (e) {
+      debugPrint('MarketplaceController updateOffer Dio error: ${e.message}');
+      errorMessage = _extractDioError(e);
+      rethrow;
+    } catch (e) {
+      debugPrint('MarketplaceController updateOffer error: $e');
+      errorMessage = 'Erro inesperado ao alterar a oferta.';
       rethrow;
     } finally {
       isLoading = false;
