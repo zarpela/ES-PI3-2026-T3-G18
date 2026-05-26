@@ -1,5 +1,6 @@
 //feito por marcelo
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_mobx/flutter_mobx.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:flutter_client/modules/presentation/pages/home_page/home_controller.dart';
@@ -29,6 +30,9 @@ class TokenTransactionPage extends StatefulWidget {
 
 class _TokenTransactionPageState extends State<TokenTransactionPage> {
   late final TokenTransactionController _controller;
+  final TextEditingController _quantityController = TextEditingController(
+    text: '1',
+  );
 
   static const Color primaryPink = Color(0xFFD4147A);
   static const Color darkText = Color(0xFF170B58);
@@ -41,11 +45,23 @@ class _TokenTransactionPageState extends State<TokenTransactionPage> {
     super.initState();
     _controller = TokenTransactionController(transactionType: widget.type);
     // Abdallah El-Khatib
-    _controller.loadAssetData(
-      widget.id,
-      initialStartupName: widget.startupName,
-      initialPricePerToken: widget.unitPrice,
-    );
+    _controller
+        .loadAssetData(
+          widget.id,
+          initialStartupName: widget.startupName,
+          initialPricePerToken: widget.unitPrice,
+        )
+        .then((_) {
+          if (mounted) {
+            _syncQuantityInput();
+          }
+        });
+  }
+
+  @override
+  void dispose() {
+    _quantityController.dispose();
+    super.dispose();
   }
 
   bool get isBuy => widget.type == TransactionType.buy;
@@ -114,6 +130,38 @@ class _TokenTransactionPageState extends State<TokenTransactionPage> {
         ],
       ),
     );
+  }
+
+  void _syncQuantityInput() {
+    final text = '${_controller.quantity}';
+    if (_quantityController.text == text) {
+      return;
+    }
+
+    _quantityController.value = TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(offset: text.length),
+    );
+  }
+
+  void _updateQuantityFromInput(String value) {
+    final parsed = int.tryParse(value);
+    if (parsed == null) {
+      return;
+    }
+
+    _controller.updateQuantity(parsed);
+    _syncQuantityInput();
+  }
+
+  void _decrementQuantity() {
+    _controller.decrementQuantity();
+    _syncQuantityInput();
+  }
+
+  void _incrementQuantity() {
+    _controller.incrementQuantity();
+    _syncQuantityInput();
   }
 
   @override
@@ -238,13 +286,32 @@ class _TokenTransactionPageState extends State<TokenTransactionPage> {
                           children: [
                             _buildCounterButton(
                               icon: Icons.remove,
-                              onTap: _controller.decrementQuantity,
+                              onTap: _decrementQuantity,
                             ),
-                            Observer(
-                              builder: (_) => Column(
-                                children: [
-                                  Text(
-                                    '${_controller.quantity}',
+                            Column(
+                              children: [
+                                SizedBox(
+                                  width: 112,
+                                  child: TextField(
+                                    controller: _quantityController,
+                                    textAlign: TextAlign.center,
+                                    keyboardType: TextInputType.number,
+                                    inputFormatters: [
+                                      FilteringTextInputFormatter.digitsOnly,
+                                    ],
+                                    onChanged: _updateQuantityFromInput,
+                                    onEditingComplete: () {
+                                      if (_quantityController.text.isEmpty) {
+                                        _controller.updateQuantity(1);
+                                        _syncQuantityInput();
+                                      }
+                                      FocusScope.of(context).unfocus();
+                                    },
+                                    decoration: const InputDecoration(
+                                      border: InputBorder.none,
+                                      isDense: true,
+                                      contentPadding: EdgeInsets.zero,
+                                    ),
                                     style: const TextStyle(
                                       color: darkText,
                                       fontSize: 40,
@@ -252,22 +319,22 @@ class _TokenTransactionPageState extends State<TokenTransactionPage> {
                                       height: 1.1,
                                     ),
                                   ),
-                                  const Text(
-                                    'TOKENS',
-                                    style: TextStyle(
-                                      color: mutedText,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: 1.5,
-                                    ),
+                                ),
+                                const Text(
+                                  'TOKENS',
+                                  style: TextStyle(
+                                    color: mutedText,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 1.5,
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
                             _buildCounterButton(
                               icon: Icons.add,
                               isPrimary: true,
-                              onTap: _controller.incrementQuantity,
+                              onTap: _incrementQuantity,
                             ),
                           ],
                         ),

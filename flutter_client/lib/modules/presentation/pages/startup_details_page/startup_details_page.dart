@@ -401,6 +401,78 @@ class _StartupDetailsPageState extends State<StartupDetailsPage> {
     return null;
   }
 
+  double readNumber(Map<String, dynamic> data, List<String> keys) {
+    for (final key in keys) {
+      final raw = data[key];
+      if (raw is num) return raw.toDouble();
+      if (raw is String && raw.trim().isNotEmpty) {
+        final parsed = double.tryParse(
+          raw
+              .replaceAll('R\$', '')
+              .replaceAll('.', '')
+              .replaceAll(',', '.')
+              .replaceAll(RegExp(r'[^0-9.-]'), ''),
+        );
+        if (parsed != null) return parsed;
+      }
+    }
+    return 0;
+  }
+
+  double tokenPriceFor(Map<String, dynamic> startup) {
+    final directPrice = readNumber(startup, [
+      'tokenPrice',
+      'unitPrice',
+      'valorToken',
+      'pricePerToken',
+    ]);
+
+    if (directPrice > 0) return directPrice;
+
+    final targetCapital = readNumber(startup, [
+      'targetCapital',
+      'metaCaptacao',
+    ]);
+    final emittedTokens = readNumber(startup, [
+      'totalEmittedTokens',
+      'tokensEmitidos',
+      'tokens',
+    ]);
+
+    if (targetCapital > 0 && emittedTokens > 0) {
+      return targetCapital / emittedTokens;
+    }
+
+    return 0;
+  }
+
+  int availableTokensFor(Map<String, dynamic> startup) {
+    final explicitAvailable = readNumber(startup, [
+      'availableTokens',
+      'tokensAvailable',
+      'tokensDisponiveis',
+    ]);
+
+    if (explicitAvailable > 0) return explicitAvailable.toInt();
+
+    final totalTokens = readNumber(startup, [
+      'totalEmittedTokens',
+      'tokensEmitidos',
+      'tokens',
+    ]);
+    final soldTokens = readNumber(startup, [
+      'soldTokens',
+      'tokensSold',
+      'tokensVendidos',
+    ]);
+
+    if (totalTokens > 0) {
+      return (totalTokens - soldTokens).clamp(0, totalTokens).toInt();
+    }
+
+    return 0;
+  }
+
   List<Map<String, dynamic>> extractListOfMaps(
     Map<String, dynamic> data,
     List<String> keys,
@@ -1335,6 +1407,11 @@ class _StartupDetailsPageState extends State<StartupDetailsPage> {
     final String startupId =
         '${startupData['id'] ?? startupData['docId'] ?? startupData['startupId'] ?? ''}'
             .trim();
+    final startupName =
+        readFirst(startupData, ['name', 'startupName', 'nomeStartup']) ??
+        startupId;
+    final unitPrice = tokenPriceFor(startupData);
+    final availableTokens = availableTokensFor(startupData);
     return Positioned(
       left: 12,
       right: 12,
@@ -1364,6 +1441,10 @@ class _StartupDetailsPageState extends State<StartupDetailsPage> {
                       arguments: {
                         "type": TransactionType.sell,
                         "id": startupId,
+                        "startupName": startupName,
+                        if (unitPrice > 0) "unitPrice": unitPrice,
+                        if (availableTokens > 0)
+                          "tokensDisponiveis": availableTokens,
                       },
                     );
                   },
@@ -1391,7 +1472,14 @@ class _StartupDetailsPageState extends State<StartupDetailsPage> {
                   onPressed: () {
                     Modular.to.pushNamed(
                       AppRoutes.transactionPage,
-                      arguments: {"type": TransactionType.buy, "id": startupId},
+                      arguments: {
+                        "type": TransactionType.buy,
+                        "id": startupId,
+                        "startupName": startupName,
+                        if (unitPrice > 0) "unitPrice": unitPrice,
+                        if (availableTokens > 0)
+                          "tokensDisponiveis": availableTokens,
+                      },
                     );
                   },
                   style: ElevatedButton.styleFrom(

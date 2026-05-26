@@ -250,6 +250,12 @@ type SerializedMarketplaceOffer = {
 
 type StartupRecord = Record<string, unknown>;
 
+type StartupLookupFallback = {
+  startupName?: string;
+  startupSymbol?: string;
+  unitPrice?: number | string;
+};
+
 type LegacyWalletToken = {
   amount?: number | string;
   averagePrice?: number | string;
@@ -1247,17 +1253,97 @@ function buildOfferDocument(data: {
   };
 }
 
-async function getStartupDataOrThrow(startupId: string): Promise<StartupRecord> {
+async function findStartupByField(
+  field: string,
+  startupId: string,
+): Promise<{data: StartupRecord; id: string} | null> {
+  const snapshot = await db
+    .collection(startupsCollection)
+    .where(field, "==", startupId)
+    .limit(1)
+    .get();
+
+  if (snapshot.empty) {
+    return null;
+  }
+
+  const document = snapshot.docs[0];
+
+  return {
+    id: document.id,
+    data: document.data() as StartupRecord,
+  };
+}
+
+function buildEmulatorStartupData(
+  startupId: string,
+  fallback?: StartupLookupFallback,
+): StartupRecord | null {
+  if (process.env.FUNCTIONS_EMULATOR !== "true") {
+    return null;
+  }
+
+  const startupName = normalizeString(fallback?.startupName) || startupId;
+  const unitPrice = parseNumber(fallback?.unitPrice);
+  const tokenPrice = Number.isFinite(unitPrice) && unitPrice > 0 ?
+    roundCurrency(unitPrice) :
+    1;
+
+  return {
+    id: startupId,
+    name: startupName,
+    startupName,
+    startupSymbol: normalizeString(fallback?.startupSymbol) ||
+      deriveStartupSymbol(startupId, startupName),
+    tokenPrice,
+    unitPrice: tokenPrice,
+    type: "emulatorFallback",
+  };
+}
+
+async function getStartupDataOrThrow(
+  startupId: string,
+  fallback?: StartupLookupFallback,
+): Promise<StartupRecord> {
   const startupSnapshot = await db
     .collection(startupsCollection)
     .doc(startupId)
     .get();
 
-  if (!startupSnapshot.exists) {
-    throw createServiceError(404, "Startup invalida.");
+  if (startupSnapshot.exists) {
+    return {
+      ...(startupSnapshot.data() as StartupRecord),
+      id: startupSnapshot.id,
+    };
   }
 
-  return startupSnapshot.data() as StartupRecord;
+  for (const field of ["id", "startupId", "docId"]) {
+    const match = await findStartupByField(field, startupId);
+
+    if (match) {
+      return {
+        ...match.data,
+        id: match.id,
+      };
+    }
+  }
+
+  const emulatorStartupData = buildEmulatorStartupData(startupId, fallback);
+
+  if (emulatorStartupData) {
+    await db
+      .collection(startupsCollection)
+      .doc(startupId)
+      .set({
+        ...emulatorStartupData,
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      }, {merge: true});
+
+    return emulatorStartupData;
+  }
+
+  throw createServiceError(404, "Startup invalida.");
 }
 
 export const createWallet = async (data: CreateWalletInput) => {
@@ -1389,10 +1475,19 @@ export const buyStartupTokens = async (data: BuyTokenInput) => {
 
   await ensureWalletDocument(userId);
 
-  const startupData = await getStartupDataOrThrow(startupId);
-  const startupName = getStartupName(startupId, data.startupName, startupData);
+  const startupData = await getStartupDataOrThrow(startupId, {
+    startupName: data.startupName,
+    startupSymbol: data.startupSymbol,
+    unitPrice: data.unitPrice ?? data.price,
+  });
+  const canonicalStartupId = normalizeString(startupData.id) || startupId;
+  const startupName = getStartupName(
+    canonicalStartupId,
+    data.startupName,
+    startupData,
+  );
   const startupSymbol = deriveStartupSymbol(
-    startupId,
+    canonicalStartupId,
     startupName,
     data.startupSymbol,
     startupData,
@@ -1411,10 +1506,10 @@ export const buyStartupTokens = async (data: BuyTokenInput) => {
   }
 
   const walletRef = getWalletRef(userId);
-  const holdingRef = getWalletHoldingRef(userId, startupId);
-  const startupRef = db.collection(startupsCollection).doc(startupId);
+  const holdingRef = getWalletHoldingRef(userId, canonicalStartupId);
+  const startupRef = db.collection(startupsCollection).doc(canonicalStartupId);
   const transactionRef = getWalletTransactionsRef(userId).doc();
-  const investorRef = getInvestorRef(startupId, userId);
+  const investorRef = getInvestorRef(canonicalStartupId, userId);
 
   await db.runTransaction(async (transaction) => {
     const [walletSnapshot, holdingSnapshot] = await Promise.all([
@@ -1438,7 +1533,7 @@ export const buyStartupTokens = async (data: BuyTokenInput) => {
 
     const existingHolding = holdingSnapshot.exists ?
       normalizeWalletHoldingDocument(
-        startupId,
+        canonicalStartupId,
         userId,
         holdingSnapshot.data() as Partial<WalletHoldingDocument>,
       ) :
@@ -1461,7 +1556,7 @@ export const buyStartupTokens = async (data: BuyTokenInput) => {
     }, {merge: true});
     transaction.set(holdingRef, buildHoldingDocument({
       userId,
-      startupId,
+      startupId: canonicalStartupId,
       startupName,
       startupSymbol,
       quantity: updatedQuantity,
@@ -1476,14 +1571,14 @@ export const buyStartupTokens = async (data: BuyTokenInput) => {
     }, {merge: true});
     transaction.set(investorRef, {
       userId,
-      startupId,
+      startupId: canonicalStartupId,
       startupName,
       updatedAt: FieldValue.serverTimestamp(),
     }, {merge: true});
     transaction.set(transactionRef, buildTransactionDocument({
       userId,
       type: "BUY",
-      startupId,
+      startupId: canonicalStartupId,
       startupName,
       startupSymbol,
       quantity,
@@ -1517,10 +1612,19 @@ export const createSellOffer = async (data: SellOfferInput) => {
 
   await ensureWalletDocument(userId);
 
-  const startupData = await getStartupDataOrThrow(startupId);
-  const startupName = getStartupName(startupId, data.startupName, startupData);
+  const startupData = await getStartupDataOrThrow(startupId, {
+    startupName: data.startupName,
+    startupSymbol: data.startupSymbol,
+    unitPrice: data.unitPrice ?? data.price,
+  });
+  const canonicalStartupId = normalizeString(startupData.id) || startupId;
+  const startupName = getStartupName(
+    canonicalStartupId,
+    data.startupName,
+    startupData,
+  );
   const startupSymbol = deriveStartupSymbol(
-    startupId,
+    canonicalStartupId,
     startupName,
     data.startupSymbol,
     startupData,
@@ -1528,7 +1632,7 @@ export const createSellOffer = async (data: SellOfferInput) => {
   const officialUnitPrice = resolveOfficialStartupUnitPrice(startupData);
   const sellerName = await resolveUserName(userId);
   const walletRef = getWalletRef(userId);
-  const holdingRef = getWalletHoldingRef(userId, startupId);
+  const holdingRef = getWalletHoldingRef(userId, canonicalStartupId);
   const offerRef = getMarketplaceOffersRef().doc();
   const transactionRef = getWalletTransactionsRef(userId).doc();
 
@@ -1551,7 +1655,7 @@ export const createSellOffer = async (data: SellOfferInput) => {
       walletSnapshot.data() as Partial<WalletDocument>,
     );
     const holding = normalizeWalletHoldingDocument(
-      startupId,
+      canonicalStartupId,
       userId,
       holdingSnapshot.data() as Partial<WalletHoldingDocument>,
     );
@@ -1578,7 +1682,7 @@ export const createSellOffer = async (data: SellOfferInput) => {
       offerId: offerRef.id,
       sellerId: userId,
       sellerName,
-      startupId,
+      startupId: canonicalStartupId,
       startupName,
       startupData,
       quantity,
@@ -1587,7 +1691,7 @@ export const createSellOffer = async (data: SellOfferInput) => {
     transaction.set(transactionRef, buildTransactionDocument({
       userId,
       type: "SELL_OFFER_CREATED",
-      startupId,
+      startupId: canonicalStartupId,
       startupName,
       startupSymbol,
       quantity,
@@ -1614,7 +1718,7 @@ export const createSellOffer = async (data: SellOfferInput) => {
         offerId: offerRef.id,
         sellerId: userId,
         sellerName,
-        startupId,
+        startupId: canonicalStartupId,
         startupName,
         startupData,
         quantity,

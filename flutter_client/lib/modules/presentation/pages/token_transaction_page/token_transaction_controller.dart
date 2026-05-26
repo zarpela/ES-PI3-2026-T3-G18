@@ -162,8 +162,10 @@ abstract class _TokenTransactionControllerBase with Store {
         endpoint,
         data: {
           'startupId': startupId,
+          'startupName': assetName,
           'quantity': quantity,
           'price': pricePerToken,
+          'unitPrice': pricePerToken,
         },
         options: Options(
           headers: token == null ? null : {'Authorization': 'Bearer $token'},
@@ -189,7 +191,9 @@ abstract class _TokenTransactionControllerBase with Store {
           orElse: () => <String, dynamic>{},
         );
 
-        availableTokenBalance = _asInt(ownedToken['quantity']);
+        availableTokenBalance = _asInt(
+          ownedToken['availableQuantity'] ?? ownedToken['quantity'],
+        );
       }
 
       return true;
@@ -208,18 +212,24 @@ abstract class _TokenTransactionControllerBase with Store {
 
   @action
   void incrementQuantity() {
-    if (transactionType == TransactionType.sell &&
-        quantity >= availableTokenBalance) {
-      return;
-    }
-    quantity++;
+    updateQuantity(quantity + 1);
   }
 
   @action
   void decrementQuantity() {
-    if (quantity > 1) {
-      quantity--;
+    updateQuantity(quantity - 1);
+  }
+
+  void updateQuantity(int newQuantity) {
+    var normalized = newQuantity < 1 ? 1 : newQuantity;
+
+    if (transactionType == TransactionType.sell &&
+        availableTokenBalance > 0 &&
+        normalized > availableTokenBalance) {
+      normalized = availableTokenBalance;
     }
+
+    quantity = normalized;
   }
 
   @action
