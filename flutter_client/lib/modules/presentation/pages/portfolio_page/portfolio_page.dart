@@ -1,53 +1,114 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_client/modules/presentation/components/home/home_palette.dart';
-import 'package:flutter_client/modules/presentation/pages/home_page/home_controller.dart';
-import 'package:flutter_client/modules/presentation/pages/token_transaction_page/token_transaction_controller.dart';
 import 'package:flutter_client/shared/app_routes.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:fl_chart/fl_chart.dart';
 
-class PortfolioView extends StatelessWidget {
+class PortfolioView extends StatefulWidget {
   const PortfolioView({super.key});
 
   static const Color deepText = Color(0xFF241B60);
   static const Color mutedText = Color(0xFF756E93);
   static const Color brandPink = Color(0xFFD4147A);
   static const Color pageBackground = Color(0xFFFCF9FF);
+  static const Color cardBackground = Colors.white;
+  static const Color softSurface = Color(0xFFF3EDF8);
+  static const Color divider = Color(0xFFE7DFF0);
+  static const Color green = Color(0xFF27AE60);
+  static const Color red = Color(0xFFD93B3B);
+  static const Color neutral = Color(0xFF7D718F);
 
-  static const Color colorFintech = Color(0xFFD4147A);
-  static const Color colorAgrotech = Color(0xFF8C7311);
-  static const Color colorHealthtech = Color(0xFFAEB2FF);
+  @override
+  State<PortfolioView> createState() => _PortfolioViewState();
+}
+
+class _PortfolioViewState extends State<PortfolioView> {
+  int selectedPeriod = 2;
+  int? touchedIndex;
+
+  final periods = const ['DIA', 'SEM', 'MÊS', 'SEMESTRE', 'YTD'];
+
+  final spotsRed = const [
+    FlSpot(0, 62),
+    FlSpot(1, 58),
+    FlSpot(2, 50),
+    FlSpot(3, 55),
+    FlSpot(4, 63),
+    FlSpot(5, 71),
+    FlSpot(6, 78),
+  ];
+
+  final spotsGreen = const [
+    FlSpot(2, 50),
+    FlSpot(3, 55),
+    FlSpot(4, 63),
+    FlSpot(5, 71),
+    FlSpot(6, 78),
+  ];
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Container(
+      color: PortfolioView.pageBackground,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 120),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildHeader(),
+            const SizedBox(height: 18),
+            _buildPatrimonioHero(),
+            const SizedBox(height: 16),
+            _buildPerformanceCard(),
+            const SizedBox(height: 14),
+            _buildMetricasRow(),
+            const SizedBox(height: 18),
+            _buildListaInvestimentos(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Row(
       children: [
-        _buildPatrimonioHero(),
-        const SizedBox(height: 24),
-        _buildComposicaoCard(),
-        const SizedBox(height: 16),
-        _buildMetricasRow(),
-        const SizedBox(height: 32),
-        _buildListaInvestimentos(),
+        const CircleAvatar(
+          radius: 14,
+          backgroundColor: Color(0xFF241B60),
+          child: Icon(Icons.person, size: 16, color: Colors.white),
+        ),
+        const Spacer(),
+        const Text(
+          'MesclaInvest',
+          style: TextStyle(
+            color: PortfolioView.brandPink,
+            fontSize: 16,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.3,
+          ),
+        ),
+        const Spacer(),
+        IconButton(
+          onPressed: () {},
+          icon: const Icon(
+            Icons.notifications_none_rounded,
+            color: PortfolioView.deepText,
+          ),
+          constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+          padding: EdgeInsets.zero,
+        ),
       ],
     );
   }
 
-  Widget _buildPatrimonioHero(double totalPatrimonio) {
-    final returnPercent = controller.estimatedReturnPercent;
-    final sign = (returnPercent ?? 0) >= 0 ? '+' : '';
-    final returnLabel = returnPercent == null
-        ? '--'
-        : '$sign${returnPercent.toStringAsFixed(1).replaceAll('.', ',')}%';
-
+  Widget _buildPatrimonioHero() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
           'PATRIMÔNIO TOTAL',
           style: TextStyle(
-            color: mutedText,
+            color: PortfolioView.mutedText,
             fontSize: 11,
             fontWeight: FontWeight.w800,
             letterSpacing: 1.2,
@@ -56,32 +117,27 @@ class PortfolioView extends StatelessWidget {
         const SizedBox(height: 8),
         Row(
           crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            const Text(
-              'R\$ ***.***,**',
+          children: const [
+            Text(
+              'R\$ 142.580,00',
               style: TextStyle(
-                color: deepText,
+                color: PortfolioView.deepText,
                 fontSize: 32,
                 fontWeight: FontWeight.w900,
                 letterSpacing: -1,
               ),
             ),
-            const SizedBox(width: 8),
-            const Padding(
+            SizedBox(width: 8),
+            Padding(
               padding: EdgeInsets.only(bottom: 6),
               child: Text(
                 '+2,4%',
                 style: TextStyle(
-                  color: brandPink,
+                  color: PortfolioView.green,
                   fontSize: 14,
                   fontWeight: FontWeight.w800,
                 ),
               ),
-            ),
-            const Spacer(),
-            IconButton(
-              icon: const Icon(Icons.remove_red_eye_outlined, color: deepText),
-              onPressed: () {},
             ),
           ],
         ),
@@ -89,7 +145,7 @@ class PortfolioView extends StatelessWidget {
     );
   }
 
-  Widget _buildComposicaoCard() {
+  Widget _buildPerformanceCard() {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -97,7 +153,7 @@ class PortfolioView extends StatelessWidget {
         borderRadius: BorderRadius.circular(32),
         boxShadow: [
           BoxShadow(
-            color: deepText.withValues(alpha: 0.04),
+            color: PortfolioView.deepText.withValues(alpha: 0.04),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -106,104 +162,138 @@ class PortfolioView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
+            children: const [
               Text(
                 'Performance',
                 style: TextStyle(
-                  color: deepText,
+                  color: PortfolioView.deepText,
                   fontSize: 18,
                   fontWeight: FontWeight.w800,
                 ),
               ),
-              Icon(Icons.pie_chart_outline_rounded, color: brandPink),
+              Icon(Icons.trending_up_rounded, color: PortfolioView.green),
             ],
           ),
-          const SizedBox(height: 24),
-          Row(
-            children: [
-              SizedBox(
-                width: 120,
-                height: 120,
-                child: Stack(
-                  children: [
-                    const Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            'SETORES',
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: mutedText,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(
-                            '3',
-                            style: TextStyle(
-                              fontSize: 24,
-                              color: deepText,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(
-                      width: 120,
-                      height: 120,
-                      child: CircularProgressIndicator(
-                        value: 1.0,
-                        strokeWidth: 16,
-                        color: colorHealthtech,
-                      ),
-                    ),
-                    const SizedBox(
-                      width: 120,
-                      height: 120,
-                      child: CircularProgressIndicator(
-                        value: 0.7,
-                        strokeWidth: 16,
-                        color: colorAgrotech,
-                      ),
-                    ),
-                    const SizedBox(
-                      width: 120,
-                      height: 120,
-                      child: CircularProgressIndicator(
-                        value: 0.45,
-                        strokeWidth: 16,
-                        color: colorFintech,
-                      ),
-                    ),
-                  ],
+          const SizedBox(height: 22),
+          SizedBox(
+            height: 185,
+            child: LineChart(
+              LineChartData(
+                minX: 0,
+                maxX: 6,
+                minY: 35,
+                maxY: 85,
+                gridData: FlGridData(
+                  show: true,
+                  drawVerticalLine: true,
+                  horizontalInterval: 10,
+                  verticalInterval: 1,
+                  getDrawingHorizontalLine: (value) =>
+                      const FlLine(color: Color(0xFFEDE5F6), strokeWidth: 1),
+                  getDrawingVerticalLine: (value) =>
+                      const FlLine(color: Color(0xFFF2EDF8), strokeWidth: 1),
                 ),
+                titlesData: const FlTitlesData(show: false),
+                borderData: FlBorderData(show: false),
+                lineTouchData: LineTouchData(
+                  enabled: true,
+                  handleBuiltInTouches: true,
+                  touchSpotThreshold: 20,
+                  getTouchedSpotIndicator: (barData, spotIndexes) {
+                    return spotIndexes.map((index) {
+                      return TouchedSpotIndicatorData(
+                        const FlLine(color: Colors.transparent, strokeWidth: 0),
+                        FlDotData(
+                          show: true,
+                          getDotPainter: (spot, percent, barData, index) {
+                            return FlDotCirclePainter(
+                              radius: 5,
+                              color: barData.color!,
+                              strokeWidth: 2,
+                              strokeColor: Colors.white,
+                            );
+                          },
+                        ),
+                      );
+                    }).toList();
+                  },
+                  touchTooltipData: LineTouchTooltipData(
+                    tooltipBorderRadius: BorderRadius.circular(14),
+                    tooltipPadding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 8,
+                    ),
+                    tooltipMargin: 12,
+                    getTooltipItems: (touchedSpots) {
+                      return touchedSpots.map((spot) {
+                        final isGreen = spot.barIndex == 1;
+                        return LineTooltipItem(
+                          'R\$ ${spot.y.toStringAsFixed(0)}\n',
+                          const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 13,
+                          ),
+                          children: [
+                            TextSpan(
+                              text: isGreen ? 'Linha positiva' : 'Linha base',
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
+                        );
+                      }).toList();
+                    },
+                  ),
+                  touchCallback: (event, response) {
+                    setState(() {
+                      touchedIndex = response?.lineBarSpots?.isNotEmpty == true
+                          ? response!.lineBarSpots!.first.spotIndex
+                          : null;
+                    });
+                  },
+                ),
+                lineBarsData: [
+                  LineChartBarData(
+                    spots: spotsRed,
+                    isCurved: true,
+                    color: PortfolioView.red,
+                    barWidth: 4,
+                    dotData: const FlDotData(show: false),
+                    belowBarData: BarAreaData(show: false),
+                  ),
+                  LineChartBarData(
+                    spots: spotsGreen,
+                    isCurved: true,
+                    color: PortfolioView.green,
+                    barWidth: 4,
+                    dotData: const FlDotData(show: false),
+                    belowBarData: BarAreaData(show: false),
+                  ),
+                ],
               ),
-              const SizedBox(width: 32),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _LegendItem(
-                      color: colorFintech,
-                      title: 'FINTECH',
-                      value: '45%',
-                    ),
-                    SizedBox(height: 12),
-                    _LegendItem(
-                      color: colorAgrotech,
-                      title: 'AGROTECH',
-                      value: '25%',
-                    ),
-                    SizedBox(height: 12),
-                    _LegendItem(
-                      color: colorHealthtech,
-                      title: 'HEALTHTECH',
-                      value: '30%',
-                    ),
-                  ],
+            ),
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: List.generate(periods.length, (index) {
+              return Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 3),
+                  child: _PeriodChip(
+                    label: periods[index],
+                    selected: selectedPeriod == index,
+                    onTap: () {
+                      setState(() {
+                        selectedPeriod = index;
+                      });
+                    },
+                  ),
                 ),
               );
             }),
@@ -220,72 +310,24 @@ class PortfolioView extends StatelessWidget {
           child: _MetricaCard(
             icon: Icons.trending_up_rounded,
             title: 'RENTABILIDADE',
-            value: '+**,*%',
+            value: '+18,4%',
+            iconColor: PortfolioView.green,
           ),
         ),
         SizedBox(width: 12),
         Expanded(
-          child: _buildMetricaCard(
+          child: _MetricaCard(
             icon: Icons.calendar_month_outlined,
             title: 'PROVENTOS',
-            value: 'R\$ ***',
-            iconColor: mutedText,
+            value: 'R\$ 840',
+            iconColor: PortfolioView.deepText,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildMetricaCard({
-    required IconData icon,
-    required String title,
-    required String value,
-    Color iconColor = brandPink,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: [
-          BoxShadow(
-            color: deepText.withValues(alpha: 0.03),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: iconColor, size: 22),
-          const SizedBox(height: 8),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 10,
-              color: mutedText,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.5,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 22,
-              color: deepText,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildListaInvestimentos() {
-    final tokens = controller.walletTokens;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -297,86 +339,59 @@ class PortfolioView extends StatelessWidget {
               'Seus Investimentos',
               style: TextStyle(
                 fontSize: 22,
-                color: deepText,
+                color: PortfolioView.deepText,
                 fontWeight: FontWeight.w900,
               ),
             ),
             GestureDetector(
-              onTap: () => Modular.to.pushNamed(AppRoutes.allInvestments),
+              onTap: () {
+                Modular.to.pushNamed(AppRoutes.allInvestments);
+              },
               child: const Text(
                 'Ver todos',
                 style: TextStyle(
                   fontSize: 13,
-                  color: brandPink,
+                  color: PortfolioView.brandPink,
                   fontWeight: FontWeight.w700,
                 ),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 18),
         _buildInvestimentoTile(
           icon: Icons.account_balance_rounded,
           nome: 'Vitality.',
-          subtitulo: 'HEALTHTECH • *** COTAS',
-          valor: 'R\$ **.***',
-          rendimento: '+**,*%',
+          subtitulo: 'HEALTHTECH • 120 COTAS',
+          valor: 'R\$ 42.400',
+          rendimento: '+12,5%',
+          rendimentoColor: PortfolioView.green,
         ),
         _buildInvestimentoTile(
           icon: Icons.agriculture_rounded,
           nome: 'AgroMais',
-          subtitulo: 'AGROTECH • ** COTAS',
-          valor: 'R\$ **.***',
-          rendimento: '+*,*%',
+          subtitulo: 'AGROTECH • 45 COTAS',
+          valor: 'R\$ 35.680',
+          rendimento: '+8,2%',
+          rendimentoColor: const Color(0xFF8C7311),
         ),
         _buildInvestimentoTile(
           icon: Icons.medical_services_outlined,
           nome: 'Locus.ai',
-          subtitulo: 'AI • ** COTAS',
-          valor: 'R\$ **.***',
-          rendimento: '0.0%',
-          rendimentoNeutro: true,
+          subtitulo: 'AI • 80 COTAS',
+          valor: 'R\$ 42.750',
+          rendimento: '0,0%',
+          rendimentoColor: PortfolioView.mutedText,
         ),
         _buildInvestimentoTile(
           icon: Icons.credit_card_rounded,
           nome: 'StudyFlow',
-          subtitulo: 'EDTECH • ** COTAS',
-          valor: 'R\$ **.***',
-          rendimento: '-*,*%',
-          rendimentoNegativo: true,
+          subtitulo: 'EDTECH • 15 COTAS',
+          valor: 'R\$ 21.750',
+          rendimento: '-2,1%',
+          rendimentoColor: PortfolioView.red,
         ),
       ],
-    );
-  }
-
-  Widget _buildTokenTile(Map<String, dynamic> token) {
-    final startupId = (token['startupId'] ?? '').toString().trim();
-    final startup = _findStartupById(startupId);
-    final sector = _sectorForToken(token);
-    final name = (token['startupName'] ?? startup?['name'] ?? startupId).toString();
-    final quantity = _asInt(token['quantity']);
-    final averagePrice = _asDouble(token['averagePrice']);
-    final currentPrice = _calculateTokenPrice(startup);
-    final returnPercent = (averagePrice > 0 && currentPrice > 0)
-        ? ((currentPrice / averagePrice) - 1) * 100
-        : 0.0;
-
-    final totalValue = quantity * (currentPrice > 0 ? currentPrice : averagePrice);
-
-    final rendimentoNeutro = returnPercent.abs() <= 0.05;
-    final rendimentoNegativo = returnPercent < -0.05;
-
-    return _buildInvestimentoTile(
-      icon: _iconForSector(sector),
-      nome: name,
-      subtitulo: '${sector.toUpperCase()} • $quantity TOKENS',
-      valor: controller.formatCurrencyAmount(totalValue),
-      rendimento:
-          '${returnPercent >= 0 ? '+' : ''}${returnPercent.toStringAsFixed(1).replaceAll('.', ',')}%',
-      rendimentoNegativo: rendimentoNegativo,
-      rendimentoNeutro: rendimentoNeutro,
-      onComprar: () => _openTransaction(startupId, TransactionType.buy),
-      onVender: () => _openTransaction(startupId, TransactionType.sell),
     );
   }
 
@@ -386,13 +401,8 @@ class PortfolioView extends StatelessWidget {
     required String subtitulo,
     required String valor,
     required String rendimento,
-    bool rendimentoNegativo = false,
-    bool rendimentoNeutro = false,
+    required Color rendimentoColor,
   }) {
-    Color corRendimento = brandPink;
-    if (rendimentoNegativo) corRendimento = const Color(0xFFD93B3B);
-    if (rendimentoNeutro) corRendimento = mutedText;
-
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -401,8 +411,8 @@ class PortfolioView extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: deepText.withValues(alpha: 0.03),
-            blurRadius: 15,
+            color: PortfolioView.deepText.withValues(alpha: 0.03),
+            blurRadius: 14,
             offset: const Offset(0, 8),
           ),
         ],
@@ -415,7 +425,7 @@ class PortfolioView extends StatelessWidget {
               color: const Color(0xFFF7EEF7),
               borderRadius: BorderRadius.circular(16),
             ),
-            child: Icon(icon, color: deepText, size: 24),
+            child: Icon(icon, color: PortfolioView.deepText, size: 24),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -425,7 +435,7 @@ class PortfolioView extends StatelessWidget {
                 Text(
                   nome,
                   style: const TextStyle(
-                    color: deepText,
+                    color: PortfolioView.deepText,
                     fontSize: 16,
                     fontWeight: FontWeight.w800,
                   ),
@@ -434,73 +444,22 @@ class PortfolioView extends StatelessWidget {
                 Text(
                   subtitulo,
                   style: const TextStyle(
-                    color: mutedText,
+                    color: PortfolioView.mutedText,
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.5,
                   ),
                 ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: onVender,
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: HomePalette.brandPink,
-                          side: BorderSide(
-                            color: HomePalette.brandPink.withValues(alpha: 0.25),
-                            width: 1.5,
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                        ),
-                        child: const Text(
-                          'Vender',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w800,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: onComprar,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: HomePalette.brandPink,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                        ),
-                        child: const Text(
-                          'Comprar',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w800,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
               ],
             ),
           ),
-          const SizedBox(width: 14),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
                 valor,
                 style: const TextStyle(
-                  color: deepText,
+                  color: PortfolioView.deepText,
                   fontSize: 16,
                   fontWeight: FontWeight.w800,
                 ),
@@ -520,66 +479,6 @@ class PortfolioView extends StatelessWidget {
       ),
     );
   }
-
-  void _openTransaction(String startupId, TransactionType type) {
-    if (startupId.isEmpty) return;
-    Modular.to.pushNamed(
-      AppRoutes.transactionPage,
-      arguments: {
-        'type': type,
-        'id': startupId,
-      },
-    );
-  }
-
-  String _sectorForToken(Map<String, dynamic> token) {
-    final startupId = (token['startupId'] ?? '').toString().trim();
-    final startup = _findStartupById(startupId);
-    return (startup?['sector'] ?? '').toString();
-  }
-
-  Map<String, dynamic>? _findStartupById(String startupId) {
-    if (startupId.isEmpty) return null;
-    for (final startup in controller.allStartups) {
-      final id = (startup['id'] ?? '').toString().trim();
-      if (id == startupId) return startup;
-    }
-    return null;
-  }
-
-  double _calculateTokenPrice(Map<String, dynamic>? startup) {
-    if (startup == null) return 0.0;
-    final emittedTokens = _asDouble(startup['totalEmittedTokens']);
-    final targetCapital = _asDouble(startup['targetCapital']);
-
-    if (emittedTokens > 0 && targetCapital > 0) {
-      final price = targetCapital / emittedTokens;
-      if (price.isFinite && price > 0) {
-        return price;
-      }
-    }
-
-    return 0.0;
-  }
-
-  IconData _iconForSector(String sector) {
-    final normalized = sector.trim().toLowerCase();
-    if (normalized.contains('agro')) return Icons.agriculture_rounded;
-    if (normalized.contains('health')) return Icons.health_and_safety_outlined;
-    if (normalized.contains('fin')) return Icons.account_balance_rounded;
-    return Icons.business_center_outlined;
-  }
-
-  double _asDouble(dynamic value) {
-    if (value is num) return value.toDouble();
-    return double.tryParse(value?.toString() ?? '') ?? 0.0;
-  }
-
-  int _asInt(dynamic value) {
-    if (value is int) return value;
-    if (value is num) return value.toInt();
-    return int.tryParse(value?.toString() ?? '') ?? 0;
-  }
 }
 
 class _MetricaCard extends StatelessWidget {
@@ -597,39 +496,85 @@ class _MetricaCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          margin: const EdgeInsets.only(top: 4),
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(shape: BoxShape.circle, color: color),
-        ),
-        const SizedBox(width: 8),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 10,
-                color: PortfolioView.mutedText,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.5,
-              ),
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: [
+          BoxShadow(
+            color: PortfolioView.deepText.withValues(alpha: 0.03),
+            blurRadius: 14,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: iconColor, size: 20),
+          const SizedBox(height: 8),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 9,
+              color: PortfolioView.mutedText,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.8,
             ),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 14,
-                color: PortfolioView.deepText,
-                fontWeight: FontWeight.w900,
-              ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 20,
+              color: PortfolioView.deepText,
+              fontWeight: FontWeight.w900,
             ),
-          ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PeriodChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _PeriodChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(999),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 9),
+          decoration: BoxDecoration(
+            color: selected ? PortfolioView.softSurface : Colors.transparent,
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 9.5,
+              color: selected
+                  ? PortfolioView.brandPink
+                  : PortfolioView.mutedText,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
         ),
-      ],
+      ),
     );
   }
 }
