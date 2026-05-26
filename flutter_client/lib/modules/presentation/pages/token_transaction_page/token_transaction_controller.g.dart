@@ -175,8 +175,18 @@ mixin _$TokenTransactionController on _TokenTransactionControllerBase, Store {
   );
 
   @override
-  Future<void> loadAssetData(String startupId) {
-    return _$loadAssetDataAsyncAction.run(() => super.loadAssetData(startupId));
+  Future<void> loadAssetData(
+    String startupId, {
+    String? initialStartupName,
+    double? initialPricePerToken,
+  }) {
+    return _$loadAssetDataAsyncAction.run(
+      () => super.loadAssetData(
+        startupId,
+        initialStartupName: initialStartupName,
+        initialPricePerToken: initialPricePerToken,
+      ),
+    );
   }
 
   late final _$submitAsyncAction = AsyncAction(

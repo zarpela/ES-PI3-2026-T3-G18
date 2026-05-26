@@ -61,7 +61,11 @@ abstract class _TokenTransactionControllerBase with Store {
   double get totalValue => quantity * pricePerToken;
 
   @action
-  Future<void> loadAssetData(String startupId) async {
+  Future<void> loadAssetData(
+    String startupId, {
+    String? initialStartupName,
+    double? initialPricePerToken,
+  }) async {
     isLoading = true;
     errorMessage = null;
 
@@ -82,16 +86,16 @@ abstract class _TokenTransactionControllerBase with Store {
 
       final wallet =
           walletResponse.data is Map && walletResponse.data['wallet'] is Map
-              ? Map<String, dynamic>.from(walletResponse.data['wallet'] as Map)
-              : <String, dynamic>{};
+          ? Map<String, dynamic>.from(walletResponse.data['wallet'] as Map)
+          : <String, dynamic>{};
 
       availableFiatBalance = _asDouble(wallet['balance']);
 
       final walletTokens = (wallet['tokens'] is List)
           ? (wallet['tokens'] as List)
-              .whereType<Map>()
-              .map((e) => Map<String, dynamic>.from(e))
-              .toList()
+                .whereType<Map>()
+                .map((e) => Map<String, dynamic>.from(e))
+                .toList()
           : <Map<String, dynamic>>[];
 
       final ownedToken = walletTokens.firstWhere(
@@ -103,11 +107,15 @@ abstract class _TokenTransactionControllerBase with Store {
       final averagePrice = _asDouble(ownedToken['averagePrice']);
 
       final startup = await _fetchStartupById(startupId);
-      assetName =
-          (startup['name'] ?? startup['startupName'] ?? startupId).toString();
+      // Abdallah El-Khatib
+      assetName = (initialStartupName?.trim().isNotEmpty ?? false)
+          ? initialStartupName!.trim()
+          : (startup['name'] ?? startup['startupName'] ?? startupId).toString();
 
-      final tokenPrice =
-          _calculateTokenPrice(startup, fallback: averagePrice);
+      final tokenPrice = _calculateTokenPrice(
+        startup,
+        fallback: initialPricePerToken ?? averagePrice,
+      );
 
       pricePerToken = transactionType == TransactionType.sell
           ? (averagePrice > 0 ? averagePrice : tokenPrice)
@@ -146,8 +154,9 @@ abstract class _TokenTransactionControllerBase with Store {
       }
 
       final token = await user.getIdToken();
-      final endpoint =
-          transactionType == TransactionType.buy ? 'market/buy' : 'market/sell';
+      final endpoint = transactionType == TransactionType.buy
+          ? 'market/buy'
+          : 'market/sell';
 
       final response = await _dio.post(
         endpoint,
@@ -170,9 +179,9 @@ abstract class _TokenTransactionControllerBase with Store {
 
         final walletTokens = (wallet['tokens'] is List)
             ? (wallet['tokens'] as List)
-                .whereType<Map>()
-                .map((e) => Map<String, dynamic>.from(e))
-                .toList()
+                  .whereType<Map>()
+                  .map((e) => Map<String, dynamic>.from(e))
+                  .toList()
             : <Map<String, dynamic>>[];
 
         final ownedToken = walletTokens.firstWhere(
