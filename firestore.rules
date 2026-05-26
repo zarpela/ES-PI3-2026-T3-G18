@@ -1,10 +1,93 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role
+          in ['admin', 'responsavel', 'owner', 'startup_admin'];
+    }
+
+    function isStartupResponsible(startupId) {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/startups/$(startupId))
+        && (
+          get(/databases/$(database)/documents/startups/$(startupId)).data.ownerId == request.auth.uid
+          || get(/databases/$(database)/documents/startups/$(startupId)).data.adminId == request.auth.uid
+          || get(/databases/$(database)/documents/startups/$(startupId)).data.responsibleUserId == request.auth.uid
+        );
+    }
 
     match /users/{userId} {
-      allow read, write: if request.auth != null
-                         && request.auth.uid == userId;
+      allow read, write: if isOwner(userId);
+    }
+
+    // Abdallah El-Khatib
+    match /wallets/{userId} {
+      allow read: if isOwner(userId);
+      allow write: if false;
+
+      match /holdings/{startupId} {
+        allow read: if isOwner(userId);
+        allow write: if false;
+      }
+
+      match /transactions/{transactionId} {
+        allow read: if isOwner(userId);
+        allow write: if false;
+      }
+    }
+
+    match /marketplaceOffers/{offerId} {
+      allow read: if isSignedIn()
+        && resource.data.type == 'sell'
+        && resource.data.status in ['open', 'partial'];
+      allow write: if false;
+    }
+
+    match /startups/{startupId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+
+      match /investors/{userId} {
+        allow read: if isOwner(userId) || isAdmin() || isStartupResponsible(startupId);
+        allow write: if false;
+      }
+
+      match /publicQuestions/{questionId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn()
+          && request.resource.data.authorId == request.auth.uid;
+        allow update, delete: if false;
+      }
+
+      match /privateQuestions/{questionId} {
+        allow read: if isSignedIn()
+          && (
+            resource.data.authorId == request.auth.uid
+            || resource.data.authorUid == request.auth.uid
+            || isAdmin()
+            || isStartupResponsible(startupId)
+          );
+        allow create: if isSignedIn()
+          && request.resource.data.authorId == request.auth.uid
+          && request.resource.data.visibility == 'privada';
+        allow update, delete: if false;
+      }
+
+      match /tokenPriceHistory/{historyId} {
+        allow read: if isSignedIn();
+        allow write: if false;
+      }
     }
   }
 }
+
