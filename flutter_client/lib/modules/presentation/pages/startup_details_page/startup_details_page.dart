@@ -38,14 +38,25 @@ class _StartupDetailsPageState extends State<StartupDetailsPage> {
   bool isLoading = true;
   String? errorMessage;
 
+  bool isQuestionsLoading = true;
+  bool isInvestor = false;
+  List<Map<String, dynamic>> publicQuestions = [];
+  List<Map<String, dynamic>> privateQuestions = [];
+  List<Map<String, dynamic>> allQuestions = [];
+
+  final TextEditingController questionController = TextEditingController();
+  bool isSubmittingQuestion = false;
+
   @override
   void initState() {
     super.initState();
     loadStartupDetails();
+    loadQuestions();
   }
 
   @override
   void dispose() {
+    questionController.dispose();
     videoController?.dispose();
     super.dispose();
   }
@@ -159,6 +170,115 @@ class _StartupDetailsPageState extends State<StartupDetailsPage> {
         resolvedVideoUrl = resolvedVideo;
         errorMessage = e.toString();
         isLoading = false;
+      });
+    }
+  }
+
+  Future<void> submitQuestion() async {
+    final text = questionController.text.trim();
+    final startupId =
+        (widget.startup['id'] ??
+                widget.startup['docId'] ??
+                widget.startup['startupId'] ??
+                '')
+            .toString()
+            .trim();
+
+    if (text.isEmpty || startupId.isEmpty) return;
+
+    try {
+      setState(() => isSubmittingQuestion = true);
+
+      await functions.httpsCallable('createStartupQuestion').call({
+        'startupId': startupId,
+        'text': text,
+        'visibility': isInvestor ? 'privada' : 'publica',
+      });
+
+      await loadQuestions();
+
+      questionController.clear();
+
+      if (mounted) Navigator.of(context).pop();
+    } catch (e) {
+      debugPrint('Erro ao enviar pergunta: $e');
+    } finally {
+      if (!mounted) return;
+      setState(() => isSubmittingQuestion = false);
+    }
+  }
+
+  Future<void> loadQuestions() async {
+    try {
+      setState(() => isQuestionsLoading = true);
+
+      final startupId =
+          (widget.startup['id'] ??
+                  widget.startup['docId'] ??
+                  widget.startup['startupId'] ??
+                  '')
+              .toString()
+              .trim();
+
+      if (startupId.isEmpty) {
+        if (!mounted) return;
+        setState(() {
+          publicQuestions = [];
+          privateQuestions = [];
+          allQuestions = [];
+          isQuestionsLoading = false;
+        });
+        return;
+      }
+
+      final pubResult = await functions
+          .httpsCallable('getStartupQuestions')
+          .call({'startupId': startupId});
+
+      final pubData = pubResult.data;
+      List<Map<String, dynamic>> pub = [];
+
+      if (pubData is Map && pubData['data'] is List) {
+        pub = (pubData['data'] as List)
+            .whereType<Map>()
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList();
+      }
+
+      List<Map<String, dynamic>> priv = [];
+      if (isInvestor) {
+        try {
+          final privResult = await functions
+              .httpsCallable('getStartupPrivateQuestions')
+              .call({'startupId': startupId});
+
+          final privData = privResult.data;
+          if (privData is Map && privData['data'] is List) {
+            priv = (privData['data'] as List)
+                .whereType<Map>()
+                .map((e) => Map<String, dynamic>.from(e))
+                .toList();
+          }
+        } catch (e) {
+          debugPrint('Erro ao buscar privadas: $e');
+        }
+      }
+
+      if (!mounted) return;
+      setState(() {
+        publicQuestions = pub;
+        privateQuestions = priv;
+        allQuestions = [...pub, ...priv];
+        isQuestionsLoading = false;
+      });
+    } catch (e) {
+      debugPrint('Erro loadQuestions: $e');
+      if (!mounted) return;
+      setState(() {
+        publicQuestions = [];
+        privateQuestions = [];
+        allQuestions = [];
+        isQuestionsLoading = false;
       });
     }
   }
@@ -472,15 +592,7 @@ class _StartupDetailsPageState extends State<StartupDetailsPage> {
                 const SizedBox(height: 22),
                 buildQuestionsHeader(),
                 const SizedBox(height: 10),
-                if (faq.isEmpty)
-                  buildEmptyFaqCard()
-                else
-                  ...faq.map(
-                    (item) => Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: buildDynamicQuestionCard(item),
-                    ),
-                  ),
+                buildQuestionsSection(),
                 if (errorMessage != null) ...[
                   const SizedBox(height: 12),
                   Text(
@@ -946,8 +1058,8 @@ class _StartupDetailsPageState extends State<StartupDetailsPage> {
 
   Widget buildQuestionsHeader() {
     return Row(
-      children: const [
-        Expanded(
+      children: [
+        const Expanded(
           child: Text(
             'DÚVIDAS E PERGUNTAS',
             style: TextStyle(
@@ -958,32 +1070,115 @@ class _StartupDetailsPageState extends State<StartupDetailsPage> {
             ),
           ),
         ),
-        Text(
-          'Perguntar',
-          style: TextStyle(
-            fontSize: 10,
-            fontWeight: FontWeight.w700,
-            color: primary,
+        TextButton(
+          onPressed: () {
+            showModalBottomSheet(
+              context: context,
+              isScrollControlled: true,
+              backgroundColor: Colors.white,
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              builder: (_) {
+                return Padding(
+                  padding: EdgeInsets.only(
+                    left: 16,
+                    right: 16,
+                    top: 16,
+                    bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Fazer pergunta',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: questionController,
+                        maxLines: 4,
+                        decoration: const InputDecoration(
+                          hintText: 'Digite sua pergunta...',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: isSubmittingQuestion
+                              ? null
+                              : submitQuestion,
+                          child: isSubmittingQuestion
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Text('Enviar'),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            );
+          },
+          child: const Text(
+            'Perguntar',
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              color: primary,
+            ),
           ),
         ),
       ],
     );
   }
 
-  Widget buildDynamicQuestionCard(Map<String, dynamic> item) {
-    final isPrivate =
-        '${item['type'] ?? item['visibility'] ?? item['tipo'] ?? ''}'
-            .toLowerCase()
-            .contains('priv');
+  Widget buildQuestionsSection() {
+    if (isQuestionsLoading) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 18),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
 
-    final question =
-        readFirst(item, ['question', 'pergunta', 'title']) ??
-        'Pergunta não informada';
-    final author =
-        readFirst(item, ['author', 'user', 'email', 'autor']) ??
-        'Usuário não informado';
-    final date = readFirst(item, ['date', 'createdAt', 'data']) ?? '--/--/----';
-    final answer = readFirst(item, ['answer', 'resposta']);
+    if (allQuestions.isEmpty) {
+      return buildEmptyFaqCard();
+    }
+
+    return Column(
+      children: allQuestions
+          .map(
+            (item) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: buildDynamicQuestionCard(item),
+            ),
+          )
+          .toList(),
+    );
+  }
+
+  Widget buildDynamicQuestionCard(Map<String, dynamic> item) {
+    final isPrivate = '${item['visibility'] ?? ''}'.toLowerCase().contains(
+      'priv',
+    );
+
+    final question = item['text']?.toString() ?? 'Pergunta não informada';
+    final author = item['authorUid']?.toString() ?? 'Usuário não informado';
+    final date = item['createdAt']?.toString() ?? '--/--/----';
+
+    final answerMap = item['answer'];
+    final answer = answerMap is Map ? answerMap['text']?.toString() : null;
 
     return Container(
       padding: const EdgeInsets.all(14),
