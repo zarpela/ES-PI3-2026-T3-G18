@@ -132,21 +132,6 @@ class _InvestedBalanceCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 4),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: HomePalette.softYellow,
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: Text(
-              controller.performanceLabel,
-              style: const TextStyle(
-                color: Color(0xFF655116),
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
         ],
       ),
     );

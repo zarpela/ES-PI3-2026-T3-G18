@@ -157,7 +157,8 @@ class HomeController extends ChangeNotifier {
     }
 
     if (wallet != null && (investedBalance ?? 0) <= 0) {
-      return 'Carteira pronta para investir';
+      // Abdallah El-Khatib
+      return 'Explore novas oportunidades';
     }
 
     if (walletErrorMessage != null) {
@@ -179,7 +180,8 @@ class HomeController extends ChangeNotifier {
     final value = estimatedReturnPercent ?? 0;
     final normalized = value.toStringAsFixed(1).replaceAll('.', ',');
     final sign = value >= 0 ? '+' : '';
-    return '~ $sign$normalized% este mes';
+    // Abdallah El-Khatib
+    return '$sign$normalized%';
   }
 
   List<Map<String, dynamic>> get recentTransactionsPreview {

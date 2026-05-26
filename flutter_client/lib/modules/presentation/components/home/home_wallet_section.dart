@@ -110,22 +110,7 @@ class _WalletBalanceHero extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: 12),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-          decoration: BoxDecoration(
-            color: HomePalette.softYellow,
-            borderRadius: BorderRadius.circular(999),
-          ),
-          child: Text(
-            controller.walletVariationLabel,
-            style: const TextStyle(
-              color: Color(0xFF655116),
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ),
+        const SizedBox(height: 4),
       ],
     );
   }
