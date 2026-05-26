@@ -6,7 +6,9 @@ import {
     StartupCatalog,
     StartupDoc,
     StartupQuestionDocument,
+    TokenPriceHistory,
 } from "../types";
+import * as admin from "firebase-admin"; // só pra schedule
 
 // ---------------------------------------------------------------------------
 // Collections
@@ -181,4 +183,28 @@ export async function getPrivateQuestions(
     } catch (e) {
         throw new HttpsError("internal", "Erro ao buscar perguntas privadas.");
     }
+}
+
+/**
+ * Salva o histórico ed valorização do token
+ * vai ser chamado em /schedule a cada 4h, começando 00:00
+ */
+export async function saveAllPriceSnapshots() {
+    const snapshot = await db.collection("startups").get();
+
+    const promises = snapshot.docs.map(async (startupDoc) => {
+        const startup = startupDoc.data() as StartupDoc;
+        const history: TokenPriceHistory = {
+            price: startup.tokenPrice,
+            createdAt: admin.firestore.Timestamp.now(),
+        };
+
+        return db
+            .collection("startups")
+            .doc(startupDoc.id)
+            .collection("tokenPriceHistory")
+            .add(history);
+    });
+
+    await Promise.all(promises);
 }

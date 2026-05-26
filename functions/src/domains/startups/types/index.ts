@@ -123,5 +123,5 @@ export type StartupQuestionResponse = {
 // subcoleçao de histórico de preços do token para cada startup
 export type TokenPriceHistory = {
     price: number;
-    createdAt: Timestamp;
+    createdAt: FirebaseFirestore.Timestamp;
 }
