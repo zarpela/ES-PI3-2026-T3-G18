@@ -44,7 +44,6 @@ class _TokenTransactionPageState extends State<TokenTransactionPage> {
   void initState() {
     super.initState();
     _controller = TokenTransactionController(transactionType: widget.type);
-    // Abdallah El-Khatib
     _controller
         .loadAssetData(
           widget.id,
