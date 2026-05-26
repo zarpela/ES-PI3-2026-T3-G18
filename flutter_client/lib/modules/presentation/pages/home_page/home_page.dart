@@ -169,7 +169,8 @@ class _HomePageState extends State<HomePage> {
         );
 
       case HomeSection.portfolio:
-        return const PortfolioView();
+        // Abdallah El-Khatib
+        return PortfolioView(controller: controller);
     }
   }
 

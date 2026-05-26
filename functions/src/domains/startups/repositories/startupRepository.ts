@@ -1,11 +1,13 @@
 // Desenvolvido por Miguel Castro
 
+import { Timestamp } from "firebase-admin/firestore";
 import { HttpsError } from "firebase-functions/v2/https";
 import { db } from "../../../shared/firebase";
 import {
     StartupCatalog,
     StartupDoc,
     StartupQuestionDocument,
+    TokenPriceHistory,
 } from "../types";
 
 // ---------------------------------------------------------------------------
@@ -18,8 +20,16 @@ function startupDoc(startupId: string) {
     return startupCol.doc(startupId);
 }
 
-function questionsCol(startupId: string) {
+function legacyQuestionsCol(startupId: string) {
     return startupDoc(startupId).collection("questions");
+}
+
+function publicQuestionsCol(startupId: string) {
+    return startupDoc(startupId).collection("publicQuestions");
+}
+
+function privateQuestionsCol(startupId: string) {
+    return startupDoc(startupId).collection("privateQuestions");
 }
 
 function investorsCol(startupId: string) {
@@ -117,11 +127,58 @@ export async function userIsInvestor(
     uid: string
 ): Promise<boolean> {
     try {
-        const doc = await investorsCol(startupId).doc(uid).get();
+        const [investorDoc, holdingDoc] = await Promise.all([
+            investorsCol(startupId).doc(uid).get(),
+            db.collection("wallets")
+                .doc(uid)
+                .collection("holdings")
+                .doc(startupId)
+                .get(),
+        ]);
 
-        return doc.exists;
+        if (investorDoc.exists) {
+            return true;
+        }
+
+        if (!holdingDoc.exists) {
+            return false;
+        }
+
+        const quantity = Number(holdingDoc.data()?.quantity ?? 0);
+
+        return quantity > 0;
     } catch (e) {
         throw new HttpsError("internal", "Erro ao verificar investidor.");
+    }
+}
+
+// Abdallah El-Khatib
+export async function userCanReadAllPrivateQuestions(
+    startupId: string,
+    uid: string
+): Promise<boolean> {
+    try {
+        const [userDoc, startup] = await Promise.all([
+            db.collection("users").doc(uid).get(),
+            startupDoc(startupId).get(),
+        ]);
+        const role = String(userDoc.data()?.role ?? "").toLowerCase();
+
+        if (["admin", "responsavel", "owner", "startup_admin"].includes(role)) {
+            return true;
+        }
+
+        const startupData = startup.data() ?? {};
+        const responsibleId = String(
+            startupData.responsibleUserId ??
+            startupData.ownerId ??
+            startupData.adminId ??
+            ""
+        );
+
+        return responsibleId === uid;
+    } catch (e) {
+        throw new HttpsError("internal", "Erro ao validar permissoes.");
     }
 }
 
@@ -134,7 +191,11 @@ export async function createQuestion(
     question: StartupQuestionDocument
 ): Promise<string> {
     try {
-        const ref = await questionsCol(startupId).add(question);
+        // Abdallah El-Khatib
+        const targetCollection = question.visibility === "privada" ?
+            privateQuestionsCol(startupId) :
+            publicQuestionsCol(startupId);
+        const ref = await targetCollection.add(question);
 
         return ref.id;
     } catch (e) {
@@ -151,12 +212,18 @@ export async function getPublicQuestions(
     }[]
 > {
     try {
-        const snapshot = await questionsCol(startupId)
-            .where("visibility", "==", "publica")
-            .orderBy("createdAt", "asc")
-            .get();
+        // Abdallah El-Khatib
+        const [publicSnapshot, legacySnapshot] = await Promise.all([
+            publicQuestionsCol(startupId)
+                .orderBy("createdAt", "asc")
+                .get(),
+            legacyQuestionsCol(startupId)
+                .where("visibility", "==", "publica")
+                .orderBy("createdAt", "asc")
+                .get(),
+        ]);
 
-        return snapshot.docs.map((doc) => ({
+        return [...publicSnapshot.docs, ...legacySnapshot.docs].map((doc) => ({
             id: doc.id,
             data: doc.data() as StartupQuestionDocument,
         }));
@@ -166,19 +233,54 @@ export async function getPublicQuestions(
 }
 
 export async function getPrivateQuestions(
-    startupId: string
+    startupId: string,
+    uid: string,
+    canReadAll = false
 ): Promise<{ id: string; data: StartupQuestionDocument }[]> {
     try {
-        const snapshot = await questionsCol(startupId)
-            .where("visibility", "==", "privada")
+        // Abdallah El-Khatib
+        const [privateSnapshot, legacySnapshot] = await Promise.all([
+            privateQuestionsCol(startupId)
+                .orderBy("createdAt", "asc")
+                .get(),
+            legacyQuestionsCol(startupId)
+                .where("visibility", "==", "privada")
+                .orderBy("createdAt", "asc")
+                .get(),
+        ]);
+        const docs = [...privateSnapshot.docs, ...legacySnapshot.docs];
+
+        return docs
+            .map((doc) => ({
+            id: doc.id,
+            data: doc.data() as StartupQuestionDocument,
+            }))
+            .filter(({ data }) => {
+                if (canReadAll) {
+                    return true;
+                }
+
+                return data.authorId === uid || data.authorUid === uid;
+            });
+    } catch (e) {
+        throw new HttpsError("internal", "Erro ao buscar perguntas privadas.");
+    }
+}
+
+// Abdallah El-Khatib
+export async function getTokenPriceHistory(
+    startupId: string,
+    startDate: Date
+): Promise<TokenPriceHistory[]> {
+    try {
+        const snapshot = await startupDoc(startupId)
+            .collection("tokenPriceHistory")
+            .where("createdAt", ">=", Timestamp.fromDate(startDate))
             .orderBy("createdAt", "asc")
             .get();
 
-        return snapshot.docs.map((doc) => ({
-            id: doc.id,
-            data: doc.data() as StartupQuestionDocument,
-        }));
+        return snapshot.docs.map((doc) => doc.data() as TokenPriceHistory);
     } catch (e) {
-        throw new HttpsError("internal", "Erro ao buscar perguntas privadas.");
+        throw new HttpsError("internal", "Erro ao buscar histórico de preços.");
     }
 }
