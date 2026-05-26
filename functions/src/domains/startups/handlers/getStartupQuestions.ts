@@ -3,6 +3,7 @@
 import { HttpsError, onCall } from "firebase-functions/v2/https";
 import { Timestamp } from "firebase-admin/firestore";
 
+import { requireAuthenticatedUser } from "../shared/auth";
 import { normalizeString } from "../shared/validation";
 import { getPublicQuestions, getStartupById } from "../repositories/startupRepository";
 import { StartupQuestionResponse } from "../types";
@@ -18,6 +19,8 @@ import { StartupQuestionResponse } from "../types";
 export const getStartupQuestions = onCall(
     { region: "southamerica-east1" },
     async (request) => {
+        // Abdallah El-Khatib
+        requireAuthenticatedUser(request);
         const startupId = normalizeString(request.data?.startupId);
 
         if (!startupId) {
@@ -37,7 +40,13 @@ export const getStartupQuestions = onCall(
 
         const data: StartupQuestionResponse[] = questions.map(({ id, data: q }) => ({
             id,
+            authorId: q.authorId ?? q.authorUid,
+            authorName: q.authorName,
             authorUid: q.authorUid,
+            isAnswered: q.isAnswered ?? Boolean(q.answer),
+            question: q.question ?? q.text,
+            startupId: q.startupId ?? startupId,
+            status: q.status ?? "open",
             text: q.text,
             visibility: q.visibility,
             createdAt: q.createdAt instanceof Timestamp

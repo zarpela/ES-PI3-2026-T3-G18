@@ -97,8 +97,15 @@ export type QuestionAnswer = {
  * Subcoleção: startups/{startupId}/questions/{questionId}
  */
 export type StartupQuestionDocument = {
+    authorId?: string;
+    authorName?: string;
     authorUid: string;
+    isAnswered?: boolean;
+    question?: string;
+    startupId?: string;
+    status?: string;
     text: string;
+    updatedAt?: Timestamp | FieldValue;
     visibility: QuestionVisibility;
     createdAt: Timestamp | FieldValue;
     answer?: QuestionAnswer;
@@ -109,7 +116,13 @@ export type StartupQuestionDocument = {
  */
 export type StartupQuestionResponse = {
     id: string;
+    authorId?: string;
+    authorName?: string;
     authorUid: string;
+    isAnswered?: boolean;
+    question?: string;
+    startupId?: string;
+    status?: string;
     text: string;
     visibility: QuestionVisibility;
     createdAt: string | null;

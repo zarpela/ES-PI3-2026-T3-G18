@@ -46,6 +46,7 @@ class _StartupDetailsPageState extends State<StartupDetailsPage> {
 
   final TextEditingController questionController = TextEditingController();
   bool isSubmittingQuestion = false;
+  String selectedQuestionVisibility = 'publica';
 
   @override
   void initState() {
@@ -192,7 +193,8 @@ class _StartupDetailsPageState extends State<StartupDetailsPage> {
       await functions.httpsCallable('createStartupQuestion').call({
         'startupId': startupId,
         'text': text,
-        'visibility': isInvestor ? 'privada' : 'publica',
+        // Abdallah El-Khatib
+        'visibility': isInvestor ? selectedQuestionVisibility : 'publica',
       });
 
       await loadQuestions();
@@ -246,26 +248,32 @@ class _StartupDetailsPageState extends State<StartupDetailsPage> {
       }
 
       List<Map<String, dynamic>> priv = [];
-      if (isInvestor) {
-        try {
-          final privResult = await functions
-              .httpsCallable('getStartupPrivateQuestions')
-              .call({'startupId': startupId});
+      var canUsePrivateQuestions = false;
 
-          final privData = privResult.data;
-          if (privData is Map && privData['data'] is List) {
-            priv = (privData['data'] as List)
-                .whereType<Map>()
-                .map((e) => Map<String, dynamic>.from(e))
-                .toList();
-          }
-        } catch (e) {
-          debugPrint('Erro ao buscar privadas: $e');
+      try {
+        // Abdallah El-Khatib
+        final privResult = await functions
+            .httpsCallable('getStartupPrivateQuestions')
+            .call({'startupId': startupId});
+
+        final privData = privResult.data;
+        if (privData is Map && privData['data'] is List) {
+          priv = (privData['data'] as List)
+              .whereType<Map>()
+              .map((e) => Map<String, dynamic>.from(e))
+              .toList();
         }
+        canUsePrivateQuestions = true;
+      } catch (e) {
+        debugPrint('Erro ao buscar privadas: $e');
       }
 
       if (!mounted) return;
       setState(() {
+        isInvestor = canUsePrivateQuestions;
+        if (!isInvestor && selectedQuestionVisibility == 'privada') {
+          selectedQuestionVisibility = 'publica';
+        }
         publicQuestions = pub;
         privateQuestions = priv;
         allQuestions = [...pub, ...priv];
@@ -1080,53 +1088,85 @@ class _StartupDetailsPageState extends State<StartupDetailsPage> {
                 borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
               ),
               builder: (_) {
-                return Padding(
-                  padding: EdgeInsets.only(
-                    left: 16,
-                    right: 16,
-                    top: 16,
-                    bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Fazer pergunta',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                        ),
+                return StatefulBuilder(
+                  builder: (context, setModalState) {
+                    return Padding(
+                      padding: EdgeInsets.only(
+                        left: 16,
+                        right: 16,
+                        top: 16,
+                        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
                       ),
-                      const SizedBox(height: 12),
-                      TextField(
-                        controller: questionController,
-                        maxLines: 4,
-                        decoration: const InputDecoration(
-                          hintText: 'Digite sua pergunta...',
-                          border: OutlineInputBorder(),
-                        ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Fazer pergunta',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          if (isInvestor) ...[
+                            // Abdallah El-Khatib
+                            SegmentedButton<String>(
+                              segments: const [
+                                ButtonSegment(
+                                  value: 'publica',
+                                  label: Text('Publica'),
+                                  icon: Icon(Icons.public, size: 16),
+                                ),
+                                ButtonSegment(
+                                  value: 'privada',
+                                  label: Text('Privada'),
+                                  icon: Icon(Icons.lock_outline, size: 16),
+                                ),
+                              ],
+                              selected: {selectedQuestionVisibility},
+                              onSelectionChanged: (selection) {
+                                final value = selection.first;
+                                setModalState(() {
+                                  selectedQuestionVisibility = value;
+                                });
+                                setState(() {
+                                  selectedQuestionVisibility = value;
+                                });
+                              },
+                            ),
+                            const SizedBox(height: 12),
+                          ],
+                          TextField(
+                            controller: questionController,
+                            maxLines: 4,
+                            decoration: const InputDecoration(
+                              hintText: 'Digite sua pergunta...',
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: isSubmittingQuestion
+                                  ? null
+                                  : submitQuestion,
+                              child: isSubmittingQuestion
+                                  ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : const Text('Enviar'),
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: isSubmittingQuestion
-                              ? null
-                              : submitQuestion,
-                          child: isSubmittingQuestion
-                              ? const SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : const Text('Enviar'),
-                        ),
-                      ),
-                    ],
-                  ),
+                    );
+                  },
                 );
               },
             );
@@ -1173,8 +1213,14 @@ class _StartupDetailsPageState extends State<StartupDetailsPage> {
       'priv',
     );
 
-    final question = item['text']?.toString() ?? 'Pergunta não informada';
-    final author = item['authorUid']?.toString() ?? 'Usuário não informado';
+    // Abdallah El-Khatib
+    final question =
+        (item['question'] ?? item['text'])?.toString() ??
+        'Pergunta nao informada';
+    final author =
+        (item['authorName'] ?? item['authorUid'] ?? item['authorId'])
+            ?.toString() ??
+        'Usuario nao informado';
     final date = item['createdAt']?.toString() ?? '--/--/----';
 
     final answerMap = item['answer'];
@@ -1313,11 +1359,12 @@ class _StartupDetailsPageState extends State<StartupDetailsPage> {
                 height: 44,
                 child: ElevatedButton(
                   onPressed: () {
-                    Modular.to.pushNamed(AppRoutes.transactionPage, arguments: 
-                      {
-                        "type" :TransactionType.sell,
+                    Modular.to.pushNamed(
+                      AppRoutes.transactionPage,
+                      arguments: {
+                        "type": TransactionType.sell,
                         "id": startupId,
-                      }
+                      },
                     );
                   },
                   style: ElevatedButton.styleFrom(
@@ -1342,11 +1389,9 @@ class _StartupDetailsPageState extends State<StartupDetailsPage> {
                 height: 44,
                 child: ElevatedButton.icon(
                   onPressed: () {
-                    Modular.to.pushNamed(AppRoutes.transactionPage, arguments: 
-                      {
-                        "type" :TransactionType.buy,
-                        "id": startupId,
-                      }
+                    Modular.to.pushNamed(
+                      AppRoutes.transactionPage,
+                      arguments: {"type": TransactionType.buy, "id": startupId},
                     );
                   },
                   style: ElevatedButton.styleFrom(

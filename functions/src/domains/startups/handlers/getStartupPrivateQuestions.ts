@@ -8,6 +8,7 @@ import { normalizeString } from "../shared/validation";
 import {
     getPrivateQuestions,
     getStartupById,
+    userCanReadAllPrivateQuestions,
     userIsInvestor,
 } from "../repositories/startupRepository";
 import { StartupQuestionResponse } from "../types";
@@ -40,20 +41,30 @@ export const getStartupPrivateQuestions = onCall(
             throw new HttpsError("not-found", "Startup não encontrada.");
         }
 
-        const isInvestor = await userIsInvestor(startupId, user.uid);
+        // Abdallah El-Khatib
+        const [isInvestor, canReadAll] = await Promise.all([
+            userIsInvestor(startupId, user.uid),
+            userCanReadAllPrivateQuestions(startupId, user.uid),
+        ]);
 
-        if (!isInvestor) {
+        if (!isInvestor && !canReadAll) {
             throw new HttpsError(
                 "permission-denied",
                 "Apenas investidores desta startup podem acessar perguntas privadas."
             );
         }
 
-        const questions = await getPrivateQuestions(startupId);
+        const questions = await getPrivateQuestions(startupId, user.uid, canReadAll);
 
         const data: StartupQuestionResponse[] = questions.map(({ id, data: q }) => ({
             id,
+            authorId: q.authorId ?? q.authorUid,
+            authorName: q.authorName,
             authorUid: q.authorUid,
+            isAnswered: q.isAnswered ?? Boolean(q.answer),
+            question: q.question ?? q.text,
+            startupId: q.startupId ?? startupId,
+            status: q.status ?? "open",
             text: q.text,
             visibility: q.visibility,
             createdAt: q.createdAt instanceof Timestamp
