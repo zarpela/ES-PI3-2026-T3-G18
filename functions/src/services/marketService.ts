@@ -3,15 +3,20 @@ Autor: Abdallah
 RA: [SEU RA]
 */
 
+// Abdallah El-Khatib
+
 import {
+  buyMarketplaceOffer,
   buyStartupTokens,
+  createSellOffer,
   getWalletTransactionHistory,
-  sellStartupTokens,
+  listMarketplaceOffers,
 } from "./walletService";
 
 type MarketOperationInput = {
   authenticatedUserId?: string;
   historyLimit?: number | string;
+  offerId?: string;
   price?: number | string;
   quantity?: number | string;
   startupId?: string;
@@ -21,6 +26,11 @@ type MarketOperationInput = {
   userId?: string;
 };
 
+type MarketOffersInput = {
+  stage?: string;
+  startupId?: string;
+};
+
 export const buyTokens = async (data: MarketOperationInput) =>
   buyStartupTokens({
     ...data,
@@ -28,9 +38,16 @@ export const buyTokens = async (data: MarketOperationInput) =>
   });
 
 export const sellTokens = async (data: MarketOperationInput) =>
-  sellStartupTokens({
+  createSellOffer({
     ...data,
     unitPrice: data.unitPrice ?? data.price,
   });
 
+export const getMarketplaceOffers = async (data: MarketOffersInput = {}) =>
+  listMarketplaceOffers(data);
+
+export const buyOffer = async (data: MarketOperationInput) =>
+  buyMarketplaceOffer(data);
+
 export {getWalletTransactionHistory};
+

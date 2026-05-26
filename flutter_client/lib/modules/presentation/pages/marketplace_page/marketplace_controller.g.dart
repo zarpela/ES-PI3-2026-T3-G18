@@ -121,23 +121,15 @@ mixin _$MarketplaceController on _MarketplaceControllerBase, Store {
     );
   }
 
-  late final _$buyTokensAsyncAction = AsyncAction(
-    '_MarketplaceControllerBase.buyTokens',
+  late final _$buyOfferAsyncAction = AsyncAction(
+    '_MarketplaceControllerBase.buyOffer',
     context: context,
   );
 
   @override
-  Future<void> buyTokens({
-    required String startupId,
-    required int quantity,
-    required double price,
-  }) {
-    return _$buyTokensAsyncAction.run(
-      () => super.buyTokens(
-        startupId: startupId,
-        quantity: quantity,
-        price: price,
-      ),
+  Future<void> buyOffer({required String offerId, required int quantity}) {
+    return _$buyOfferAsyncAction.run(
+      () => super.buyOffer(offerId: offerId, quantity: quantity),
     );
   }
 

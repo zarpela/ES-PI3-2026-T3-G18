@@ -7,11 +7,11 @@ import {Request, Response} from "express";
 import {
   addBalanceToWallet,
   buyStartupTokens,
+  createSellOffer,
   createWallet,
   getWalletByUserId,
   getWalletTransactionHistory,
   listWalletTokens,
-  sellStartupTokens,
   withdrawBalanceFromWallet,
 } from "../services/walletService";
 
@@ -162,14 +162,15 @@ export const buyTokensHandler = async (req: Request, res: Response) => {
 
 export const sellTokensHandler = async (req: Request, res: Response) => {
   try {
-    const overview = await sellStartupTokens(buildWalletRequest(req, res));
+    const result = await createSellOffer(buildWalletRequest(req, res));
 
     return res.status(200).json({
       ok: true,
-      message: "Venda realizada com sucesso.",
-      wallet: overview.wallet,
-      tokens: overview.tokens,
-      recentTransactions: overview.recentTransactions,
+      message: "Oferta de venda criada com sucesso.",
+      wallet: result.wallet,
+      tokens: result.tokens,
+      recentTransactions: result.recentTransactions,
+      offer: result.offer,
     });
   } catch (error) {
     console.error("Erro ao vender tokens.", error);

@@ -1,7 +1,6 @@
 //feito por marcelo
 // integracao com backend feita por Abdallah
-
-import 'dart:math';
+// Abdallah El-Khatib
 
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:dio/dio.dart';
@@ -12,22 +11,26 @@ import 'package:mobx/mobx.dart';
 
 part 'marketplace_controller.g.dart';
 
-enum MarketplaceFilter { nova, emOperacao, emExpansao }
+enum MarketplaceFilter { todos, nova, emOperacao, emExpansao }
 
 extension MarketplaceFilterLabel on MarketplaceFilter {
   String get label {
     switch (this) {
+      case MarketplaceFilter.todos:
+        return 'Todas';
       case MarketplaceFilter.nova:
         return 'Nova';
       case MarketplaceFilter.emOperacao:
-        return 'Em operação';
+        return 'Em operacao';
       case MarketplaceFilter.emExpansao:
-        return 'Em expansão';
+        return 'Em expansao';
     }
   }
 
   String get stageValue {
     switch (this) {
+      case MarketplaceFilter.todos:
+        return '';
       case MarketplaceFilter.nova:
         return 'nova';
       case MarketplaceFilter.emOperacao:
@@ -63,7 +66,7 @@ abstract class _MarketplaceControllerBase with Store {
   String searchQuery = '';
 
   @observable
-  MarketplaceFilter activeFilter = MarketplaceFilter.nova;
+  MarketplaceFilter activeFilter = MarketplaceFilter.todos;
 
   @observable
   ObservableList<Map<String, dynamic>> sellOrders =
@@ -91,76 +94,65 @@ abstract class _MarketplaceControllerBase with Store {
 
     try {
       final user = _auth.currentUser;
-      final idToken = await user?.getIdToken();
-
-      final callable = _functions.httpsCallable('getStartups');
-      final result = await callable.call(<String, dynamic>{
-        'stage': activeFilter.stageValue,
-      });
-
-      final raw = result.data;
-      final items = raw is Map && raw['data'] is List
-          ? (raw['data'] as List)
-          : raw is List
-              ? raw
-              : <dynamic>[];
-
-      final ownedByStartupId = <String, int>{};
-      if (user != null && idToken != null) {
-        try {
-          final walletTokensResponse = await _dio.get(
-            'wallet/${user.uid}/tokens',
-            options: Options(
-              headers: {'Authorization': 'Bearer $idToken'},
-            ),
-          );
-
-          final tokens = walletTokensResponse.data is Map &&
-                  walletTokensResponse.data['tokens'] is List
-              ? List<Map<String, dynamic>>.from(
-                  (walletTokensResponse.data['tokens'] as List).map(
-                    (item) => Map<String, dynamic>.from(item as Map),
-                  ),
-                )
-              : <Map<String, dynamic>>[];
-
-          for (final token in tokens) {
-            final startupId = (token['startupId'] ?? '').toString().trim();
-            if (startupId.isEmpty) continue;
-            ownedByStartupId[startupId] = _asInt(token['quantity']);
-          }
-        } catch (e) {
-          debugPrint('MarketplaceController wallet tokens fetch error: $e');
-        }
+      if (user == null) {
+        throw Exception('Usuario nao autenticado.');
       }
 
-      sellOrders.clear();
+      final idToken = await user.getIdToken();
+      final response = await _dio.get(
+        'market/offers',
+        queryParameters: {
+          if (activeFilter.stageValue.isNotEmpty)
+            'stage': activeFilter.stageValue,
+        },
+        options: Options(
+          headers: idToken == null
+              ? null
+              : {'Authorization': 'Bearer $idToken'},
+        ),
+      );
 
+      final raw = response.data;
+      final items = raw is Map && raw['offers'] is List
+          ? (raw['offers'] as List)
+          : raw is Map && raw['data'] is List
+          ? (raw['data'] as List)
+          : raw is List
+          ? raw
+          : <dynamic>[];
+
+      sellOrders.clear();
       sellOrders.addAll(
         items.whereType<Map>().map((item) {
-          final startup = Map<String, dynamic>.from(item);
-          final startupId = (startup['id'] ?? '').toString();
-          final startupName = (startup['name'] ?? startupId).toString();
-
-          final price = _calculateTokenPrice(startup);
-          final ownedQuantity = ownedByStartupId[startupId] ?? 0;
+          final offer = Map<String, dynamic>.from(item);
+          final offerId = (offer['id'] ?? offer['offerId'] ?? '').toString();
+          final startupId = (offer['startupId'] ?? '').toString();
+          final startupName =
+              (offer['startupName'] ?? offer['title'] ?? startupId).toString();
+          final price = _asDouble(
+            offer['unitPrice'] ?? offer['pricePerToken'] ?? offer['price'],
+          );
+          final remainingQuantity = _asInt(
+            offer['remainingQuantity'] ?? offer['quantity'] ?? offer['amount'],
+          );
 
           return <String, dynamic>{
-            'id': startupId,
+            'id': offerId,
+            'offerId': offerId,
             'startupId': startupId,
             'startupName': startupName,
             'title': startupName,
-            'sellerName': 'MesclaInvest',
-            'quantity': ownedQuantity,
+            'sellerName': offer['sellerName'] ?? 'Investidor',
+            'quantity': remainingQuantity,
             'price': price,
+            'unitPrice': price,
+            'status': offer['status'] ?? 'open',
           };
         }),
       );
-    } on FirebaseFunctionsException catch (e) {
-      debugPrint(
-        'FirebaseFunctionsException (getStartups): code=${e.code}, message=${e.message}',
-      );
-      errorMessage = 'Não foi possível carregar as ofertas.';
+    } on DioException catch (e) {
+      debugPrint('MarketplaceController fetch Dio error: ${e.message}');
+      errorMessage = _extractDioError(e);
     } catch (e) {
       debugPrint('MarketplaceController fetch error: $e');
       errorMessage = 'Erro inesperado ao carregar o marketplace.';
@@ -196,7 +188,7 @@ abstract class _MarketplaceControllerBase with Store {
       debugPrint(
         'FirebaseFunctionsException (getStartupById): code=${e.code}, message=${e.message}',
       );
-      errorMessage = 'Não foi possível carregar os detalhes da startup.';
+      errorMessage = 'Nao foi possivel carregar os detalhes da startup.';
       throw Exception(errorMessage);
     } catch (e) {
       debugPrint('MarketplaceController getStartupById error: $e');
@@ -208,10 +200,9 @@ abstract class _MarketplaceControllerBase with Store {
   }
 
   @action
-  Future<void> buyTokens({
-    required String startupId,
+  Future<void> buyOffer({
+    required String offerId,
     required int quantity,
-    required double price,
   }) async {
     isLoading = true;
     errorMessage = null;
@@ -225,59 +216,23 @@ abstract class _MarketplaceControllerBase with Store {
       final token = await user.getIdToken();
 
       await _dio.post(
-        'market/buy',
-        data: {
-          'startupId': startupId,
-          'quantity': quantity,
-          'price': price,
-        },
+        'market/offers/$offerId/buy',
+        data: {'quantity': quantity},
         options: Options(
           headers: token == null ? null : {'Authorization': 'Bearer $token'},
         ),
       );
     } on DioException catch (e) {
-      debugPrint('MarketplaceController buyTokens Dio error: ${e.message}');
+      debugPrint('MarketplaceController buyOffer Dio error: ${e.message}');
       errorMessage = _extractDioError(e);
       rethrow;
     } catch (e) {
-      debugPrint('MarketplaceController buyTokens error: $e');
+      debugPrint('MarketplaceController buyOffer error: $e');
       errorMessage = 'Erro inesperado ao processar a compra.';
       rethrow;
     } finally {
       isLoading = false;
     }
-  }
-
-  double _calculateTokenPrice(Map<String, dynamic> startup) {
-    final emittedTokens = _asDouble(startup['totalEmittedTokens']);
-    final targetCapital = _asDouble(startup['targetCapital']);
-
-    if (emittedTokens > 0 && targetCapital > 0) {
-      final price = targetCapital / emittedTokens;
-      if (price.isFinite && price > 0) {
-        return price;
-      }
-    }
-
-    return 1.0;
-  }
-
-  // Mantido aqui para uso futuro caso o marketplace volte a exibir
-  // quantidade disponível por startup (emissão primária).
-  int _calculateAvailableQuantity(Map<String, dynamic> startup, double price) {
-    final emittedTokens = _asInt(startup['totalEmittedTokens']);
-    final raisedCapital = _asDouble(startup['raisedCapital']);
-
-    if (emittedTokens <= 0) {
-      return 0;
-    }
-
-    if (price <= 0 || raisedCapital <= 0) {
-      return emittedTokens;
-    }
-
-    final sold = (raisedCapital / price).floor();
-    return max(0, emittedTokens - sold);
   }
 
   double _asDouble(dynamic value) {
@@ -307,6 +262,6 @@ abstract class _MarketplaceControllerBase with Store {
       }
     }
 
-    return 'Não foi possível completar a operação.';
+    return 'Nao foi possivel completar a operacao.';
   }
 }
