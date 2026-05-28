@@ -9,6 +9,7 @@ import 'package:flutter_client/modules/presentation/pages/login_page/login_contr
 import 'package:flutter_client/modules/presentation/pages/login_page/login_page.dart';
 import 'package:flutter_client/modules/presentation/pages/marketplace_page/marketplace_controller.dart';
 import 'package:flutter_client/modules/presentation/pages/marketplace_page/marketplace_page.dart';
+import 'package:flutter_client/modules/presentation/pages/mfa_verification_page/mfa_verification_page.dart';
 import 'package:flutter_client/modules/presentation/pages/password_recovery/change_password_page/change_password_controller.dart';
 import 'package:flutter_client/modules/presentation/pages/password_recovery/change_password_page/change_password_page.dart';
 import 'package:flutter_client/modules/presentation/pages/password_recovery/forgot_password_page/forgot_password_page.dart';
@@ -50,6 +51,7 @@ class AppModule extends Module {
     r.child(AppRoutes.register, child: (_) => const RegisterPage());
     r.child(AppRoutes.forgotPassword, child: (_) => const ForgotPasswordPage());
     r.child(AppRoutes.changePassword, child: (_) => const ChangePasswordPage());
+    r.child(AppRoutes.mfaVerify, child: (_) => const MfaVerificationPage());
     r.child(AppRoutes.allInvestments, child: (_) => const AllInvestmentsPage());
     r.child(AppRoutes.marketplace, child: (_) => const MarketplacePage());
     r.child(

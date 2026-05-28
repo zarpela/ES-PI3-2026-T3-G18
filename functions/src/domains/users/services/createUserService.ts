@@ -33,6 +33,7 @@ export async function createUser(data: CreateUserInput): Promise<UserRecord> {
     cpf,
     telefone,
     email,
+    mfaEnabled: false,
     createdAt: new Date(),
   });
 

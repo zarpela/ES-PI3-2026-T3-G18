@@ -1,5 +1,6 @@
 // feito por abdallah, pedro, marcelo
 import 'package:flutter/material.dart';
+import 'package:flutter_client/core/app_session.dart';
 import 'package:flutter_client/modules/presentation/components/home/home_bottom_navigation.dart';
 import 'package:flutter_client/modules/presentation/components/home/home_explore_section.dart';
 import 'package:flutter_client/modules/presentation/components/home/home_history_sheet.dart';
@@ -29,7 +30,9 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     controller.addListener(_refresh);
-    WidgetsBinding.instance.addPostFrameCallback((_) => controller.load());
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _ensureAuthorizedSession(),
+    );
   }
 
   @override
@@ -42,6 +45,20 @@ class _HomePageState extends State<HomePage> {
     if (mounted) {
       setState(() {});
     }
+  }
+
+  Future<void> _ensureAuthorizedSession() async {
+    if (!AppSession.instance.isAccessGranted ||
+        controller.currentUser == null) {
+      controller.reset();
+      await controller.auth.signOut();
+      if (mounted) {
+        Modular.to.navigate(AppRoutes.login);
+      }
+      return;
+    }
+
+    controller.load();
   }
 
   @override
@@ -91,9 +108,7 @@ class _HomePageState extends State<HomePage> {
                       child: ListView(
                         physics: const AlwaysScrollableScrollPhysics(),
                         padding: const EdgeInsets.fromLTRB(18, 18, 18, 24),
-                        children: [
-                          _buildCurrentSection(),
-                        ],
+                        children: [_buildCurrentSection()],
                       ),
                     ),
                   ),
@@ -112,11 +127,8 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _openStartupDetails(Map<String, dynamic> startup) {
-  Modular.to.pushNamed(
-    AppRoutes.startupDetailsPage,
-    arguments: startup,
-  );
-}
+    Modular.to.pushNamed(AppRoutes.startupDetailsPage, arguments: startup);
+  }
 
   Widget _buildCurrentSection() {
     switch (currentSection) {
@@ -157,13 +169,13 @@ class _HomePageState extends State<HomePage> {
         );
 
       case HomeSection.portfolio:
-        return PortfolioView(controller: controller);
+        return const PortfolioView();
     }
   }
 
   void _handleProfilePhotoTap() {
-  Modular.to.pushNamed(AppRoutes.settings);
-}
+    Modular.to.pushNamed(AppRoutes.settings);
+  }
 
   Future<void> _openWalletAmountPage(WalletAmountPageMode mode) async {
     final result = await Navigator.of(context).push<String>(
@@ -177,10 +189,7 @@ class _HomePageState extends State<HomePage> {
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(result),
-        behavior: SnackBarBehavior.floating,
-      ),
+      SnackBar(content: Text(result), behavior: SnackBarBehavior.floating),
     );
   }
 
@@ -222,10 +231,7 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
-    Modular.to.pushNamed(
-      AppRoutes.startupDetailsPage,
-      arguments: startup,
-    );
+    Modular.to.pushNamed(AppRoutes.startupDetailsPage, arguments: startup);
   }
 
   Map<String, dynamic>? _findStartupByName(String startupName) {
@@ -238,7 +244,7 @@ class _HomePageState extends State<HomePage> {
       }
     }
 
-    if ('${controller.featuredStartupName}'.trim().toLowerCase() ==
+    if (controller.featuredStartupName.trim().toLowerCase() ==
             normalizedTarget &&
         controller.startups.isNotEmpty) {
       return controller.startups.first;

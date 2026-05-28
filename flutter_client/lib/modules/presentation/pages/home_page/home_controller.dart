@@ -7,14 +7,19 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_client/core/app_session.dart';
 
 class HomeController extends ChangeNotifier {
   HomeController(this._dio, [FirebaseAuth? auth]) : _auth = auth {
     _authSub = this.auth.authStateChanges().listen((user) {
       final uid = user?.uid;
-      if (uid != null && uid != _currentUid) {
+      if (uid != null &&
+          AppSession.instance.isAccessGranted &&
+          uid != _currentUid) {
         _currentUid = uid;
         load();
+      } else if (uid != null) {
+        _currentUid = uid;
       } else if (user == null) {
         _currentUid = null;
       }
@@ -422,6 +427,7 @@ class HomeController extends ChangeNotifier {
     try {
       final token = await user.getIdToken();
 
+      // O uid na query ajuda a evitar cache indevido entre contas diferentes.
       final response = await _dio.get<List<int>>(
         'profile-photo?uid=${user.uid}&t=${DateTime.now().millisecondsSinceEpoch}',
         options: Options(
@@ -675,7 +681,8 @@ class HomeController extends ChangeNotifier {
     final response = raw is Map
         ? Map<String, dynamic>.from(raw)
         : <String, dynamic>{};
-    final rawTransactions = response['transactions'] ?? response['recentTransactions'];
+    final rawTransactions =
+        response['transactions'] ?? response['recentTransactions'];
 
     if (rawTransactions is! List) {
       return <Map<String, dynamic>>[];
@@ -688,7 +695,9 @@ class HomeController extends ChangeNotifier {
 
     transactions.sort((left, right) {
       final leftDate = DateTime.tryParse((left['createdAt'] ?? '').toString());
-      final rightDate = DateTime.tryParse((right['createdAt'] ?? '').toString());
+      final rightDate = DateTime.tryParse(
+        (right['createdAt'] ?? '').toString(),
+      );
 
       if (leftDate == null && rightDate == null) {
         return 0;
@@ -713,10 +722,14 @@ class HomeController extends ChangeNotifier {
       ...transaction,
       'type': type,
       'amount': _asDouble(
-        transaction['amount'] ?? transaction['totalAmount'] ?? transaction['total'],
+        transaction['amount'] ??
+            transaction['totalAmount'] ??
+            transaction['total'],
       ),
       'total': _asDouble(
-        transaction['total'] ?? transaction['totalAmount'] ?? transaction['amount'],
+        transaction['total'] ??
+            transaction['totalAmount'] ??
+            transaction['amount'],
       ),
       'createdAt': _normalizeIsoDate(transaction['createdAt']),
     };
