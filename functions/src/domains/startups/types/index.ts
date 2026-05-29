@@ -136,10 +136,5 @@ export type StartupQuestionResponse = {
 // subcoleçao de histórico de preços do token para cada startup
 export type TokenPriceHistory = {
     price: number;
-<<<<<<< HEAD
     createdAt: FirebaseFirestore.Timestamp;
 }
-=======
-    createdAt: Timestamp;
-}
->>>>>>> feature/integracao-marketplace-wallet-perguntas

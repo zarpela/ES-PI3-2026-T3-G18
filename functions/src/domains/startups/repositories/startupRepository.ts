@@ -268,7 +268,6 @@ export async function getPrivateQuestions(
     }
 }
 
-<<<<<<< HEAD
 /**
  * Salva o histórico ed valorização do token
  * vai ser chamado em /schedule a cada 4h, começando 00:00
@@ -292,7 +291,6 @@ export async function saveAllPriceSnapshots() {
 
     await Promise.all(promises);
 }
-=======
 // Abdallah El-Khatib
 export async function getTokenPriceHistory(
     startupId: string,
@@ -310,4 +308,3 @@ export async function getTokenPriceHistory(
         throw new HttpsError("internal", "Erro ao buscar histórico de preços.");
     }
 }
->>>>>>> feature/integracao-marketplace-wallet-perguntas
