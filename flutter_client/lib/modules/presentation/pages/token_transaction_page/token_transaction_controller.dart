@@ -61,14 +61,18 @@ abstract class _TokenTransactionControllerBase with Store {
   double get totalValue => quantity * pricePerToken;
 
   @action
-  Future<void> loadAssetData(String startupId) async {
+  Future<void> loadAssetData(
+    String startupId, {
+    String? initialStartupName,
+    double? initialPricePerToken,
+  }) async {
     isLoading = true;
     errorMessage = null;
 
     try {
       final user = _auth.currentUser;
       if (user == null) {
-        throw Exception('Usuario nao autenticado.');
+        throw Exception('Usuário não autenticado.');
       }
 
       final token = await user.getIdToken();
@@ -82,16 +86,16 @@ abstract class _TokenTransactionControllerBase with Store {
 
       final wallet =
           walletResponse.data is Map && walletResponse.data['wallet'] is Map
-              ? Map<String, dynamic>.from(walletResponse.data['wallet'] as Map)
-              : <String, dynamic>{};
+          ? Map<String, dynamic>.from(walletResponse.data['wallet'] as Map)
+          : <String, dynamic>{};
 
       availableFiatBalance = _asDouble(wallet['balance']);
 
       final walletTokens = (wallet['tokens'] is List)
           ? (wallet['tokens'] as List)
-              .whereType<Map>()
-              .map((e) => Map<String, dynamic>.from(e))
-              .toList()
+                .whereType<Map>()
+                .map((e) => Map<String, dynamic>.from(e))
+                .toList()
           : <Map<String, dynamic>>[];
 
       final ownedToken = walletTokens.firstWhere(
@@ -99,24 +103,28 @@ abstract class _TokenTransactionControllerBase with Store {
         orElse: () => <String, dynamic>{},
       );
 
-      availableTokenBalance = _asInt(ownedToken['quantity']);
+      availableTokenBalance = _asInt(
+        ownedToken['availableQuantity'] ?? ownedToken['quantity'],
+      );
       final averagePrice = _asDouble(ownedToken['averagePrice']);
 
       final startup = await _fetchStartupById(startupId);
-      assetName =
-          (startup['name'] ?? startup['startupName'] ?? startupId).toString();
+      // Abdallah El-Khatib
+      assetName = (initialStartupName?.trim().isNotEmpty ?? false)
+          ? initialStartupName!.trim()
+          : (startup['name'] ?? startup['startupName'] ?? startupId).toString();
 
-      final tokenPrice =
-          _calculateTokenPrice(startup, fallback: averagePrice);
+      final tokenPrice = _calculateTokenPrice(
+        startup,
+        fallback: initialPricePerToken ?? averagePrice,
+      );
 
-      pricePerToken = transactionType == TransactionType.sell
-          ? (averagePrice > 0 ? averagePrice : tokenPrice)
-          : tokenPrice;
+      pricePerToken = tokenPrice;
 
       quantity = 1;
     } catch (e) {
       debugPrint('TokenTransactionController loadAssetData error: $e');
-      errorMessage = 'Nao foi possivel carregar os dados do ativo.';
+      errorMessage = 'Não foi possível carregar os dados do ativo.';
     } finally {
       isLoading = false;
     }
@@ -130,12 +138,12 @@ abstract class _TokenTransactionControllerBase with Store {
     try {
       final user = _auth.currentUser;
       if (user == null) {
-        errorMessage = 'Usuario nao autenticado.';
+        errorMessage = 'Usuário não autenticado.';
         return false;
       }
 
       if (quantity <= 0) {
-        errorMessage = 'Quantidade invalida.';
+        errorMessage = 'Quantidade inválida.';
         return false;
       }
 
@@ -146,15 +154,18 @@ abstract class _TokenTransactionControllerBase with Store {
       }
 
       final token = await user.getIdToken();
-      final endpoint =
-          transactionType == TransactionType.buy ? 'market/buy' : 'market/sell';
+      final endpoint = transactionType == TransactionType.buy
+          ? 'market/buy'
+          : 'market/sell';
 
       final response = await _dio.post(
         endpoint,
         data: {
           'startupId': startupId,
+          'startupName': assetName,
           'quantity': quantity,
           'price': pricePerToken,
+          'unitPrice': pricePerToken,
         },
         options: Options(
           headers: token == null ? null : {'Authorization': 'Bearer $token'},
@@ -170,9 +181,9 @@ abstract class _TokenTransactionControllerBase with Store {
 
         final walletTokens = (wallet['tokens'] is List)
             ? (wallet['tokens'] as List)
-                .whereType<Map>()
-                .map((e) => Map<String, dynamic>.from(e))
-                .toList()
+                  .whereType<Map>()
+                  .map((e) => Map<String, dynamic>.from(e))
+                  .toList()
             : <Map<String, dynamic>>[];
 
         final ownedToken = walletTokens.firstWhere(
@@ -180,7 +191,9 @@ abstract class _TokenTransactionControllerBase with Store {
           orElse: () => <String, dynamic>{},
         );
 
-        availableTokenBalance = _asInt(ownedToken['quantity']);
+        availableTokenBalance = _asInt(
+          ownedToken['availableQuantity'] ?? ownedToken['quantity'],
+        );
       }
 
       return true;
@@ -190,7 +203,7 @@ abstract class _TokenTransactionControllerBase with Store {
       return false;
     } catch (e) {
       debugPrint('TokenTransactionController submit error: $e');
-      errorMessage = 'Erro inesperado ao processar a transacao.';
+      errorMessage = 'Erro inesperado ao processar a transação.';
       return false;
     } finally {
       isSubmitting = false;
@@ -199,18 +212,24 @@ abstract class _TokenTransactionControllerBase with Store {
 
   @action
   void incrementQuantity() {
-    if (transactionType == TransactionType.sell &&
-        quantity >= availableTokenBalance) {
-      return;
-    }
-    quantity++;
+    updateQuantity(quantity + 1);
   }
 
   @action
   void decrementQuantity() {
-    if (quantity > 1) {
-      quantity--;
+    updateQuantity(quantity - 1);
+  }
+
+  void updateQuantity(int newQuantity) {
+    var normalized = newQuantity < 1 ? 1 : newQuantity;
+
+    if (transactionType == TransactionType.sell &&
+        availableTokenBalance > 0 &&
+        normalized > availableTokenBalance) {
+      normalized = availableTokenBalance;
     }
+
+    quantity = normalized;
   }
 
   @action
@@ -288,6 +307,6 @@ abstract class _TokenTransactionControllerBase with Store {
       }
     }
 
-    return 'Nao foi possivel completar a operacao.';
+    return 'Não foi possível completar a operação.';
   }
 }

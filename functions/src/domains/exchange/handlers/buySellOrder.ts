@@ -7,7 +7,9 @@ import { buySellOrder } from "../repositories/exchangeRepository";
  * Corpo esperado em request.data para comprar uma ordem de venda aberta.
  */
 type BuySellOrderRequest = {
+    amount?: number;
     orderId?: string;
+    quantity?: number;
 }
 
 /**
@@ -49,6 +51,7 @@ export const buySellOrderHandler = onCall(
         // evita quebra se request.data for undefined
         const data = (request.data ?? {}) as Partial<BuySellOrderRequest>;
         const orderId = data.orderId;
+        const amount = data.quantity ?? data.amount;
 
         // valida orderId
         if (!orderId || typeof orderId !== "string") 
@@ -57,7 +60,7 @@ export const buySellOrderHandler = onCall(
         }
 
         // executa compra da ordem
-        await buySellOrder(buyerId,orderId,);
+        await buySellOrder(buyerId, orderId, amount);
 
         return {
             message: "Ordem comprada com sucesso.",

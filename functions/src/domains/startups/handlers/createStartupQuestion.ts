@@ -33,7 +33,9 @@ export const createStartupQuestion = onCall(
 
         const startupId = normalizeString(request.data?.startupId);
         const text = normalizeString(request.data?.text);
-        const visibility = (normalizeString(request.data?.visibility) ?? "publica") as QuestionVisibility;
+        // Abdallah El-Khatib
+        const rawVisibility = normalizeString(request.data?.visibility) ?? "publica";
+        const visibility = normalizeVisibility(rawVisibility);
 
         if (!startupId || !text) {
 
@@ -68,10 +70,17 @@ export const createStartupQuestion = onCall(
         }
 
         const question: StartupQuestionDocument = {
+            authorId: user.uid,
+            authorName: user.email?.split("@")[0] ?? "Investidor",
             authorUid: user.uid,
+            isAnswered: false,
+            question: text,
+            startupId,
+            status: "open",
             text,
             visibility,
             createdAt: FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp(),
         };
 
         const questionId = await createQuestion(startupId, question);
@@ -91,3 +100,14 @@ export const createStartupQuestion = onCall(
         };
     }
 );
+
+// Abdallah El-Khatib
+function normalizeVisibility(value: string): QuestionVisibility {
+    const normalized = value.trim().toLowerCase();
+
+    if (normalized === "private" || normalized === "privada") {
+        return "privada";
+    }
+
+    return "publica";
+}

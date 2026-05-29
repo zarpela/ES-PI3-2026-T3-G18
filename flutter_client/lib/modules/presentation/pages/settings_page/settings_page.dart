@@ -48,9 +48,9 @@ class _SettingsPageState extends State<SettingsPage> {
     _showSnackBar(
       success
           ? enabled
-                ? 'Autenticacao multifator ativada com sucesso.'
-                : 'Autenticacao multifator desativada com sucesso.'
-          : 'Erro ao atualizar autenticacao multifator.',
+                ? 'Autenticação multifator ativada com sucesso.'
+                : 'Autenticação multifator desativada com sucesso.'
+          : 'Erro ao atualizar autenticação multifator.',
     );
   }
 
@@ -174,7 +174,7 @@ class _SettingsPageState extends State<SettingsPage> {
         elevation: 0,
         leading: const BackButton(color: HomePalette.deepText),
         title: const Text(
-          'Configuracoes',
+          'Configurações',
           style: TextStyle(
             color: HomePalette.deepText,
             fontWeight: FontWeight.w800,
@@ -198,7 +198,7 @@ class _SettingsPageState extends State<SettingsPage> {
               _SettingsTile(
                 icon: Icons.shield_outlined,
                 iconColor: HomePalette.brandPink,
-                label: 'Autenticacao multifator',
+                label: 'Autenticação multifator',
                 trailing: CupertinoSwitch(
                   value: _controller.mfaEnabled,
                   activeTrackColor: HomePalette.brandPink,

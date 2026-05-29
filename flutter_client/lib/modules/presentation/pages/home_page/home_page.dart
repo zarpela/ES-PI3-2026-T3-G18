@@ -104,11 +104,23 @@ class _HomePageState extends State<HomePage> {
                   Expanded(
                     child: RefreshIndicator(
                       color: HomePalette.brandPink,
-                      onRefresh: controller.refresh,
+                      displacement: 28,
+                      triggerMode: RefreshIndicatorTriggerMode.anywhere,
+                      notificationPredicate: (notification) =>
+                          notification.depth == 0,
+                      onRefresh: _handleRefresh,
                       child: ListView(
-                        physics: const AlwaysScrollableScrollPhysics(),
+                        key: PageStorageKey<String>(
+                          'home-${currentSection.name}',
+                        ),
+                        physics: const BouncingScrollPhysics(
+                          parent: AlwaysScrollableScrollPhysics(),
+                        ),
                         padding: const EdgeInsets.fromLTRB(18, 18, 18, 24),
-                        children: [_buildCurrentSection()],
+                        children: [
+                          _buildCurrentSection(),
+                          const SizedBox(height: 1),
+                        ],
                       ),
                     ),
                   ),
@@ -169,7 +181,8 @@ class _HomePageState extends State<HomePage> {
         );
 
       case HomeSection.portfolio:
-        return const PortfolioView();
+        // Abdallah El-Khatib
+        return PortfolioView(controller: controller);
     }
   }
 
@@ -205,6 +218,15 @@ class _HomePageState extends State<HomePage> {
         );
       },
     );
+  }
+
+  Future<void> _handleRefresh() async {
+    if (currentSection == HomeSection.carteira) {
+      await controller.refreshWallet();
+      return;
+    }
+
+    await controller.refresh();
   }
 
   void _selectSection(HomeSection section) {

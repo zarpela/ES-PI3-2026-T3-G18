@@ -39,7 +39,7 @@ class HomeProfileSection extends StatelessWidget {
         _ShortcutCard(
           title: 'Sua foto de perfil',
           description:
-              'Toque no avatar ou no botao abaixo para trocar a foto que aparece no cabecalho.',
+              'Toque no avatar ou no botão abaixo para trocar a foto que aparece no cabeçalho.',
           buttonLabel: 'Alterar foto',
           onPressed: onProfileTap,
         ),

@@ -152,7 +152,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     } on DioException catch (error) {
       return _extractErrorMessage(error);
     } catch (_) {
-      return 'Nao foi possivel validar o codigo.';
+      return 'Não foi possível validar o código.';
     }
   }
 
@@ -174,15 +174,15 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     if (error.type == DioExceptionType.connectionTimeout ||
         error.type == DioExceptionType.receiveTimeout ||
         error.type == DioExceptionType.sendTimeout) {
-      return 'A solicitacao demorou demais. Tente novamente.';
+      return 'A solicitação demorou demais. Tente novamente.';
     }
 
     if (error.type == DioExceptionType.connectionError ||
         error.type == DioExceptionType.unknown) {
-      return 'Nao foi possivel conectar ao servidor. Verifique a API e tente novamente.';
+      return 'Não foi possível conectar ao servidor. Verifique a API e tente novamente.';
     }
 
-    return 'Nao foi possivel concluir a solicitacao.';
+    return 'Não foi possível concluir a solicitação.';
   }
 
   String _buildApiMessage(Map<String, dynamic> data) {
@@ -238,9 +238,9 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const AuthSectionHeader(
-            title: 'Recuperacao de\nSenha',
+            title: 'Recuperação de\nSenha',
             subtitle:
-                'Enviaremos um codigo para o seu e-mail para redefinir sua senha',
+                'Enviaremos um código para o seu e-mail para redefinir sua senha',
             titleFontSize: 32,
             titleHeight: 1.2,
             bottomSpacing: 48,
@@ -279,7 +279,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           ],
           const SizedBox(height: 16),
           AuthActionButton(
-            label: 'Enviar instrucoes',
+            label: 'Enviar instruções',
             onPressed: () => sendInstructions(),
             isEnabled: !isSending,
             isLoading: isSending,

@@ -35,7 +35,7 @@ class _LoginMfaVerificationDialogState
 
     if (code.length != 6) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Digite o codigo com 6 digitos.')),
+        const SnackBar(content: Text('Digite o código com 6 dígitos.')),
       );
       return;
     }
@@ -132,7 +132,7 @@ class _LoginMfaVerificationDialogState
               ),
               const SizedBox(height: 12),
               Text(
-                'Enviamos um codigo de verificacao para ${widget.email}.',
+                'Enviamos um código de verificação para ${widget.email}.',
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: 14,
@@ -142,7 +142,7 @@ class _LoginMfaVerificationDialogState
               ),
               const SizedBox(height: 8),
               const Text(
-                'Digite os 6 digitos para concluir o login.',
+                'Digite os 6 dígitos para concluir o login.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14,

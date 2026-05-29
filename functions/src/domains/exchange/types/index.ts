@@ -12,7 +12,7 @@ export type Token = {
 }
 
 // poderia ser possível cancelar uma venda
-export type SellOrderStatus = "open" | "completed" | "cancelled";
+export type SellOrderStatus = "open" | "partial" | "closed" | "cancelled";
 
 /**
  * Ordem de venda
@@ -21,6 +21,8 @@ export type SellOrder = {
     // identificação
     id?: string;
     ownerId: string;
+    sellerId?: string;
+    sellerName?: string;
     startupId: string;
 
     // visual
@@ -28,12 +30,18 @@ export type SellOrder = {
 
     // dados da ordem
     amount: number;
+    quantity?: number;
+    remainingQuantity?: number;
     pricePerToken: number;
+    unitPrice?: number;
     averagePrice: number;
 
     // dados para controle
-    createdAt: Timestamp;
+    createdAt: Timestamp | string | null;
+    updatedAt?: Timestamp | string | null;
     status: SellOrderStatus;
+    totalValue?: number;
+    type?: "sell";
 
 }
 

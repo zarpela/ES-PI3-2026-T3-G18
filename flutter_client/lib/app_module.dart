@@ -60,7 +60,19 @@ class AppModule extends Module {
         final payload = Modular.args.data as Map<String, dynamic>;
         final TransactionType type = payload['type'];
         final String id = payload['id'];
-        return TokenTransactionPage(type: type, id: id);
+        // Abdallah El-Khatib
+        return TokenTransactionPage(
+          type: type,
+          id: id,
+          startupName: payload['startupName']?.toString(),
+          unitPrice: payload['unitPrice'] is num
+              ? (payload['unitPrice'] as num).toDouble()
+              : double.tryParse(payload['unitPrice']?.toString() ?? ''),
+          tokensDisponiveis: payload['tokensDisponiveis'] is num
+              ? (payload['tokensDisponiveis'] as num).toInt()
+              : int.tryParse(payload['tokensDisponiveis']?.toString() ?? ''),
+          logoUrl: payload['logo']?.toString(),
+        );
       },
     );
     r.child(AppRoutes.settings, child: (_) => const SettingsPage());

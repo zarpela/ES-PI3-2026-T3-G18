@@ -71,7 +71,7 @@ class _BootstrapApp extends StatelessWidget {
                 debugShowCheckedModeBanner: false,
                 home: _StartupStateScreen(
                   title: 'Carregando MesclaInvest...',
-                  subtitle: 'Inicializando a aplicacao.',
+                  subtitle: 'Inicializando a aplicação.',
                   loading: true,
                 ),
               );
@@ -81,7 +81,7 @@ class _BootstrapApp extends StatelessWidget {
               return MaterialApp(
                 debugShowCheckedModeBanner: false,
                 home: _StartupStateScreen(
-                  title: 'Nao foi possivel iniciar o app',
+                  title: 'Não foi possível iniciar o app',
                   subtitle: '${snapshot.error}',
                 ),
               );

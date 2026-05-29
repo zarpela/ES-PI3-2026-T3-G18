@@ -60,16 +60,13 @@ class _BuyBottomSheetContentState extends State<_BuyBottomSheetContent> {
 
   Future<void> _handleBuy() async {
     try {
-      await _controller.buyTokens(
-        startupId: widget.offerId,
-        quantity: _quantity,
-        price: widget.pricePerToken,
-      );
+      // Abdallah El-Khatib
+      await _controller.buyOffer(offerId: widget.offerId, quantity: _quantity);
 
       await Modular.get<HomeController>().refreshWallet();
 
       if (!mounted) return;
-      
+
       Navigator.of(context).pop();
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -82,7 +79,9 @@ class _BuyBottomSheetContentState extends State<_BuyBottomSheetContent> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(_controller.errorMessage ?? 'Erro ao concluir a compra.'),
+          content: Text(
+            _controller.errorMessage ?? 'Erro ao concluir a compra.',
+          ),
           backgroundColor: Colors.red,
         ),
       );
@@ -188,7 +187,7 @@ class _BuyBottomSheetContentState extends State<_BuyBottomSheetContent> {
               ),
             ],
           ),
-          
+
           const SizedBox(height: 24),
           const Divider(color: Color(0xFFEAE5FF)),
           const SizedBox(height: 16),
@@ -211,7 +210,7 @@ class _BuyBottomSheetContentState extends State<_BuyBottomSheetContent> {
               ),
             ],
           ),
-          
+
           const SizedBox(height: 32),
 
           Observer(

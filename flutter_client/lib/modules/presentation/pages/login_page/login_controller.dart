@@ -100,7 +100,7 @@ abstract class LoginControllerBase with Store {
           errorMessage = 'Senha incorreta';
           break;
         case 'user-disabled':
-          errorMessage = 'Usuario desativado';
+          errorMessage = 'Usuário desativado';
           break;
         case 'too-many-requests':
           errorMessage = 'Muitas tentativas. Tente novamente mais tarde';
@@ -113,7 +113,7 @@ abstract class LoginControllerBase with Store {
       await _safeSignOut();
       errorMessage =
           _extractApiMessage(e) ??
-          'Nao foi possivel iniciar a autenticacao multifator.';
+          'Não foi possível iniciar a autenticação multifator.';
       return false;
     } catch (_) {
       await _safeSignOut();
@@ -129,11 +129,11 @@ abstract class LoginControllerBase with Store {
     final user = auth.currentUser;
 
     if (user == null) {
-      return 'Sua sessao expirou. Faca login novamente.';
+      return 'Sua sessão expirou. Faça login novamente.';
     }
 
     if (trimmedCode.length != 6) {
-      return 'Digite o codigo com 6 digitos.';
+      return 'Digite o código com 6 dígitos.';
     }
 
     try {
@@ -148,9 +148,9 @@ abstract class LoginControllerBase with Store {
       AppSession.instance.grantAccess();
       return null;
     } on DioException catch (e) {
-      return _extractApiMessage(e) ?? 'Nao foi possivel validar o codigo.';
+      return _extractApiMessage(e) ?? 'Não foi possível validar o código.';
     } catch (_) {
-      return 'Nao foi possivel validar o codigo.';
+      return 'Não foi possível validar o código.';
     }
   }
 
@@ -158,22 +158,22 @@ abstract class LoginControllerBase with Store {
     final user = auth.currentUser;
 
     if (user == null) {
-      return 'Sua sessao expirou. Faca login novamente.';
+      return 'Sua sessão expirou. Faça login novamente.';
     }
 
     try {
       _pendingMfaEmail = await _requestLoginMfaCode(user);
       return null;
     } on DioException catch (e) {
-      return _extractApiMessage(e) ?? 'Nao foi possivel reenviar o codigo.';
+      return _extractApiMessage(e) ?? 'Não foi possível reenviar o código.';
     } catch (_) {
-      return 'Nao foi possivel reenviar o codigo.';
+      return 'Não foi possível reenviar o código.';
     }
   }
 
   Future<void> cancelPendingMfa() async {
     _pendingMfaEmail = null;
-    errorMessage = 'Login cancelado. Faca login novamente para continuar.';
+    errorMessage = 'Login cancelado. Faça login novamente para continuar.';
     await _safeSignOut();
   }
 
@@ -214,12 +214,12 @@ abstract class LoginControllerBase with Store {
     if (error.type == DioExceptionType.connectionTimeout ||
         error.type == DioExceptionType.receiveTimeout ||
         error.type == DioExceptionType.sendTimeout) {
-      return 'A solicitacao demorou demais. Tente novamente.';
+      return 'A solicitação demorou demais. Tente novamente.';
     }
 
     if (error.type == DioExceptionType.connectionError ||
         error.type == DioExceptionType.unknown) {
-      return 'Nao foi possivel conectar ao servidor. Verifique a API e tente novamente.';
+      return 'Não foi possível conectar ao servidor. Verifique a API e tente novamente.';
     }
 
     return null;

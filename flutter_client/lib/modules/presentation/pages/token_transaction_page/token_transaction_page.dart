@@ -1,15 +1,28 @@
 //feito por marcelo
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_mobx/flutter_mobx.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:flutter_client/modules/presentation/pages/home_page/home_controller.dart';
-import 'token_transaction_controller.dart'; 
+import 'token_transaction_controller.dart';
 
 class TokenTransactionPage extends StatefulWidget {
   final TransactionType type;
   final String id;
+  final String? startupName;
+  final double? unitPrice;
+  final int? tokensDisponiveis;
+  final String? logoUrl;
 
-  const TokenTransactionPage({super.key, required this.type, required this.id});
+  const TokenTransactionPage({
+    super.key,
+    required this.type,
+    required this.id,
+    this.startupName,
+    this.unitPrice,
+    this.tokensDisponiveis,
+    this.logoUrl,
+  });
 
   @override
   State<TokenTransactionPage> createState() => _TokenTransactionPageState();
@@ -17,6 +30,9 @@ class TokenTransactionPage extends StatefulWidget {
 
 class _TokenTransactionPageState extends State<TokenTransactionPage> {
   late final TokenTransactionController _controller;
+  final TextEditingController _quantityController = TextEditingController(
+    text: '1',
+  );
 
   static const Color primaryPink = Color(0xFFD4147A);
   static const Color darkText = Color(0xFF170B58);
@@ -28,7 +44,23 @@ class _TokenTransactionPageState extends State<TokenTransactionPage> {
   void initState() {
     super.initState();
     _controller = TokenTransactionController(transactionType: widget.type);
-    _controller.loadAssetData(widget.id);
+    _controller
+        .loadAssetData(
+          widget.id,
+          initialStartupName: widget.startupName,
+          initialPricePerToken: widget.unitPrice,
+        )
+        .then((_) {
+          if (mounted) {
+            _syncQuantityInput();
+          }
+        });
+  }
+
+  @override
+  void dispose() {
+    _quantityController.dispose();
+    super.dispose();
   }
 
   bool get isBuy => widget.type == TransactionType.buy;
@@ -60,13 +92,18 @@ class _TokenTransactionPageState extends State<TokenTransactionPage> {
       builder: (context) => AlertDialog(
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: const Text('Definir preço', style: TextStyle(color: darkText, fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Definir preço',
+          style: TextStyle(color: darkText, fontWeight: FontWeight.bold),
+        ),
         content: TextField(
           controller: priceController,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           decoration: const InputDecoration(
             prefixText: 'R\$ ',
-            focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: primaryPink)),
+            focusedBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: primaryPink),
+            ),
           ),
         ),
         actions: [
@@ -76,17 +113,54 @@ class _TokenTransactionPageState extends State<TokenTransactionPage> {
           ),
           TextButton(
             onPressed: () {
-              final newPrice = double.tryParse(priceController.text.replaceAll(',', '.'));
+              final newPrice = double.tryParse(
+                priceController.text.replaceAll(',', '.'),
+              );
               if (newPrice != null && newPrice > 0) {
                 _controller.updatePricePerToken(newPrice);
               }
               Navigator.pop(context);
             },
-            child: const Text('Salvar', style: TextStyle(color: primaryPink, fontWeight: FontWeight.bold)),
+            child: const Text(
+              'Salvar',
+              style: TextStyle(color: primaryPink, fontWeight: FontWeight.bold),
+            ),
           ),
         ],
       ),
     );
+  }
+
+  void _syncQuantityInput() {
+    final text = '${_controller.quantity}';
+    if (_quantityController.text == text) {
+      return;
+    }
+
+    _quantityController.value = TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(offset: text.length),
+    );
+  }
+
+  void _updateQuantityFromInput(String value) {
+    final parsed = int.tryParse(value);
+    if (parsed == null) {
+      return;
+    }
+
+    _controller.updateQuantity(parsed);
+    _syncQuantityInput();
+  }
+
+  void _decrementQuantity() {
+    _controller.decrementQuantity();
+    _syncQuantityInput();
+  }
+
+  void _incrementQuantity() {
+    _controller.incrementQuantity();
+    _syncQuantityInput();
   }
 
   @override
@@ -120,7 +194,9 @@ class _TokenTransactionPageState extends State<TokenTransactionPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    isBuy ? 'Quanto deseja comprar?' : 'Quanto você deseja vender?',
+                    isBuy
+                        ? 'Quanto deseja comprar?'
+                        : 'Quanto você deseja vender?',
                     style: const TextStyle(
                       color: darkText,
                       fontSize: 24,
@@ -151,7 +227,11 @@ class _TokenTransactionPageState extends State<TokenTransactionPage> {
                           color: primaryPink,
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.hexagon_outlined, color: Colors.white, size: 28),
+                        child: const Icon(
+                          Icons.hexagon_outlined,
+                          color: Colors.white,
+                          size: 28,
+                        ),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
@@ -205,13 +285,32 @@ class _TokenTransactionPageState extends State<TokenTransactionPage> {
                           children: [
                             _buildCounterButton(
                               icon: Icons.remove,
-                              onTap: _controller.decrementQuantity,
+                              onTap: _decrementQuantity,
                             ),
-                            Observer(
-                              builder: (_) => Column(
-                                children: [
-                                  Text(
-                                    '${_controller.quantity}',
+                            Column(
+                              children: [
+                                SizedBox(
+                                  width: 112,
+                                  child: TextField(
+                                    controller: _quantityController,
+                                    textAlign: TextAlign.center,
+                                    keyboardType: TextInputType.number,
+                                    inputFormatters: [
+                                      FilteringTextInputFormatter.digitsOnly,
+                                    ],
+                                    onChanged: _updateQuantityFromInput,
+                                    onEditingComplete: () {
+                                      if (_quantityController.text.isEmpty) {
+                                        _controller.updateQuantity(1);
+                                        _syncQuantityInput();
+                                      }
+                                      FocusScope.of(context).unfocus();
+                                    },
+                                    decoration: const InputDecoration(
+                                      border: InputBorder.none,
+                                      isDense: true,
+                                      contentPadding: EdgeInsets.zero,
+                                    ),
                                     style: const TextStyle(
                                       color: darkText,
                                       fontSize: 40,
@@ -219,22 +318,22 @@ class _TokenTransactionPageState extends State<TokenTransactionPage> {
                                       height: 1.1,
                                     ),
                                   ),
-                                  const Text(
-                                    'TOKENS',
-                                    style: TextStyle(
-                                      color: mutedText,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: 1.5,
-                                    ),
+                                ),
+                                const Text(
+                                  'TOKENS',
+                                  style: TextStyle(
+                                    color: mutedText,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 1.5,
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
                             _buildCounterButton(
                               icon: Icons.add,
                               isPrimary: true,
-                              onTap: _controller.incrementQuantity,
+                              onTap: _incrementQuantity,
                             ),
                           ],
                         ),
@@ -280,37 +379,58 @@ class _TokenTransactionPageState extends State<TokenTransactionPage> {
                               'Preço por token',
                               style: TextStyle(color: mutedText, fontSize: 14),
                             ),
-                            Observer(builder: (_) {
-                              final priceText = _formatCurrency(_controller.pricePerToken);
-                              if (isBuy) {
-                                return Text(
-                                  priceText,
-                                  style: const TextStyle(color: darkText, fontSize: 14, fontWeight: FontWeight.bold),
+                            Observer(
+                              builder: (_) {
+                                final priceText = _formatCurrency(
+                                  _controller.pricePerToken,
                                 );
-                              } else {
-                                // Editable Price for Sell
-                                return GestureDetector(
-                                  onTap: () => _showEditPriceDialog(context),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      color: primaryPink.withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(16),
+                                if (isBuy) {
+                                  return Text(
+                                    priceText,
+                                    style: const TextStyle(
+                                      color: darkText,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
                                     ),
-                                    child: Row(
-                                      children: [
-                                        Text(
-                                          priceText,
-                                          style: const TextStyle(color: darkText, fontSize: 14, fontWeight: FontWeight.bold),
+                                  );
+                                } else {
+                                  // Editable Price for Sell
+                                  return GestureDetector(
+                                    onTap: () => _showEditPriceDialog(context),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 6,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: primaryPink.withValues(
+                                          alpha: 0.1,
                                         ),
-                                        const SizedBox(width: 6),
-                                        const Icon(Icons.edit, size: 14, color: primaryPink),
-                                      ],
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Text(
+                                            priceText,
+                                            style: const TextStyle(
+                                              color: darkText,
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 6),
+                                          const Icon(
+                                            Icons.edit,
+                                            size: 14,
+                                            color: primaryPink,
+                                          ),
+                                        ],
+                                      ),
                                     ),
-                                  ),
-                                );
-                              }
-                            }),
+                                  );
+                                }
+                              },
+                            ),
                           ],
                         ),
                         const SizedBox(height: 16),
@@ -323,7 +443,11 @@ class _TokenTransactionPageState extends State<TokenTransactionPage> {
                             ),
                             Text(
                               'GRÁTIS',
-                              style: TextStyle(color: primaryPink, fontSize: 12, fontWeight: FontWeight.w900),
+                              style: TextStyle(
+                                color: primaryPink,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w900,
+                              ),
                             ),
                           ],
                         ),
@@ -336,12 +460,20 @@ class _TokenTransactionPageState extends State<TokenTransactionPage> {
                           children: [
                             Text(
                               isBuy ? 'Total a pagar' : 'Total a receber',
-                              style: const TextStyle(color: darkText, fontSize: 16, fontWeight: FontWeight.w900),
+                              style: const TextStyle(
+                                color: darkText,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w900,
+                              ),
                             ),
                             Observer(
                               builder: (_) => Text(
                                 _formatCurrency(_controller.totalValue),
-                                style: const TextStyle(color: primaryPink, fontSize: 20, fontWeight: FontWeight.w900),
+                                style: const TextStyle(
+                                  color: primaryPink,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w900,
+                                ),
                               ),
                             ),
                           ],
@@ -350,7 +482,7 @@ class _TokenTransactionPageState extends State<TokenTransactionPage> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  
+
                   // Terms text
                   Center(
                     child: Text(
@@ -389,7 +521,8 @@ class _TokenTransactionPageState extends State<TokenTransactionPage> {
               child: Observer(
                 builder: (_) {
                   return ElevatedButton(
-                    onPressed: (_controller.isLoading || _controller.isSubmitting)
+                    onPressed:
+                        (_controller.isLoading || _controller.isSubmitting)
                         ? null
                         : () async {
                             final ok = await _controller.submit(widget.id);
@@ -397,14 +530,15 @@ class _TokenTransactionPageState extends State<TokenTransactionPage> {
                             if (!context.mounted) return;
 
                             if (ok) {
-                              await Modular.get<HomeController>().refreshWallet();
+                              await Modular.get<HomeController>()
+                                  .refreshWallet();
                               if (!context.mounted) return;
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(
                                     isBuy
                                         ? 'Compra realizada com sucesso!'
-                                        : 'Venda realizada com sucesso!',
+                                        : 'Oferta de venda criada com sucesso!',
                                   ),
                                   backgroundColor: Colors.green,
                                 ),
@@ -417,7 +551,7 @@ class _TokenTransactionPageState extends State<TokenTransactionPage> {
                               SnackBar(
                                 content: Text(
                                   _controller.errorMessage ??
-                                      'Nao foi possivel completar a operacao.',
+                                      'Não foi possível completar a operação.',
                                 ),
                                 backgroundColor: Colors.red,
                               ),
@@ -473,12 +607,14 @@ class _TokenTransactionPageState extends State<TokenTransactionPage> {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: isPrimary ? primaryPink : Colors.transparent,
-            border: isPrimary ? null : Border.all(color: primaryPink.withValues(alpha: 0.3), width: 1.5),
+            border: isPrimary
+                ? null
+                : Border.all(
+                    color: primaryPink.withValues(alpha: 0.3),
+                    width: 1.5,
+                  ),
           ),
-          child: Icon(
-            icon,
-            color: isPrimary ? Colors.white : primaryPink,
-          ),
+          child: Icon(icon, color: isPrimary ? Colors.white : primaryPink),
         ),
       ),
     );

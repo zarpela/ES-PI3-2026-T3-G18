@@ -27,7 +27,7 @@ class HomeBottomNavigation extends StatelessWidget {
           Expanded(
             child: _HomeNavItem(
               icon: Icons.home_outlined,
-              label: 'INICIO',
+              label: 'INÍCIO',
               isActive: currentSection == HomeSection.inicio,
               onTap: () => onSectionSelected(HomeSection.inicio),
             ),

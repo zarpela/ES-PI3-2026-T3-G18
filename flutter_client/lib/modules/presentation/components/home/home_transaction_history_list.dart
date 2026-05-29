@@ -127,7 +127,7 @@ class HomeEmptyHistoryCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Sem movimentacoes por enquanto',
+            'Sem movimentações por enquanto',
             style: TextStyle(
               color: HomePalette.deepText,
               fontSize: 16,
@@ -136,7 +136,7 @@ class HomeEmptyHistoryCard extends StatelessWidget {
           ),
           SizedBox(height: 6),
           Text(
-            'Os ultimos depositos, saques e investimentos vao aparecer aqui.',
+            'Os últimos depósitos, saques e investimentos vão aparecer aqui.',
             style: TextStyle(
               color: HomePalette.mutedText,
               fontSize: 13,
@@ -158,36 +158,61 @@ IconData _transactionIcon(Map<String, dynamic> transaction) {
     case 'WITHDRAW_BALANCE':
       return Icons.account_balance_wallet_outlined;
     case 'SELL':
+    case 'SELL_MARKETPLACE':
       return Icons.trending_up_rounded;
     case 'BUY':
+    case 'BUY_MARKETPLACE':
       return Icons.insert_chart_outlined_rounded;
+    case 'SELL_OFFER_CREATED':
+      return Icons.storefront_rounded;
+    case 'OFFER_CANCELLED':
+      return Icons.cancel_outlined;
+    case 'OFFER_UPDATED':
+      return Icons.edit_note_rounded;
     default:
       return Icons.wallet_giftcard_rounded;
   }
 }
 
 String _transactionTitle(Map<String, dynamic> transaction) {
+  final startupName = (transaction['startupName'] ?? '').toString().trim();
+
+  String withStartup(String label) {
+    return startupName.isEmpty ? label : '$label - $startupName';
+  }
+
   switch ((transaction['type'] ?? '').toString()) {
     case 'DEPOSIT':
     case 'ADD_BALANCE':
-      return 'Deposito';
+      return 'Depósito';
     case 'WITHDRAW':
     case 'WITHDRAW_BALANCE':
       return 'Saque';
     case 'SELL':
-      return 'Venda de Ativos';
+      return withStartup('Venda de ativos');
+    case 'SELL_MARKETPLACE':
+      return withStartup('Recebimento de venda');
     case 'BUY':
-      return 'Compra de Ativos';
+      return withStartup('Compra de ativos');
+    case 'BUY_MARKETPLACE':
+      return withStartup('Compra no marketplace');
+    case 'SELL_OFFER_CREATED':
+      return withStartup('Oferta anunciada');
+    case 'OFFER_CANCELLED':
+      return withStartup('Oferta cancelada');
+    case 'OFFER_UPDATED':
+      return withStartup('Oferta alterada');
     case 'CREATE_WALLET':
       return 'Carteira criada';
     default:
-      return 'Movimentacao';
+      return 'Movimentação';
   }
 }
 
 String _transactionSubtitle(Map<String, dynamic> transaction) {
-  final createdAt = DateTime.tryParse((transaction['createdAt'] ?? '').toString())
-      ?.toLocal();
+  final createdAt = DateTime.tryParse(
+    (transaction['createdAt'] ?? '').toString(),
+  )?.toLocal();
 
   if (createdAt == null) {
     return 'Agora';
@@ -230,9 +255,21 @@ double _transactionAmount(Map<String, dynamic> transaction) {
     case 'WITHDRAW_BALANCE':
       return -_asDouble(transaction['amount'] ?? transaction['totalAmount']);
     case 'SELL':
-      return _asDouble(transaction['total'] ?? transaction['totalAmount']);
+    case 'SELL_MARKETPLACE':
+      return _asDouble(
+        transaction['total'] ??
+            transaction['totalAmount'] ??
+            transaction['totalValue'] ??
+            transaction['amount'],
+      );
     case 'BUY':
-      return -_asDouble(transaction['total'] ?? transaction['totalAmount']);
+    case 'BUY_MARKETPLACE':
+      return -_asDouble(
+        transaction['total'] ??
+            transaction['totalAmount'] ??
+            transaction['totalValue'] ??
+            transaction['amount'],
+      );
     default:
       return 0;
   }
@@ -251,6 +288,17 @@ String _transactionAmountLabel(
 
   if (amount < 0) {
     return '- $formatted';
+  }
+
+  switch ((transaction['type'] ?? '').toString()) {
+    case 'SELL_OFFER_CREATED':
+      return 'Aberta';
+    case 'OFFER_CANCELLED':
+      return 'Cancelada';
+    case 'OFFER_UPDATED':
+      return 'Alterada';
+    case 'CREATE_WALLET':
+      return 'Criada';
   }
 
   return formatted;

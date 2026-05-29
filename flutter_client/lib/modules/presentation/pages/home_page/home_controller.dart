@@ -104,7 +104,16 @@ class HomeController extends ChangeNotifier {
       return email.split('@').first;
     }
 
-    return 'Usuario';
+    return 'Usuário';
+  }
+
+  String get greetingLabel {
+    final displayName = currentUser?.displayName?.trim() ?? '';
+    if (displayName.isNotEmpty) {
+      return 'Ol\u00e1, ${displayName.split(RegExp(r'\s+')).first}!';
+    }
+
+    return 'Ol\u00e1!';
   }
 
   String get userInitials {
@@ -157,7 +166,8 @@ class HomeController extends ChangeNotifier {
     }
 
     if (wallet != null && (investedBalance ?? 0) <= 0) {
-      return 'Carteira pronta para investir';
+      // Abdallah El-Khatib
+      return 'Explore novas oportunidades';
     }
 
     if (walletErrorMessage != null) {
@@ -177,9 +187,14 @@ class HomeController extends ChangeNotifier {
     }
 
     final value = estimatedReturnPercent ?? 0;
-    final normalized = value.toStringAsFixed(1).replaceAll('.', ',');
+    if (value.abs() > 1000) {
+      return '';
+    }
+
+    final normalized = value.toStringAsFixed(2).replaceAll('.', ',');
     final sign = value >= 0 ? '+' : '';
-    return '~ $sign$normalized% este mes';
+    // Abdallah El-Khatib
+    return '$sign$normalized%';
   }
 
   List<Map<String, dynamic>> get recentTransactionsPreview {
@@ -211,7 +226,7 @@ class HomeController extends ChangeNotifier {
       return tagline;
     }
 
-    return 'Conheca a oportunidade em destaque disponível na plataforma.';
+    return 'Conheça a oportunidade em destaque disponível na plataforma.';
   }
 
   String? mediaFromStartup(Map<String, dynamic> startup, List<String> keys) {
@@ -317,7 +332,7 @@ class HomeController extends ChangeNotifier {
   Future<String> addBalance(double amount) async {
     final user = currentUser;
     if (user == null) {
-      throw Exception('Usuario nao autenticado.');
+      throw Exception('Usuário não autenticado.');
     }
 
     try {
@@ -330,7 +345,7 @@ class HomeController extends ChangeNotifier {
       _applyWalletData(response.data);
       await _loadWalletHistory();
       notifyListeners();
-      return 'Deposito realizado com sucesso.';
+      return 'Depósito realizado com sucesso.';
     } on DioException catch (error) {
       throw Exception(_extractWalletError(error));
     }
@@ -339,7 +354,7 @@ class HomeController extends ChangeNotifier {
   Future<String> withdrawBalance(double amount) async {
     final user = currentUser;
     if (user == null) {
-      throw Exception('Usuario nao autenticado.');
+      throw Exception('Usuário não autenticado.');
     }
 
     if (amount > availableBalance) {
@@ -484,12 +499,12 @@ class HomeController extends ChangeNotifier {
       debugPrint(
         'FirebaseFunctionsException: code=${e.code}, message=${e.message}, details=${e.details}',
       );
-      errorMessage = 'Nao foi possivel carregar as startups.';
+      errorMessage = 'Não foi possível carregar as startups.';
       _allStartups = [];
       startups = [];
     } catch (e) {
       debugPrint('HomeController startup error: $e');
-      errorMessage = 'Erro inesperado ao carregar o catalogo.';
+      errorMessage = 'Erro inesperado ao carregar o catálogo.';
       _allStartups = [];
       startups = [];
     } finally {
@@ -595,7 +610,7 @@ class HomeController extends ChangeNotifier {
         walletErrorMessage = _extractWalletError(e);
       } catch (e) {
         debugPrint('HomeController unexpected wallet error: $e');
-        walletErrorMessage = 'Nao foi possivel carregar a carteira.';
+        walletErrorMessage = 'Não foi possível carregar a carteira.';
       }
     } finally {
       _syncPortfolioHighlights();
@@ -618,7 +633,7 @@ class HomeController extends ChangeNotifier {
       walletErrorMessage = _extractWalletError(e);
     } catch (e) {
       debugPrint('HomeController unexpected wallet creation error: $e');
-      walletErrorMessage = 'Nao foi possivel preparar a carteira.';
+      walletErrorMessage = 'Não foi possível preparar a carteira.';
     }
   }
 
@@ -817,7 +832,7 @@ class HomeController extends ChangeNotifier {
       }
     }
 
-    return 'Nao foi possivel carregar a carteira.';
+    return 'Não foi possível carregar a carteira.';
   }
 
   void _applyFilters({bool notify = true}) {
@@ -1000,7 +1015,7 @@ class HomeController extends ChangeNotifier {
   }
 
   String _formatPercent(double value) {
-    final normalized = value.toStringAsFixed(1).replaceAll('.', ',');
+    final normalized = value.toStringAsFixed(2).replaceAll('.', ',');
     return '${value >= 0 ? '+' : ''}$normalized%';
   }
 

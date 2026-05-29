@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_client/modules/presentation/components/home/home_header.dart';
 import 'package:flutter_client/modules/presentation/components/home/home_palette.dart';
 import 'package:flutter_client/modules/presentation/pages/home_page/home_controller.dart';
+import 'package:flutter_client/modules/presentation/pages/token_transaction_page/token_transaction_controller.dart';
 import 'package:flutter_client/shared/app_routes.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 
@@ -81,11 +82,30 @@ class HomeExploreSection extends StatelessWidget {
               startup: startup,
               onTapStartup: () => onStartupTap(startup),
               onInvestTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Em desenvolvimento'),
-                    behavior: SnackBarBehavior.floating,
-                  ),
+                // Abdallah El-Khatib
+                final startupId = (startup['id'] ?? startup['startupId'] ?? '')
+                    .toString();
+
+                if (startupId.trim().isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Startup inválida para investimento.'),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                  return;
+                }
+
+                Modular.to.pushNamed(
+                  AppRoutes.transactionPage,
+                  arguments: {
+                    'type': TransactionType.buy,
+                    'id': startupId,
+                    'startupName': startup['name'],
+                    'unitPrice': _tokenPriceFromStartup(startup),
+                    'tokensDisponiveis': _availableTokensFromStartup(startup),
+                    'logo': controller.logoOf(startup),
+                  },
                 );
               },
             ),
@@ -121,26 +141,21 @@ class _ExploreHero extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         ElevatedButton(
-            onPressed: () => Modular.to.pushNamed(AppRoutes.marketplace),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: HomePalette.brandPink,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(999),
-              ),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 20,
-              ),
+          onPressed: () => Modular.to.pushNamed(AppRoutes.marketplace),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: HomePalette.brandPink,
+            foregroundColor: Colors.white,
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(999),
             ),
-            child: const Text(
-              "Compre de outros usuários",
-              style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              ),
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 20),
           ),
+          child: const Text(
+            "Compre de outros usuários",
+            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+          ),
+        ),
       ],
     );
   }
@@ -368,7 +383,7 @@ class _StartupCard extends StatelessWidget {
     final investment = fakeTicketByStage((startup['stage'] ?? '').toString());
     final roi = startupRoiLabel(startup);
     final name = (startup['name'] ?? 'Startup').toString();
-    final description = (startup['description'] ?? 'Sem descricao informada.')
+    final description = (startup['description'] ?? 'Sem descrição informada.')
         .toString();
 
     return Padding(
@@ -520,7 +535,7 @@ class _StartupCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 12),
                       const Text(
-                        'CAPTACAO',
+                        'CAPTAÇÃO',
                         style: TextStyle(
                           fontSize: 9,
                           fontWeight: FontWeight.w800,
@@ -729,7 +744,7 @@ class _ExploreErrorState extends StatelessWidget {
             ),
             const SizedBox(height: 14),
             const Text(
-              'Erro ao carregar catalogo',
+              'Erro ao carregar catálogo',
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.w800,
@@ -738,7 +753,7 @@ class _ExploreErrorState extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              message ?? 'Nao foi possivel carregar as startups.',
+              message ?? 'Não foi possível carregar as startups.',
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontSize: 13,
@@ -878,9 +893,73 @@ String fakeTicketByStage(String stage) {
 String startupRoiLabel(Map<String, dynamic> startup) {
   final roi = (startup['roi'] ?? '').toString().trim();
   if (roi.isEmpty) {
-    return 'Potencial em analise';
+    return 'Potencial em análise';
   }
   return roi;
+}
+
+// Abdallah El-Khatib
+double _tokenPriceFromStartup(Map<String, dynamic> startup) {
+  final raw = startup['raw'];
+  final data = raw is Map ? Map<String, dynamic>.from(raw) : startup;
+  final directPrice = _asDouble(
+    data['tokenPrice'] ?? data['unitPrice'] ?? data['valorToken'],
+  );
+
+  if (directPrice > 0) return directPrice;
+
+  final emittedTokens = _asDouble(
+    data['totalEmittedTokens'] ?? data['tokensEmitidos'] ?? data['tokens'],
+  );
+  final targetCapital = _asDouble(
+    data['targetCapital'] ?? data['metaCaptacao'],
+  );
+
+  if (emittedTokens > 0 && targetCapital > 0) {
+    final price = targetCapital / emittedTokens;
+    if (price.isFinite && price > 0) return price;
+  }
+
+  return 1.0;
+}
+
+// Abdallah El-Khatib
+int _availableTokensFromStartup(Map<String, dynamic> startup) {
+  final raw = startup['raw'];
+  final data = raw is Map ? Map<String, dynamic>.from(raw) : startup;
+  final explicit = _asDouble(
+    data['availableTokens'] ??
+        data['tokensAvailable'] ??
+        data['tokensDisponiveis'],
+  );
+
+  if (explicit > 0) return explicit.floor();
+
+  final emittedTokens = _asDouble(
+    data['totalEmittedTokens'] ?? data['tokensEmitidos'] ?? data['tokens'],
+  );
+
+  if (emittedTokens <= 0) return 0;
+
+  final soldTokens = _asDouble(
+    data['soldTokens'] ?? data['tokensSold'] ?? data['tokensVendidos'],
+  );
+
+  if (soldTokens > 0) {
+    return (emittedTokens - soldTokens).clamp(0, emittedTokens).floor();
+  }
+
+  return emittedTokens.floor();
+}
+
+double _asDouble(dynamic value) {
+  if (value is num) return value.toDouble();
+  final text = value?.toString().trim() ?? '';
+  if (text.isEmpty) return 0;
+  final normalized = text.contains(',')
+      ? text.replaceAll('.', '').replaceAll(',', '.')
+      : text.replaceAll(',', '');
+  return double.tryParse(normalized.replaceAll(RegExp(r'[^0-9.-]'), '')) ?? 0;
 }
 
 String formatStageLabel(String stage) {

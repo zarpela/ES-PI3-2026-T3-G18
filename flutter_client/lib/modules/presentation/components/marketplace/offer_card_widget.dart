@@ -8,6 +8,7 @@ class OfferCardModel {
   final int quantity;
   final String unit;
   final double pricePerUnit;
+  final bool isOwnOffer;
   final IconData icon;
   final Color iconBackgroundColor;
 
@@ -18,6 +19,7 @@ class OfferCardModel {
     required this.quantity,
     required this.unit,
     required this.pricePerUnit,
+    this.isOwnOffer = false,
     required this.icon,
     this.iconBackgroundColor = const Color(0xFFF0EBFF),
   });
@@ -26,13 +28,17 @@ class OfferCardModel {
 class OfferCardWidget extends StatelessWidget {
   final OfferCardModel offer;
   final VoidCallback onBuyTap;
-  final VoidCallback onDetailsTap; 
+  final VoidCallback? onEditTap;
+  final VoidCallback? onCancelTap;
+  final VoidCallback onDetailsTap;
 
   const OfferCardWidget({
     super.key,
     required this.offer,
     required this.onBuyTap,
-    required this.onDetailsTap, 
+    this.onEditTap,
+    this.onCancelTap,
+    required this.onDetailsTap,
   });
 
   @override
@@ -164,46 +170,108 @@ class OfferCardWidget extends StatelessWidget {
 
           const SizedBox(height: 12),
 
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: onDetailsTap,
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: primaryColor,
-                    side: BorderSide(color: primaryColor.withOpacity(0.5)),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+          if (offer.isOwnOffer)
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: onEditTap,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: primaryColor,
+                      side: BorderSide(color: primaryColor.withOpacity(0.5)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                  ),
-                  child: const Text(
-                    'Detalhes',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    child: const Text(
+                      'Editar',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: onBuyTap,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: primaryColor,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: onCancelTap,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF584048),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      elevation: 0,
                     ),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    elevation: 0,
-                  ),
-                  child: const Text(
-                    'Comprar',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    child: const Text(
+                      'Cancelar',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            )
+          else
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: onDetailsTap,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: primaryColor,
+                      side: BorderSide(color: primaryColor.withOpacity(0.5)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    child: const Text(
+                      'Detalhes',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: onBuyTap,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryColor,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      elevation: 0,
+                    ),
+                    child: const Text(
+                      'Comprar',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
         ],
       ),
     );

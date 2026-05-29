@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_client/modules/presentation/components/filter_chip.dart';
 import 'package:flutter_client/modules/presentation/components/marketplace/buy_bottom_sheet.dart';
 import 'package:flutter_client/modules/presentation/components/marketplace/offer_card_widget.dart';
+import 'package:flutter_client/modules/presentation/pages/home_page/home_controller.dart';
 import 'package:flutter_client/modules/presentation/pages/marketplace_page/marketplace_controller.dart';
 import 'package:flutter_client/shared/app_routes.dart';
 import 'package:flutter_mobx/flutter_mobx.dart';
@@ -67,7 +68,8 @@ class _MarketplacePageState extends State<MarketplacePage> {
                   );
                 }
 
-                if (_controller.errorMessage != null && _controller.sellOrders.isEmpty) {
+                if (_controller.errorMessage != null &&
+                    _controller.sellOrders.isEmpty) {
                   return Center(
                     child: Text(
                       _controller.errorMessage!,
@@ -81,11 +83,17 @@ class _MarketplacePageState extends State<MarketplacePage> {
 
                 final filtered = _controller.sellOrders.where((order) {
                   final q = _controller.searchQuery.toLowerCase();
-                  
-                  final title = (order['startupName'] ?? order['title'] ?? '').toString().toLowerCase();
-                  final sellerName = (order['sellerName'] ?? '').toString().toLowerCase();
-                  
-                  return q.isEmpty || title.contains(q) || sellerName.contains(q);
+
+                  final title = (order['startupName'] ?? order['title'] ?? '')
+                      .toString()
+                      .toLowerCase();
+                  final sellerName = (order['sellerName'] ?? '')
+                      .toString()
+                      .toLowerCase();
+
+                  return q.isEmpty ||
+                      title.contains(q) ||
+                      sellerName.contains(q);
                 }).toList();
 
                 if (filtered.isEmpty) {
@@ -106,11 +114,24 @@ class _MarketplacePageState extends State<MarketplacePage> {
                   itemBuilder: (context, index) {
                     final order = filtered[index];
 
-                    final offerId = (order['id'] ?? order['orderId'] ?? '').toString();
-                    final offerTitle = (order['startupName'] ?? order['title'] ?? 'Oferta').toString();
-                    final offerSeller = (order['sellerName'] ?? 'Vendedor').toString();
-                    final offerQuantity = int.tryParse(order['quantity']?.toString() ?? '0') ?? 0;
-                    final offerPrice = double.tryParse(order['price']?.toString() ?? '0') ?? 0.0;
+                    final offerId = (order['id'] ?? order['orderId'] ?? '')
+                        .toString();
+                    final offerTitle =
+                        (order['startupName'] ?? order['title'] ?? 'Oferta')
+                            .toString();
+                    final offerSeller = (order['sellerName'] ?? 'Vendedor')
+                        .toString();
+                    final offerQuantity =
+                        int.tryParse(order['quantity']?.toString() ?? '0') ?? 0;
+                    final offerPrice =
+                        double.tryParse(order['price']?.toString() ?? '0') ??
+                        0.0;
+                    final ownerId =
+                        (order['ownerId'] ?? order['sellerId'] ?? '')
+                            .toString();
+                    final isOwnOffer =
+                        ownerId.isNotEmpty &&
+                        ownerId == _controller.currentUserId;
 
                     final offerModel = OfferCardModel(
                       id: offerId,
@@ -119,6 +140,7 @@ class _MarketplacePageState extends State<MarketplacePage> {
                       quantity: offerQuantity,
                       unit: 'tokens',
                       pricePerUnit: offerPrice,
+                      isOwnOffer: isOwnOffer,
                       icon: Icons.business_outlined,
                       iconBackgroundColor: const Color(0xFFF0EBFF),
                     );
@@ -127,30 +149,37 @@ class _MarketplacePageState extends State<MarketplacePage> {
                       offer: offerModel,
                       onBuyTap: () => showBuyBottomSheet(
                         context: context,
-                        offerId: offerModel.id, 
+                        offerId: offerModel.id,
                         assetTitle: offerModel.title,
                         pricePerToken: offerModel.pricePerUnit,
                         availableQuantity: offerQuantity,
                       ),
+                      onEditTap: () => _showEditOfferDialog(order),
+                      onCancelTap: () => _cancelOffer(offerId),
                       onDetailsTap: () async {
-                        try{
-                           final startupId = order['startupId']?.toString() ?? '';
+                        try {
+                          final startupId =
+                              order['startupId']?.toString() ?? '';
 
-                          final startupDetails = await _controller.getStartupById(startupId);
+                          final startupDetails = await _controller
+                              .getStartupById(startupId);
 
+                          if (!context.mounted) return;
                           Modular.to.pushNamed(
                             AppRoutes.startupDetailsPage,
                             arguments: startupDetails,
                           );
-                        }
-                        catch (e) {
-                          ScaffoldMessenger.of(context).
-                            showSnackBar(
-                                SnackBar(
-                                  content: Text(_controller.errorMessage ?? 'Erro ao carregar detalhes'),
-                                  backgroundColor: Colors.red,
-                                ),
-                            );
+                        } catch (e) {
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                _controller.errorMessage ??
+                                    'Erro ao carregar detalhes',
+                              ),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
                         }
                       },
                     );
@@ -162,6 +191,131 @@ class _MarketplacePageState extends State<MarketplacePage> {
         ],
       ),
     );
+  }
+
+  Future<void> _cancelOffer(String offerId) async {
+    try {
+      await _controller.cancelOffer(offerId: offerId);
+      await Modular.get<HomeController>().refreshWallet();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Oferta cancelada com sucesso.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_controller.errorMessage ?? 'Erro ao cancelar oferta.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _showEditOfferDialog(Map<String, dynamic> order) async {
+    final offerId = (order['id'] ?? order['offerId'] ?? '').toString();
+    final quantityController = TextEditingController(
+      text: (order['quantity'] ?? 0).toString(),
+    );
+    final priceController = TextEditingController(
+      text: ((double.tryParse(order['price']?.toString() ?? '0') ?? 0)
+          .toStringAsFixed(2)
+          .replaceAll('.', ',')),
+    );
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text(
+          'Editar oferta',
+          style: TextStyle(fontWeight: FontWeight.w800),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: quantityController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: 'Quantidade'),
+            ),
+            TextField(
+              controller: priceController,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: const InputDecoration(labelText: 'Preço unitário'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () async {
+              final quantity = int.tryParse(quantityController.text.trim());
+              final price = double.tryParse(
+                priceController.text
+                    .replaceAll('.', '')
+                    .replaceAll(',', '.')
+                    .trim(),
+              );
+
+              if (quantity == null ||
+                  quantity <= 0 ||
+                  price == null ||
+                  price <= 0) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Informe quantidade e preço válidos.'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                return;
+              }
+
+              try {
+                await _controller.updateOffer(
+                  offerId: offerId,
+                  quantity: quantity,
+                  price: price,
+                );
+                await Modular.get<HomeController>().refreshWallet();
+                if (!dialogContext.mounted) return;
+                Navigator.of(dialogContext).pop();
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Oferta alterada com sucesso.'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              } catch (_) {
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      _controller.errorMessage ?? 'Erro ao alterar oferta.',
+                    ),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+            child: const Text('Salvar', style: TextStyle(color: _primaryColor)),
+          ),
+        ],
+      ),
+    );
+
+    quantityController.dispose();
+    priceController.dispose();
   }
 }
 
@@ -176,9 +330,7 @@ class _SearchBar extends StatelessWidget {
       onChanged: controller.onSearchChanged,
       decoration: InputDecoration(
         hintText: 'Buscar ofertas...',
-        hintStyle: TextStyle(
-          color: const Color(0xFF584048).withOpacity(0.45),
-        ),
+        hintStyle: TextStyle(color: const Color(0xFF584048).withOpacity(0.45)),
         prefixIcon: Icon(
           Icons.search,
           color: const Color(0xFF584048).withOpacity(0.6),
@@ -196,10 +348,7 @@ class _SearchBar extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(
-            color: Color(0xFFD4147A),
-            width: 1.5,
-          ),
+          borderSide: const BorderSide(color: Color(0xFFD4147A), width: 1.5),
         ),
       ),
     );

@@ -1,44 +1,45 @@
 // Desenvolvido por Miguel Castro
+// Abdallah El-Khatib
 
-import { Timestamp } from "firebase-admin/firestore";
-import { db } from "../../../shared/firebase";
-import { HttpsError } from "firebase-functions/https";
-import { Wallet } from "../../users/types";
-import { StartupDoc } from "../../startups/types";
-import { SellOrder, Token, TokenMetrics, UserInvestment, UserInvestmentsSummary } from "../types";
+import {HttpsError} from "firebase-functions/v2/https";
+import {
+  buyMarketplaceOffer,
+  buyStartupTokens,
+  createSellOffer,
+  createServiceError,
+  getTokenMetrics as getWalletTokenMetrics,
+  getUserInvestmentsMetrics as getWalletInvestmentsMetrics,
+  listMarketplaceOffers,
+} from "../../../services/walletService";
+import {
+  SellOrder,
+  TokenMetrics,
+  UserInvestmentsSummary,
+} from "../types";
 
-const walletCol = db.collection("wallet");
-const startupCol = db.collection("startups");
-const sellOrdersCol = db.collection("sellOrders");
+function toHttpsError(error: unknown): HttpsError {
+  const status = (error as {status?: unknown}).status;
+  const message = error instanceof Error ?
+    error.message :
+    "Erro ao processar operacao de mercado.";
 
-/**
- * Compra tokens de uma startup para a carteira do usuário.
- *
- * @param uid - ID do usuário comprador.
- * @param startupId - ID da startup cujos tokens serão comprados.
- * @param amount - Quantidade de tokens a comprar. Deve ser maior que zero.
- * @returns Promise<void> quando a compra for concluída com sucesso.
- */
-export async function buyTokens(
-    uid: string,
-    startupId: string,
-    amount: number,
-): Promise<void> {
-
-  if (amount <= 0) {
-    throw new HttpsError("invalid-argument", "Quantidade inválida");
+  if (status === 400) {
+    return new HttpsError("invalid-argument", message);
   }
 
-  const walletRef = walletCol.doc(uid);
-  const tokenRef = walletRef.collection("tokens").doc(startupId);
+  if (status === 401) {
+    return new HttpsError("unauthenticated", message);
+  }
 
-  const startupRef = startupCol.doc(startupId);
+  if (status === 403) {
+    return new HttpsError("permission-denied", message);
+  }
 
-  // transaction garante que todas as operações sejam feitas
-  // de uma só vez ou nenhuma no banco
-  await db.runTransaction(async (transaction) => {
-    const startupSnap = await transaction.get(startupRef);
+  if (status === 404) {
+    return new HttpsError("not-found", message);
+  }
 
+<<<<<<< HEAD
     if (!startupSnap.exists) {
         throw new HttpsError("not-found", "Startup não encontrada.");
     }
@@ -105,23 +106,34 @@ export async function buyTokens(
     });
 
   });
+=======
+  return new HttpsError("internal", message);
 }
 
-/**
- * Cria uma ordem de venda de tokens a partir da carteira do usuário.
- *
- * @param uid - ID do usuário vendedor.
- * @param startupId - ID da startup cujos tokens serão vendidos.
- * @param amount - Quantidade de tokens a vender. Deve ser maior que zero.
- * @param pricePerToken - Preço por token definido para a ordem. Deve ser maior que zero.
- * @returns Promise<void> quando a ordem de venda for criada com sucesso.
- */
-export async function sellTokens(
-    uid: string,
-    startupId: string,
-    amount: number,
-    pricePerToken: number,
+export async function buyTokens(
+  uid: string,
+  startupId: string,
+  amount: number,
 ): Promise<void> {
+  try {
+    await buyStartupTokens({
+      authenticatedUserId: uid,
+      startupId,
+      quantity: amount,
+    });
+  } catch (error) {
+    throw toHttpsError(error);
+  }
+>>>>>>> feature/integracao-marketplace-wallet-perguntas
+}
+
+export async function sellTokens(
+  uid: string,
+  startupId: string,
+  amount: number,
+  pricePerToken: number,
+): Promise<void> {
+<<<<<<< HEAD
     if (amount <= 0) {
         throw new HttpsError("invalid-argument", "Quantidade inválida.");
     }
@@ -202,50 +214,62 @@ export async function sellTokens(
 
         // cria ordem de venda
         transaction.set(orderRef, order);
+=======
+  try {
+    await createSellOffer({
+      authenticatedUserId: uid,
+      startupId,
+      quantity: amount,
+      unitPrice: pricePerToken,
+>>>>>>> feature/integracao-marketplace-wallet-perguntas
     });
-
+  } catch (error) {
+    throw toHttpsError(error);
+  }
 }
 
-/**
- * Retorna todas as ordens de venda abertas
- */
-/**
- * Retorna todas as ordens de venda abertas.
- *
- * @returns Promise<SellOrder[]> com as ordens de venda em estado "open".
- */
 export async function getSellOrders(): Promise<SellOrder[]> {
-    try {
-        // busca ordens abertas
-        const snapshot = await sellOrdersCol
-        .where("status", "==", "open")
-        .get();
+  try {
+    const offers = await listMarketplaceOffers();
 
-        return snapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...(doc.data() as SellOrder),
-        }));
-    } catch (e) {
-        throw new HttpsError("internal", "Erro ao buscar ordens de venda.");
-    }
+    return offers.map((offer) => ({
+      id: offer.id,
+      ownerId: offer.sellerId,
+      sellerId: offer.sellerId,
+      sellerName: offer.sellerName,
+      startupId: offer.startupId,
+      startupName: offer.startupName,
+      amount: offer.remainingQuantity,
+      quantity: offer.quantity,
+      remainingQuantity: offer.remainingQuantity,
+      pricePerToken: offer.unitPrice,
+      unitPrice: offer.unitPrice,
+      averagePrice: offer.unitPrice,
+      createdAt: offer.createdAt,
+      updatedAt: offer.updatedAt,
+      status: offer.status,
+      totalValue: offer.totalValue,
+      type: "sell",
+    })) as SellOrder[];
+  } catch (error) {
+    throw toHttpsError(error);
+  }
 }
 
-/**
- * Compra uma ordem de venda aberta para um comprador específico.
- *
- * @param buyerId - ID do usuário que está comprando a ordem.
- * @param orderId - ID da ordem de venda a ser comprada.
- * @returns Promise<void> quando a compra da ordem for concluída com sucesso.
- */
 export async function buySellOrder(
-    buyerId: string,
-    orderId: string,
+  buyerId: string,
+  orderId: string,
+  amount?: number,
 ): Promise<void> {
-    const orderRef = sellOrdersCol.doc(orderId);
-    const buyerWalletRef = walletCol.doc(buyerId);
+  try {
+    const quantity = amount ?? (await listMarketplaceOffers())
+      .find((offer) => offer.id === orderId)?.remainingQuantity;
 
-    await db.runTransaction(async (transaction) => {
+    if (!quantity) {
+      invalidExchangeRequest("Quantidade da oferta invalida.");
+    }
 
+<<<<<<< HEAD
         // busca ordem
         const orderSnap = await transaction.get(orderRef);
         
@@ -353,155 +377,39 @@ export async function buySellOrder(
         transaction.update(startupRef, {
             tokenPrice: Number(newTokenPrice.toFixed(2)),
         });
+=======
+    await buyMarketplaceOffer({
+      authenticatedUserId: buyerId,
+      offerId: orderId,
+      quantity,
+>>>>>>> feature/integracao-marketplace-wallet-perguntas
     });
+  } catch (error) {
+    throw toHttpsError(error);
+  }
 }
 
-/**
- * Retorna métricas de token para a carteira do usuário e a startup informada.
- *
- * @param uid - ID do usuário dono da carteira onde o token está armazenado.
- * @param startupId - ID da startup referente ao token.
- * @returns Promise<TokenMetrics> com métricas do token:
- *   - amount: quantidade de tokens do usuário.
- *   - currentPrice: preço atual do token da startup.
- *   - averagePrice: preço médio de aquisição do token pelo usuário.
- *   - valuation: valorização percentual atual.
- *   - profit: lucro absoluto atual da posição de token.
- *   - Retorna 0 em valuation se o `averagePrice` do token for menor ou igual a zero.
- *   - O valor retornado é arredondado para 2 casas decimais.
- * @throws HttpsError("not-found") se o token ou a startup não existirem.
- * @throws HttpsError("internal") em caso de erro interno ao calcular as métricas.
- */
 export async function getTokenMetrics(
-    uid: string,
-    startupId: string,
+  uid: string,
+  startupId: string,
 ): Promise<TokenMetrics> {
-    try {
-        const tokenRef = walletCol
-            .doc(uid)
-            .collection("tokens")
-            .doc(startupId);
-
-        const startupRef = startupCol.doc(startupId);
-        const startupSnap = await startupRef.get();
-        const tokenSnap = await tokenRef.get();
-        
-        // token existe?
-        if (!tokenSnap.exists) {
-            throw new HttpsError("not-found", "Token não encontrado.");
-        }
-
-        // startup existe?
-        if (!startupSnap.exists) {
-            throw new HttpsError("not-found", "Startup não encontrada.");
-        }
-
-        const token = tokenSnap.data() as Token;
-        const startup = startupSnap.data() as StartupDoc;
-        const currentPrice = startup.tokenPrice;
-        const averagePrice = token.averagePrice;
-        const amount = token.amount;
-
-        let valuation = 0;
-
-        // evita divisão por zero
-        if (averagePrice > 0) {
-            valuation = ((currentPrice - averagePrice) / averagePrice) * 100;
-        }
-
-        const profit = (currentPrice - averagePrice) * amount;
-
-        // arredonda 2 casas
-        return {
-            amount,
-            currentPrice,
-            averagePrice,
-            valuation: Number(valuation.toFixed(2)),
-            profit: Number(profit.toFixed(2)),
-        };
-
-    } catch (e) {
-        throw new HttpsError("internal", "Erro ao calcular métricas do token.");
-    }
+  try {
+    return await getWalletTokenMetrics(uid, startupId);
+  } catch (error) {
+    throw toHttpsError(error);
+  }
 }
 
-/**
- * Retorna o resumo dos investimentos do usuário.
- *
- * @param uid ID do usuário dono da carteira.
- * @returns Promise<UserInvestmentsSummary> com os investimentos,
- *   valores totais e valorização da carteira.
- * @throws HttpsError("not-found") se a carteira não existir.
- * @throws HttpsError("internal") em caso de erro interno.
- */
 export async function getUserInvestmentsMetrics(
-    uid: string,
+  uid: string,
 ): Promise<UserInvestmentsSummary> {
-    try {
-        const walletRef = walletCol.doc(uid);
-        const walletSnap = await walletRef.get();
+  try {
+    return await getWalletInvestmentsMetrics(uid);
+  } catch (error) {
+    throw toHttpsError(error);
+  }
+}
 
-        if (!walletSnap.exists) {
-            throw new HttpsError("not-found", "Carteira não encontrada.");
-        }
-
-        const tokensSnap = await walletRef.collection("tokens").get();
-        const investments: UserInvestment[] = [];
-
-        let investedValue = 0;
-        let currentValue = 0;
-        let totalProfit = 0;
-
-        for (const doc of tokensSnap.docs) {
-            const startupId = doc.id;
-            const token = doc.data() as Token;
-
-            const startupSnap = await startupCol.doc(startupId).get();
-            if (!startupSnap.exists) {
-                continue;
-            }
-
-            const startup = startupSnap.data() as StartupDoc;
-            const currentPrice = startup.tokenPrice;
-            const averagePrice = token.averagePrice;
-            const amount = token.amount;
-
-            const investmentCost = averagePrice * amount;
-            const investmentCurrentValue = currentPrice * amount;
-            const profit = investmentCurrentValue - investmentCost;
-            const valuation = investmentCost > 0
-                ? Number(((profit / investmentCost) * 100).toFixed(2))
-                : 0;
-
-            investedValue += investmentCost;
-            currentValue += investmentCurrentValue;
-            totalProfit += profit;
-
-            investments.push({
-                startupId,
-                amount,
-                currentPrice,
-                averagePrice,
-                valuation,
-                profit: Number(profit.toFixed(2)),
-            });
-        }
-
-        const totalValuation = investedValue > 0
-            ? Number(((totalProfit / investedValue) * 100).toFixed(2))
-            : 0;
-
-        return {
-            investments, // a lista de investimentos e suas métricas individuais
-            
-            // resumo dos valores totais da carteira, calculando todos os
-            // investimentos juntos 
-            investedValue: Number(investedValue.toFixed(2)),
-            currentValue: Number(currentValue.toFixed(2)),
-            totalProfit: Number(totalProfit.toFixed(2)),
-            totalValuation,
-        };
-    } catch (e) {
-        throw new HttpsError("internal", "Erro ao buscar investimentos.");
-    }
+export function invalidExchangeRequest(message: string): never {
+  throw createServiceError(400, message);
 }

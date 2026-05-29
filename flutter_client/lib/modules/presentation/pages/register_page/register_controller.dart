@@ -109,10 +109,10 @@ abstract class _RegisterControllerBase with Store {
       return true;
     } on DioException catch (error) {
       errorMessage =
-          _extractErrorMessage(error) ?? 'Nao foi possivel criar a conta.';
+          _extractErrorMessage(error) ?? 'Não foi possível criar a conta.';
       return false;
     } catch (_) {
-      errorMessage = 'Nao foi possivel criar a conta.';
+      errorMessage = 'Não foi possível criar a conta.';
       return false;
     } finally {
       isLoading = false;

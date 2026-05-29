@@ -6,10 +6,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 
 class MfaVerificationController extends ChangeNotifier {
-  MfaVerificationController(
-    this._dio, [
-    FirebaseAuth? auth,
-  ]) : _auth = auth ?? FirebaseAuth.instance;
+  MfaVerificationController(this._dio, [FirebaseAuth? auth])
+    : _auth = auth ?? FirebaseAuth.instance;
 
   final Dio _dio;
   final FirebaseAuth _auth;
@@ -47,12 +45,12 @@ class MfaVerificationController extends ChangeNotifier {
   Future<bool> resendCode() async {
     final token = await _getIdToken();
     if (token == null) {
-      errorMessage = 'Sessao expirada. Faca login novamente.';
+      errorMessage = 'Sessão expirada. Faça login novamente.';
       notifyListeners();
       return false;
     }
 
-    // Reenvia um novo codigo para o e-mail (backend gera e substitui o anterior).
+    // Reenvia um novo código para o e-mail (backend gera e substitui o anterior).
     isLoading = true;
     errorMessage = null;
     notifyListeners();
@@ -66,11 +64,11 @@ class MfaVerificationController extends ChangeNotifier {
     } on DioException catch (e) {
       errorMessage = _parseApiMessage(
         e.response?.data,
-        fallback: 'Nao foi possivel reenviar o codigo.',
+        fallback: 'Não foi possível reenviar o código.',
       );
       return false;
     } catch (_) {
-      errorMessage = 'Nao foi possivel reenviar o codigo.';
+      errorMessage = 'Não foi possível reenviar o código.';
       return false;
     } finally {
       isLoading = false;
@@ -81,14 +79,14 @@ class MfaVerificationController extends ChangeNotifier {
   Future<bool> verifyCode() async {
     final token = await _getIdToken();
     if (token == null) {
-      errorMessage = 'Sessao expirada. Faca login novamente.';
+      errorMessage = 'Sessão expirada. Faça login novamente.';
       notifyListeners();
       return false;
     }
 
     final normalizedCode = code.trim();
     if (normalizedCode.length != 6) {
-      errorMessage = 'Informe o codigo de 6 digitos.';
+      errorMessage = 'Informe o código de 6 dígitos.';
       notifyListeners();
       return false;
     }
@@ -98,7 +96,7 @@ class MfaVerificationController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Valida o codigo no backend. Em caso de sucesso, o app libera a navegacao
+      // Valida o código no backend. Em caso de sucesso, o app libera a navegação
       // para a home; em caso de erro, o backend pode retornar mensagem detalhada.
       await _dio.post(
         '/mfa/verify-code',

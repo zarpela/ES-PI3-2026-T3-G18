@@ -97,8 +97,15 @@ export type QuestionAnswer = {
  * Subcoleção: startups/{startupId}/questions/{questionId}
  */
 export type StartupQuestionDocument = {
+    authorId?: string;
+    authorName?: string;
     authorUid: string;
+    isAnswered?: boolean;
+    question?: string;
+    startupId?: string;
+    status?: string;
     text: string;
+    updatedAt?: Timestamp | FieldValue;
     visibility: QuestionVisibility;
     createdAt: Timestamp | FieldValue;
     answer?: QuestionAnswer;
@@ -109,7 +116,13 @@ export type StartupQuestionDocument = {
  */
 export type StartupQuestionResponse = {
     id: string;
+    authorId?: string;
+    authorName?: string;
     authorUid: string;
+    isAnswered?: boolean;
+    question?: string;
+    startupId?: string;
+    status?: string;
     text: string;
     visibility: QuestionVisibility;
     createdAt: string | null;
@@ -123,5 +136,10 @@ export type StartupQuestionResponse = {
 // subcoleçao de histórico de preços do token para cada startup
 export type TokenPriceHistory = {
     price: number;
+<<<<<<< HEAD
     createdAt: FirebaseFirestore.Timestamp;
 }
+=======
+    createdAt: Timestamp;
+}
+>>>>>>> feature/integracao-marketplace-wallet-perguntas

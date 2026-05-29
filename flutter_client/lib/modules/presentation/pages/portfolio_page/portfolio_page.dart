@@ -1,114 +1,120 @@
+// Abdallah El-Khatib
+
+import 'package:cloud_functions/cloud_functions.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_client/modules/presentation/components/home/home_palette.dart';
+import 'package:flutter_client/modules/presentation/pages/home_page/home_controller.dart';
+import 'package:flutter_client/modules/presentation/pages/token_transaction_page/token_transaction_controller.dart';
 import 'package:flutter_client/shared/app_routes.dart';
 import 'package:flutter_modular/flutter_modular.dart';
-import 'package:fl_chart/fl_chart.dart';
 
 class PortfolioView extends StatefulWidget {
-  const PortfolioView({super.key});
+  const PortfolioView({required this.controller, super.key});
 
-  static const Color deepText = Color(0xFF241B60);
-  static const Color mutedText = Color(0xFF756E93);
-  static const Color brandPink = Color(0xFFD4147A);
-  static const Color pageBackground = Color(0xFFFCF9FF);
-  static const Color cardBackground = Colors.white;
-  static const Color softSurface = Color(0xFFF3EDF8);
-  static const Color divider = Color(0xFFE7DFF0);
-  static const Color green = Color(0xFF27AE60);
-  static const Color red = Color(0xFFD93B3B);
-  static const Color neutral = Color(0xFF7D718F);
+  final HomeController controller;
 
   @override
   State<PortfolioView> createState() => _PortfolioViewState();
 }
 
 class _PortfolioViewState extends State<PortfolioView> {
-  int selectedPeriod = 2;
-  int? touchedIndex;
+  final FirebaseFunctions _functions = FirebaseFunctions.instanceFor(
+    region: 'southamerica-east1',
+  );
 
-  final periods = const ['DIA', 'SEM', 'MÊS', 'SEMESTRE', 'YTD'];
-
-  final spotsRed = const [
-    FlSpot(0, 62),
-    FlSpot(1, 58),
-    FlSpot(2, 50),
-    FlSpot(3, 55),
-    FlSpot(4, 63),
-    FlSpot(5, 71),
-    FlSpot(6, 78),
+  final List<_PortfolioPeriod> _periods = const [
+    _PortfolioPeriod('DIA', 'daily'),
+    _PortfolioPeriod('SEM', 'weekly'),
+    _PortfolioPeriod('MÊS', 'monthly'),
+    _PortfolioPeriod('6M', '6months'),
+    _PortfolioPeriod('YTD', 'ytd'),
   ];
 
-  final spotsGreen = const [
-    FlSpot(2, 50),
-    FlSpot(3, 55),
-    FlSpot(4, 63),
-    FlSpot(5, 71),
-    FlSpot(6, 78),
-  ];
+  int _selectedPeriod = 2;
+  bool _isChartLoading = true;
+  String? _chartError;
+  List<_PortfolioPoint> _points = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPortfolioHistory();
+  }
+
+  Future<void> _loadPortfolioHistory() async {
+    setState(() {
+      _isChartLoading = true;
+      _chartError = null;
+    });
+
+    try {
+      final result = await _functions.httpsCallable('getPortfolioHistory').call(
+        {'period': _periods[_selectedPeriod].value},
+      );
+      final raw = result.data;
+      final data = raw is Map && raw['data'] is List
+          ? raw['data'] as List
+          : <dynamic>[];
+      final points = data
+          .whereType<Map>()
+          .map(
+            (item) => _PortfolioPoint.fromMap(Map<String, dynamic>.from(item)),
+          )
+          .where((point) => point.totalValue >= 0)
+          .toList();
+
+      if (!mounted) return;
+      setState(() {
+        _points = points;
+        _isChartLoading = false;
+      });
+    } on FirebaseFunctionsException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _chartError = e.code == 'internal'
+            ? 'Não foi possível carregar o gráfico agora.'
+            : e.message ?? 'Não foi possível carregar o gráfico.';
+        _isChartLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _chartError = 'Erro inesperado ao carregar o gráfico.';
+        _isChartLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: PortfolioView.pageBackground,
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 10, 16, 120),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeader(),
-            const SizedBox(height: 18),
-            _buildPatrimonioHero(),
-            const SizedBox(height: 16),
-            _buildPerformanceCard(),
-            const SizedBox(height: 14),
-            _buildMetricasRow(),
-            const SizedBox(height: 18),
-            _buildListaInvestimentos(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const CircleAvatar(
-          radius: 14,
-          backgroundColor: Color(0xFF241B60),
-          child: Icon(Icons.person, size: 16, color: Colors.white),
-        ),
-        const Spacer(),
-        const Text(
-          'MesclaInvest',
-          style: TextStyle(
-            color: PortfolioView.brandPink,
-            fontSize: 16,
-            fontWeight: FontWeight.w800,
-            letterSpacing: -0.3,
-          ),
-        ),
-        const Spacer(),
-        IconButton(
-          onPressed: () {},
-          icon: const Icon(
-            Icons.notifications_none_rounded,
-            color: PortfolioView.deepText,
-          ),
-          constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-          padding: EdgeInsets.zero,
-        ),
+        _buildPatrimonioHero(),
+        const SizedBox(height: 18),
+        _buildPerformanceCard(),
+        const SizedBox(height: 14),
+        _buildMetricasRow(),
+        const SizedBox(height: 22),
+        _buildListaInvestimentos(),
       ],
     );
   }
 
   Widget _buildPatrimonioHero() {
+    final wallet = widget.controller.wallet ?? {};
+    final total = _asDouble(wallet['portfolioTotal']) > 0
+        ? _asDouble(wallet['portfolioTotal'])
+        : widget.controller.availableBalance +
+              _asDouble(wallet['totalCurrentValue']);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
           'PATRIMÔNIO TOTAL',
           style: TextStyle(
-            color: PortfolioView.mutedText,
+            color: HomePalette.mutedText,
             fontSize: 11,
             fontWeight: FontWeight.w800,
             letterSpacing: 1.2,
@@ -117,27 +123,27 @@ class _PortfolioViewState extends State<PortfolioView> {
         const SizedBox(height: 8),
         Row(
           crossAxisAlignment: CrossAxisAlignment.end,
-          children: const [
-            Text(
-              'R\$ 142.580,00',
-              style: TextStyle(
-                color: PortfolioView.deepText,
-                fontSize: 32,
-                fontWeight: FontWeight.w900,
-                letterSpacing: -1,
-              ),
-            ),
-            SizedBox(width: 8),
-            Padding(
-              padding: EdgeInsets.only(bottom: 6),
+          children: [
+            Expanded(
               child: Text(
-                '+2,4%',
-                style: TextStyle(
-                  color: PortfolioView.green,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
+                widget.controller.isBalanceVisible
+                    ? widget.controller.formatCurrencyAmount(total)
+                    : 'R\$ ******',
+                style: const TextStyle(
+                  color: HomePalette.deepText,
+                  fontSize: 30,
+                  fontWeight: FontWeight.w900,
                 ),
               ),
+            ),
+            IconButton(
+              icon: Icon(
+                widget.controller.isBalanceVisible
+                    ? Icons.remove_red_eye_outlined
+                    : Icons.visibility_off_outlined,
+                color: HomePalette.deepText,
+              ),
+              onPressed: widget.controller.toggleBalanceVisibility,
             ),
           ],
         ),
@@ -147,13 +153,13 @@ class _PortfolioViewState extends State<PortfolioView> {
 
   Widget _buildPerformanceCard() {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: PortfolioView.cardBackground,
-        borderRadius: BorderRadius.circular(32),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: PortfolioView.deepText.withValues(alpha: 0.04),
+            color: HomePalette.deepText.withValues(alpha: 0.04),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -162,136 +168,34 @@ class _PortfolioViewState extends State<PortfolioView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
+            children: [
               Text(
                 'Performance',
                 style: TextStyle(
-                  color: PortfolioView.deepText,
+                  color: HomePalette.deepText,
                   fontSize: 18,
                   fontWeight: FontWeight.w800,
                 ),
               ),
-              Icon(Icons.trending_up_rounded, color: PortfolioView.green),
+              Icon(Icons.show_chart_rounded, color: HomePalette.brandPink),
             ],
           ),
-          const SizedBox(height: 22),
-          SizedBox(
-            height: 185,
-            child: LineChart(
-              LineChartData(
-                minX: 0,
-                maxX: 6,
-                minY: 35,
-                maxY: 85,
-                gridData: FlGridData(
-                  show: true,
-                  drawVerticalLine: true,
-                  horizontalInterval: 10,
-                  verticalInterval: 1,
-                  getDrawingHorizontalLine: (value) =>
-                      const FlLine(color: Color(0xFFEDE5F6), strokeWidth: 1),
-                  getDrawingVerticalLine: (value) =>
-                      const FlLine(color: Color(0xFFF2EDF8), strokeWidth: 1),
-                ),
-                titlesData: const FlTitlesData(show: false),
-                borderData: FlBorderData(show: false),
-                lineTouchData: LineTouchData(
-                  enabled: true,
-                  handleBuiltInTouches: true,
-                  touchSpotThreshold: 20,
-                  getTouchedSpotIndicator: (barData, spotIndexes) {
-                    return spotIndexes.map((index) {
-                      return TouchedSpotIndicatorData(
-                        const FlLine(color: Colors.transparent, strokeWidth: 0),
-                        FlDotData(
-                          show: true,
-                          getDotPainter: (spot, percent, barData, index) {
-                            return FlDotCirclePainter(
-                              radius: 5,
-                              color: barData.color!,
-                              strokeWidth: 2,
-                              strokeColor: Colors.white,
-                            );
-                          },
-                        ),
-                      );
-                    }).toList();
-                  },
-                  touchTooltipData: LineTouchTooltipData(
-                    tooltipBorderRadius: BorderRadius.circular(14),
-                    tooltipPadding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 8,
-                    ),
-                    tooltipMargin: 12,
-                    getTooltipItems: (touchedSpots) {
-                      return touchedSpots.map((spot) {
-                        final isGreen = spot.barIndex == 1;
-                        return LineTooltipItem(
-                          'R\$ ${spot.y.toStringAsFixed(0)}\n',
-                          const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 13,
-                          ),
-                          children: [
-                            TextSpan(
-                              text: isGreen ? 'Linha positiva' : 'Linha base',
-                              style: const TextStyle(
-                                color: Colors.white70,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 11,
-                              ),
-                            ),
-                          ],
-                        );
-                      }).toList();
-                    },
-                  ),
-                  touchCallback: (event, response) {
-                    setState(() {
-                      touchedIndex = response?.lineBarSpots?.isNotEmpty == true
-                          ? response!.lineBarSpots!.first.spotIndex
-                          : null;
-                    });
-                  },
-                ),
-                lineBarsData: [
-                  LineChartBarData(
-                    spots: spotsRed,
-                    isCurved: true,
-                    color: PortfolioView.red,
-                    barWidth: 4,
-                    dotData: const FlDotData(show: false),
-                    belowBarData: BarAreaData(show: false),
-                  ),
-                  LineChartBarData(
-                    spots: spotsGreen,
-                    isCurved: true,
-                    color: PortfolioView.green,
-                    barWidth: 4,
-                    dotData: const FlDotData(show: false),
-                    belowBarData: BarAreaData(show: false),
-                  ),
-                ],
-              ),
-            ),
-          ),
+          const SizedBox(height: 18),
+          SizedBox(height: 178, child: _buildChartBody()),
           const SizedBox(height: 14),
           Row(
-            children: List.generate(periods.length, (index) {
+            children: List.generate(_periods.length, (index) {
               return Expanded(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 3),
                   child: _PeriodChip(
-                    label: periods[index],
-                    selected: selectedPeriod == index,
+                    label: _periods[index].label,
+                    selected: _selectedPeriod == index,
                     onTap: () {
-                      setState(() {
-                        selectedPeriod = index;
-                      });
+                      setState(() => _selectedPeriod = index);
+                      _loadPortfolioHistory();
                     },
                   ),
                 ),
@@ -303,24 +207,137 @@ class _PortfolioViewState extends State<PortfolioView> {
     );
   }
 
+  Widget _buildChartBody() {
+    if (_isChartLoading) {
+      return const Center(
+        child: CircularProgressIndicator(color: HomePalette.brandPink),
+      );
+    }
+
+    if (_chartError != null) {
+      return Center(
+        child: Text(
+          _chartError!,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            color: HomePalette.mutedText,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      );
+    }
+
+    if (_points.isEmpty) {
+      return const Center(
+        child: Text(
+          'Ainda não há dados suficientes para exibir o gráfico.',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: HomePalette.mutedText,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      );
+    }
+
+    final spots = List.generate(
+      _points.length,
+      (index) => FlSpot(index.toDouble(), _points[index].totalValue),
+    );
+    final values = _points.map((point) => point.totalValue).toList();
+    final minValue = values.reduce((a, b) => a < b ? a : b);
+    final maxValue = values.reduce((a, b) => a > b ? a : b);
+    final verticalPadding = (maxValue - minValue).abs() < 1
+        ? 10.0
+        : (maxValue - minValue) * 0.16;
+
+    return LineChart(
+      LineChartData(
+        minX: 0,
+        maxX: (spots.length - 1).toDouble(),
+        minY: (minValue - verticalPadding).clamp(0, double.infinity).toDouble(),
+        maxY: maxValue + verticalPadding,
+        gridData: FlGridData(
+          show: true,
+          drawVerticalLine: false,
+          horizontalInterval: (maxValue - minValue).abs() <= 1
+              ? 10
+              : (maxValue - minValue) / 4,
+          getDrawingHorizontalLine: (_) =>
+              const FlLine(color: Color(0xFFEDE5F6), strokeWidth: 1),
+        ),
+        titlesData: const FlTitlesData(show: false),
+        borderData: FlBorderData(show: false),
+        lineTouchData: LineTouchData(
+          enabled: true,
+          touchTooltipData: LineTouchTooltipData(
+            tooltipBorderRadius: BorderRadius.circular(12),
+            getTooltipItems: (touchedSpots) {
+              return touchedSpots.map((spot) {
+                final point = _points[spot.x.toInt()];
+                return LineTooltipItem(
+                  '${widget.controller.formatCurrencyAmount(point.totalValue)}\n',
+                  const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                  ),
+                  children: [
+                    TextSpan(
+                      text: point.shortDate,
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                );
+              }).toList();
+            },
+          ),
+        ),
+        lineBarsData: [
+          LineChartBarData(
+            spots: spots,
+            isCurved: true,
+            color: HomePalette.brandPink,
+            barWidth: 4,
+            dotData: const FlDotData(show: false),
+            belowBarData: BarAreaData(
+              show: true,
+              color: HomePalette.brandPink.withValues(alpha: 0.08),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildMetricasRow() {
+    final wallet = widget.controller.wallet ?? {};
+
     return Row(
-      children: const [
+      children: [
         Expanded(
           child: _MetricaCard(
             icon: Icons.trending_up_rounded,
             title: 'RENTABILIDADE',
-            value: '+18,4%',
-            iconColor: PortfolioView.green,
+            value: _formatPercent(_asDouble(wallet['totalProfitLossPercent'])),
+            iconColor: HomePalette.brandPink,
           ),
         ),
-        SizedBox(width: 12),
+        const SizedBox(width: 12),
         Expanded(
           child: _MetricaCard(
-            icon: Icons.calendar_month_outlined,
-            title: 'PROVENTOS',
-            value: 'R\$ 840',
-            iconColor: PortfolioView.deepText,
+            icon: Icons.savings_outlined,
+            title: 'INVESTIDO',
+            value: widget.controller.formatCurrencyAmount(
+              _asDouble(wallet['totalInvested']),
+            ),
+            iconColor: HomePalette.deepText,
           ),
         ),
       ],
@@ -328,171 +345,325 @@ class _PortfolioViewState extends State<PortfolioView> {
   }
 
   Widget _buildListaInvestimentos() {
+    final tokens = widget.controller.walletTokens;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             const Text(
               'Seus Investimentos',
               style: TextStyle(
                 fontSize: 22,
-                color: PortfolioView.deepText,
+                color: HomePalette.deepText,
                 fontWeight: FontWeight.w900,
               ),
             ),
             GestureDetector(
-              onTap: () {
-                Modular.to.pushNamed(AppRoutes.allInvestments);
-              },
+              onTap: () => Modular.to.pushNamed(AppRoutes.allInvestments),
               child: const Text(
                 'Ver todos',
                 style: TextStyle(
                   fontSize: 13,
-                  color: PortfolioView.brandPink,
+                  color: HomePalette.brandPink,
                   fontWeight: FontWeight.w700,
                 ),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 18),
-        _buildInvestimentoTile(
-          icon: Icons.account_balance_rounded,
-          nome: 'Vitality.',
-          subtitulo: 'HEALTHTECH • 120 COTAS',
-          valor: 'R\$ 42.400',
-          rendimento: '+12,5%',
-          rendimentoColor: PortfolioView.green,
-        ),
-        _buildInvestimentoTile(
-          icon: Icons.agriculture_rounded,
-          nome: 'AgroMais',
-          subtitulo: 'AGROTECH • 45 COTAS',
-          valor: 'R\$ 35.680',
-          rendimento: '+8,2%',
-          rendimentoColor: const Color(0xFF8C7311),
-        ),
-        _buildInvestimentoTile(
-          icon: Icons.medical_services_outlined,
-          nome: 'Locus.ai',
-          subtitulo: 'AI • 80 COTAS',
-          valor: 'R\$ 42.750',
-          rendimento: '0,0%',
-          rendimentoColor: PortfolioView.mutedText,
-        ),
-        _buildInvestimentoTile(
-          icon: Icons.credit_card_rounded,
-          nome: 'StudyFlow',
-          subtitulo: 'EDTECH • 15 COTAS',
-          valor: 'R\$ 21.750',
-          rendimento: '-2,1%',
-          rendimentoColor: PortfolioView.red,
-        ),
+        const SizedBox(height: 16),
+        if (widget.controller.isWalletLoading && tokens.isEmpty)
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 24),
+              child: CircularProgressIndicator(color: HomePalette.brandPink),
+            ),
+          )
+        else if (tokens.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 18),
+            child: Text(
+              'Você ainda não possui tokens.',
+              style: TextStyle(
+                color: HomePalette.mutedText,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          )
+        else
+          ...tokens.take(4).map(_buildTokenTile),
       ],
     );
   }
 
-  Widget _buildInvestimentoTile({
-    required IconData icon,
-    required String nome,
-    required String subtitulo,
-    required String valor,
-    required String rendimento,
-    required Color rendimentoColor,
-  }) {
+  Widget _buildTokenTile(Map<String, dynamic> token) {
+    final startupId = (token['startupId'] ?? '').toString().trim();
+    final startup = _findStartupById(startupId);
+    final sector = (startup?['sector'] ?? '').toString();
+    final name = (token['startupName'] ?? startup?['name'] ?? startupId)
+        .toString();
+    final quantity = _asInt(token['quantity']);
+    final currentValue = _asDouble(token['currentValue']) > 0
+        ? _asDouble(token['currentValue'])
+        : quantity * _calculateTokenPrice(startup);
+    final profitPercent = _asDouble(token['profitLossPercent']);
+    final isNegative = profitPercent < 0;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: PortfolioView.cardBackground,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: PortfolioView.deepText.withValues(alpha: 0.03),
+            color: HomePalette.deepText.withValues(alpha: 0.03),
             blurRadius: 14,
             offset: const Offset(0, 8),
           ),
         ],
       ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF7EEF7),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Icon(icon, color: PortfolioView.deepText, size: 24),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  nome,
-                  style: const TextStyle(
-                    color: PortfolioView.deepText,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  subtitulo,
-                  style: const TextStyle(
-                    color: PortfolioView.mutedText,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final compact = constraints.maxWidth < 330;
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                valor,
-                style: const TextStyle(
-                  color: PortfolioView.deepText,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                ),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF7EEF7),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Icon(
+                      _iconForSector(sector),
+                      color: HomePalette.deepText,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: HomePalette.deepText,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${sector.toUpperCase()} - $quantity TOKENS',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: HomePalette.mutedText,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: compact ? 104 : 124),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          widget.controller.formatCurrencyAmount(currentValue),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: HomePalette.deepText,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _formatPercent(profitPercent),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: isNegative
+                                ? const Color(0xFFD93B3B)
+                                : const Color(0xFF27AE60),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 4),
-              Text(
-                rendimento,
-                style: TextStyle(
-                  color: rendimentoColor,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () =>
+                          _openTransaction(startupId, TransactionType.sell),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: HomePalette.brandPink,
+                        side: BorderSide(
+                          color: HomePalette.brandPink.withValues(alpha: 0.25),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      child: const Text(
+                        'Vender',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () =>
+                          _openTransaction(startupId, TransactionType.buy),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: HomePalette.brandPink,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      child: const Text(
+                        'Comprar',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
-          ),
-        ],
+          );
+        },
       ),
+    );
+  }
+
+  void _openTransaction(String startupId, TransactionType type) {
+    if (startupId.isEmpty) return;
+    Modular.to.pushNamed(
+      AppRoutes.transactionPage,
+      arguments: {'type': type, 'id': startupId},
+    );
+  }
+
+  Map<String, dynamic>? _findStartupById(String startupId) {
+    for (final startup in widget.controller.allStartups) {
+      if ((startup['id'] ?? '').toString() == startupId) return startup;
+    }
+    return null;
+  }
+
+  double _calculateTokenPrice(Map<String, dynamic>? startup) {
+    if (startup == null) return 0;
+    final raw = startup['raw'];
+    final data = raw is Map ? Map<String, dynamic>.from(raw) : startup;
+    final directPrice = _asDouble(
+      data['tokenPrice'] ?? data['unitPrice'] ?? data['valorToken'],
+    );
+
+    if (directPrice > 0) return directPrice;
+
+    final emittedTokens = _asDouble(data['totalEmittedTokens']);
+    final targetCapital = _asDouble(data['targetCapital']);
+
+    if (emittedTokens > 0 && targetCapital > 0) {
+      return targetCapital / emittedTokens;
+    }
+
+    return 0;
+  }
+
+  IconData _iconForSector(String sector) {
+    final normalized = sector.toLowerCase();
+    if (normalized.contains('agro')) return Icons.agriculture_rounded;
+    if (normalized.contains('health')) return Icons.health_and_safety_outlined;
+    if (normalized.contains('fin')) return Icons.account_balance_rounded;
+    if (normalized.contains('edu')) return Icons.school_outlined;
+    return Icons.business_center_outlined;
+  }
+
+  double _asDouble(dynamic value) {
+    if (value is num) return value.toDouble();
+    return double.tryParse(value?.toString() ?? '') ?? 0;
+  }
+
+  int _asInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '') ?? 0;
+  }
+
+  String _formatPercent(double value) {
+    if (!value.isFinite || value.abs() > 1000) {
+      return '--';
+    }
+
+    final normalized = value.toStringAsFixed(2).replaceAll('.', ',');
+    return '${value >= 0 ? '+' : ''}$normalized%';
+  }
+}
+
+class _PortfolioPeriod {
+  const _PortfolioPeriod(this.label, this.value);
+
+  final String label;
+  final String value;
+}
+
+class _PortfolioPoint {
+  const _PortfolioPoint({required this.timestamp, required this.totalValue});
+
+  final DateTime timestamp;
+  final double totalValue;
+
+  String get shortDate =>
+      '${timestamp.day.toString().padLeft(2, '0')}/${timestamp.month.toString().padLeft(2, '0')}';
+
+  factory _PortfolioPoint.fromMap(Map<String, dynamic> map) {
+    return _PortfolioPoint(
+      timestamp:
+          DateTime.tryParse((map['timestamp'] ?? '').toString()) ??
+          DateTime.now(),
+      totalValue: map['totalValue'] is num
+          ? (map['totalValue'] as num).toDouble()
+          : double.tryParse(map['totalValue']?.toString() ?? '') ?? 0,
     );
   }
 }
 
 class _MetricaCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String value;
-  final Color iconColor;
-
   const _MetricaCard({
     required this.icon,
     required this.title,
     required this.value,
     required this.iconColor,
   });
+
+  final IconData icon;
+  final String title;
+  final String value;
+  final Color iconColor;
 
   @override
   Widget build(BuildContext context) {
@@ -503,7 +674,7 @@ class _MetricaCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: PortfolioView.deepText.withValues(alpha: 0.03),
+            color: HomePalette.deepText.withValues(alpha: 0.03),
             blurRadius: 14,
             offset: const Offset(0, 8),
           ),
@@ -518,7 +689,7 @@ class _MetricaCard extends StatelessWidget {
             title,
             style: const TextStyle(
               fontSize: 9,
-              color: PortfolioView.mutedText,
+              color: HomePalette.mutedText,
               fontWeight: FontWeight.w800,
               letterSpacing: 0.8,
             ),
@@ -526,9 +697,11 @@ class _MetricaCard extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: const TextStyle(
-              fontSize: 20,
-              color: PortfolioView.deepText,
+              fontSize: 18,
+              color: HomePalette.deepText,
               fontWeight: FontWeight.w900,
             ),
           ),
@@ -539,15 +712,15 @@ class _MetricaCard extends StatelessWidget {
 }
 
 class _PeriodChip extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
   const _PeriodChip({
     required this.label,
     required this.selected,
     required this.onTap,
   });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -559,7 +732,9 @@ class _PeriodChip extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 9),
           decoration: BoxDecoration(
-            color: selected ? PortfolioView.softSurface : Colors.transparent,
+            color: selected
+                ? HomePalette.activeNavBackground
+                : Colors.transparent,
             borderRadius: BorderRadius.circular(999),
           ),
           child: Text(
@@ -567,9 +742,7 @@ class _PeriodChip extends StatelessWidget {
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 9.5,
-              color: selected
-                  ? PortfolioView.brandPink
-                  : PortfolioView.mutedText,
+              color: selected ? HomePalette.brandPink : HomePalette.mutedText,
               fontWeight: FontWeight.w700,
             ),
           ),

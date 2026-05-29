@@ -56,7 +56,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
 
     if (!isLoggedIn && (email.isEmpty || code.isEmpty)) {
       setState(() {
-        statusMessage = 'Solicite um novo codigo para continuar.';
+        statusMessage = 'Solicite um novo código para continuar.';
         isStatusError = true;
       });
       return;
@@ -90,7 +90,9 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     }
 
     setState(() {
-      statusMessage = isLoggedIn ? 'Senha alterada com sucesso.' : 'Senha redefinida com sucesso.';
+      statusMessage = isLoggedIn
+          ? 'Senha alterada com sucesso.'
+          : 'Senha redefinida com sucesso.';
       isStatusError = false;
     });
 
