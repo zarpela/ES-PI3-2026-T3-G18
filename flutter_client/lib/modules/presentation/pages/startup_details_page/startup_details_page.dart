@@ -175,6 +175,7 @@ class _StartupDetailsPageState extends State<StartupDetailsPage> {
     }
   }
 
+  //feito por Abdallah
   Future<void> submitQuestion() async {
     final text = questionController.text.trim();
     final startupId =
@@ -193,7 +194,6 @@ class _StartupDetailsPageState extends State<StartupDetailsPage> {
       await functions.httpsCallable('createStartupQuestion').call({
         'startupId': startupId,
         'text': text,
-        // Abdallah El-Khatib
         'visibility': isInvestor ? selectedQuestionVisibility : 'publica',
       });
 
@@ -210,6 +210,7 @@ class _StartupDetailsPageState extends State<StartupDetailsPage> {
     }
   }
 
+  //feito por Abdallah
   Future<void> loadQuestions() async {
     try {
       setState(() => isQuestionsLoading = true);
@@ -251,7 +252,6 @@ class _StartupDetailsPageState extends State<StartupDetailsPage> {
       var canUsePrivateQuestions = false;
 
       try {
-        // Abdallah El-Khatib
         final privResult = await functions
             .httpsCallable('getStartupPrivateQuestions')
             .call({'startupId': startupId});
@@ -1136,6 +1136,7 @@ class _StartupDetailsPageState extends State<StartupDetailsPage> {
     );
   }
 
+  //feito por Abdallah
   Widget buildQuestionsHeader() {
     return Row(
       children: [
@@ -1182,7 +1183,6 @@ class _StartupDetailsPageState extends State<StartupDetailsPage> {
                           ),
                           const SizedBox(height: 12),
                           if (isInvestor) ...[
-                            // Abdallah El-Khatib
                             SegmentedButton<String>(
                               segments: const [
                                 ButtonSegment(
@@ -1294,12 +1294,12 @@ class _StartupDetailsPageState extends State<StartupDetailsPage> {
     );
   }
 
+  //feito por Abdallah
   Widget buildDynamicQuestionCard(Map<String, dynamic> item) {
     final isPrivate = '${item['visibility'] ?? ''}'.toLowerCase().contains(
       'priv',
     );
 
-    // Abdallah El-Khatib
     final question =
         (item['question'] ?? item['text'])?.toString() ??
         'Pergunta não informada';

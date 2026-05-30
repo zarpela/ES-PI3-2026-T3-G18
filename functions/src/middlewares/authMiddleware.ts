@@ -1,8 +1,4 @@
-/*
-Autor: Abdallah
-RA: [COLOQUE SEU RA]
-*/
-
+//feito por Abdallah
 import {NextFunction, Request, Response} from "express";
 import {auth} from "../shared/firebase";
 

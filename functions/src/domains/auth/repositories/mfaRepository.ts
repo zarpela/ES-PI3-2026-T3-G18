@@ -1,8 +1,4 @@
-/*
-feito por Abdallah
-RA: 25018711
-*/
-
+//feito por Abdallah
 import {db} from "../../../shared/firebase";
 import type {StoredMfaCode} from "../../../shared/types";
 

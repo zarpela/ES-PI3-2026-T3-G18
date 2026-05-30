@@ -19,7 +19,7 @@ import { StartupQuestionResponse } from "../types";
 export const getStartupQuestions = onCall(
     { region: "southamerica-east1" },
     async (request) => {
-        // Abdallah El-Khatib
+        //feito por Abdallah
         requireAuthenticatedUser(request);
         const startupId = normalizeString(request.data?.startupId);
 
@@ -61,7 +61,7 @@ export const getStartupQuestions = onCall(
                 id,
                 authorId: q.authorId ?? q.authorUid,
                 // Garante um nome padrão caso venha indefinido das coleções antigas
-                authorName: q.authorName ?? "Usuário", 
+                authorName: q.authorName ?? "Usuário",
                 authorUid: q.authorUid,
                 isAnswered: q.isAnswered ?? Boolean(q.answer),
                 question: q.question ?? q.text,

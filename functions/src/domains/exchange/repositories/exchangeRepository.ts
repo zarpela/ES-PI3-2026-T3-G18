@@ -1,6 +1,5 @@
 // Desenvolvido por Miguel Castro
-// Abdallah El-Khatib
-
+//feito por Abdallah
 import {HttpsError} from "firebase-functions/v2/https";
 import {
   buyMarketplaceOffer,

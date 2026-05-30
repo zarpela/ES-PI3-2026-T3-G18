@@ -1,4 +1,5 @@
 // feito por pedro henrique bonetto
+//feito por Abdallah
 
 import 'dart:async';
 import 'dart:typed_data';
@@ -166,7 +167,6 @@ class HomeController extends ChangeNotifier {
     }
 
     if (wallet != null && (investedBalance ?? 0) <= 0) {
-      // Abdallah El-Khatib
       return 'Explore novas oportunidades';
     }
 
@@ -193,7 +193,6 @@ class HomeController extends ChangeNotifier {
 
     final normalized = value.toStringAsFixed(2).replaceAll('.', ',');
     final sign = value >= 0 ? '+' : '';
-    // Abdallah El-Khatib
     return '$sign$normalized%';
   }
 

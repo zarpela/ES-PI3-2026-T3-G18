@@ -1,4 +1,5 @@
-// feito por abdallah, pedro, marcelo
+//feito por Abdallah
+// feito por pedro, marcelo
 import 'package:flutter/material.dart';
 import 'package:flutter_client/core/app_session.dart';
 import 'package:flutter_client/modules/presentation/components/home/home_bottom_navigation.dart';
@@ -181,7 +182,6 @@ class _HomePageState extends State<HomePage> {
         );
 
       case HomeSection.portfolio:
-        // Abdallah El-Khatib
         return PortfolioView(controller: controller);
     }
   }

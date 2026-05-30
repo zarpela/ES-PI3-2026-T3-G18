@@ -1,7 +1,5 @@
 //feito por marcelo
-// integracao com backend feita por Abdallah
-// Abdallah El-Khatib
-
+//feito por Abdallah
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';

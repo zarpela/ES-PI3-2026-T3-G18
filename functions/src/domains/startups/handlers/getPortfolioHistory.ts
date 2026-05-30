@@ -1,6 +1,5 @@
 // Desenvolvido por Gabriel Scolfaro
-// Abdallah El-Khatib
-
+//feito por Abdallah
 import {Timestamp} from "firebase-admin/firestore";
 import {HttpsError, onCall} from "firebase-functions/v2/https";
 import {db} from "../../../shared/firebase";

@@ -1,4 +1,5 @@
 // feito por marcelo
+//feito por Abdallah
 import 'package:flutter/material.dart';
 
 class OfferCardModel {

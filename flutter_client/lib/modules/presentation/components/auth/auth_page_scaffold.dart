@@ -1,3 +1,4 @@
+//feito por Abdallah
 import 'package:flutter/material.dart';
 
 class AuthPageScaffold extends StatelessWidget {

@@ -1,8 +1,4 @@
-/*
-feito por Abdallah
-RA: 25018711
-*/
-
+//feito por Abdallah
 import type {Request, Response} from "express";
 import * as logger from "firebase-functions/logger";
 import {isAppError} from "../../../shared/errors";

@@ -33,7 +33,6 @@ export const createStartupQuestion = onCall(
 
         const startupId = normalizeString(request.data?.startupId);
         const text = normalizeString(request.data?.text);
-        // Abdallah El-Khatib
         const rawVisibility = normalizeString(request.data?.visibility) ?? "publica";
         const visibility = normalizeVisibility(rawVisibility);
 
@@ -71,7 +70,7 @@ export const createStartupQuestion = onCall(
 
         const question: StartupQuestionDocument = {
             authorId: user.uid,
-            authorName: user.name ?? user.email?.split("@")[0] ?? "Usuário", 
+            authorName: user.name ?? user.email?.split("@")[0] ?? "Usuário",
             authorUid: user.uid,
             isAnswered: false,
             question: text,
@@ -101,7 +100,7 @@ export const createStartupQuestion = onCall(
     }
 );
 
-// Abdallah El-Khatib
+//feito por Abdallah
 function normalizeVisibility(value: string): QuestionVisibility {
     const normalized = value.trim().toLowerCase();
 

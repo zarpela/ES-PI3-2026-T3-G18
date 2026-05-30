@@ -116,7 +116,7 @@ abstract class _ChangePasswordControllerBase with Store {
     }
   }
 
-  // Feito por Abdallah - RA: 25018711
+  //feito por Abdallah
   Future<String?> changePasswordLoggedIn() async {
     try {
       final user = FirebaseAuth.instance.currentUser;

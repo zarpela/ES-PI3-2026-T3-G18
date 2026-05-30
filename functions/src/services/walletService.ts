@@ -1,10 +1,4 @@
-/*
-Autor: Abdallah
-RA: [COLOQUE SEU RA]
-*/
-
-// Abdallah El-Khatib
-
+//feito por Abdallah
 import {FieldValue, Timestamp} from "firebase-admin/firestore";
 import {db} from "../shared/firebase";
 import { StartupDoc } from "../domains/startups/types";
@@ -1493,7 +1487,7 @@ export const buyStartupTokens = async (data: BuyTokenInput) => {
     data.startupSymbol,
     startupData,
   );
-  
+
   const currentTokenPrice = resolveStartupUnitPrice(
     startupData,
     data.unitPrice ?? data.price,
@@ -1686,7 +1680,7 @@ export const createSellOffer = async (data: SellOfferInput) => {
     if (!startupSnapshot.exists) {
     throw createServiceError(404, "Startup nao encontrada.");
   }
-  
+
   const startup = startupSnapshot.data() as StartupDoc;
 
     const wallet = normalizeWalletDocument(

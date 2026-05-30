@@ -1,6 +1,5 @@
 //feito por marcelo
-// integracao com backend feita por Abdallah
-
+//feito por Abdallah
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -109,7 +108,6 @@ abstract class _TokenTransactionControllerBase with Store {
       final averagePrice = _asDouble(ownedToken['averagePrice']);
 
       final startup = await _fetchStartupById(startupId);
-      // Abdallah El-Khatib
       assetName = (initialStartupName?.trim().isNotEmpty ?? false)
           ? initialStartupName!.trim()
           : (startup['name'] ?? startup['startupName'] ?? startupId).toString();

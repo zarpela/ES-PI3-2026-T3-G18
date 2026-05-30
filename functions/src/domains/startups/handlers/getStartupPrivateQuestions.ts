@@ -41,7 +41,7 @@ export const getStartupPrivateQuestions = onCall(
             throw new HttpsError("not-found", "Startup não encontrada.");
         }
 
-        // Abdallah El-Khatib
+        //feito por Abdallah
         const [isInvestor, canReadAll] = await Promise.all([
             userIsInvestor(startupId, user.uid),
             userCanReadAllPrivateQuestions(startupId, user.uid),

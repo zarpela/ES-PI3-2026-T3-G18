@@ -1,3 +1,4 @@
+//feito por Abdallah
 import * as logger from "firebase-functions/logger";
 import nodemailer from "nodemailer";
 import type {LocalMailConfig} from "../../../shared/types";

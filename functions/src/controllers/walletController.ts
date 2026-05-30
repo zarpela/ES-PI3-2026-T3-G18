@@ -1,8 +1,4 @@
-/*
-Autor: Abdallah
-RA: [COLOQUE SEU RA]
-*/
-
+//feito por Abdallah
 import {Request, Response} from "express";
 import {
   addBalanceToWallet,
