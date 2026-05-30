@@ -116,7 +116,6 @@ abstract class _TokenTransactionControllerBase with Store {
 
       final tokenPrice = _calculateTokenPrice(
         startup,
-        fallback: initialPricePerToken ?? averagePrice,
       );
 
       pricePerToken = tokenPrice;
@@ -260,24 +259,23 @@ abstract class _TokenTransactionControllerBase with Store {
   }
 
   double _calculateTokenPrice(
-    Map<String, dynamic> startup, {
-    required double fallback,
-  }) {
-    final emittedTokens = _asDouble(startup['totalEmittedTokens']);
-    final targetCapital = _asDouble(startup['targetCapital']);
+    Map<String, dynamic> startup) {
+    final dbTokenPrice = _asDouble(startup['tokenPrice']);
+  if (dbTokenPrice > 0) {
+    return dbTokenPrice;
+  }
 
-    if (emittedTokens > 0 && targetCapital > 0) {
-      final price = targetCapital / emittedTokens;
-      if (price.isFinite && price > 0) {
-        return price;
-      }
+  final emittedTokens = _asDouble(startup['totalEmittedTokens']);
+  final targetCapital = _asDouble(startup['targetCapital']);
+
+  if (emittedTokens > 0 && targetCapital > 0) {
+    final price = targetCapital / emittedTokens;
+    if (price.isFinite && price > 0) {
+      return price;
     }
+  }
 
-    if (fallback > 0) {
-      return fallback;
-    }
-
-    return 1.0;
+  throw Exception('Não foi possível determinar o preço do token para esta startup.');
   }
 
   double _asDouble(dynamic value) {
