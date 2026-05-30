@@ -9,6 +9,7 @@ import 'package:flutter_client/modules/presentation/pages/login_page/login_contr
 import 'package:flutter_client/modules/presentation/pages/login_page/login_page.dart';
 import 'package:flutter_client/modules/presentation/pages/marketplace_page/marketplace_controller.dart';
 import 'package:flutter_client/modules/presentation/pages/marketplace_page/marketplace_page.dart';
+import 'package:flutter_client/modules/presentation/pages/portfolio_page/portfolio_controller.dart';
 import 'package:flutter_client/modules/presentation/pages/mfa_verification_page/mfa_verification_page.dart';
 import 'package:flutter_client/modules/presentation/pages/password_recovery/change_password_page/change_password_controller.dart';
 import 'package:flutter_client/modules/presentation/pages/password_recovery/change_password_page/change_password_page.dart';
@@ -41,6 +42,9 @@ class AppModule extends Module {
     i.addSingleton(() => ChangePasswordController(i()));
     i.addSingleton(() => RegisterController(i()));
     i.addLazySingleton(() => MarketplaceController());
+    i.addLazySingleton(() => PortfolioController());
+
+    
   }
 
   @override

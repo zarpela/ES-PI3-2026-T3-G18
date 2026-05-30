@@ -1,5 +1,4 @@
-//feito por marcelo
-// integracao com backend feita por Abdallah
+//feito por marcelo e abdallah
 
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:dio/dio.dart';

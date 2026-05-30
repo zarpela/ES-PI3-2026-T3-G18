@@ -1,89 +1,34 @@
-// Abdallah El-Khatib
-
-import 'package:cloud_functions/cloud_functions.dart';
+// Feito por Marcelo, Abdallah 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_mobx/flutter_mobx.dart';
 import 'package:flutter_client/modules/presentation/components/home/home_palette.dart';
 import 'package:flutter_client/modules/presentation/pages/home_page/home_controller.dart';
 import 'package:flutter_client/modules/presentation/pages/token_transaction_page/token_transaction_controller.dart';
 import 'package:flutter_client/shared/app_routes.dart';
 import 'package:flutter_modular/flutter_modular.dart';
+import 'portfolio_controller.dart' ;
+
 
 class PortfolioView extends StatefulWidget {
-  const PortfolioView({required this.controller, super.key});
+  const PortfolioView({
+    required this.homeController, 
+    required this.portfolioController, 
+    super.key,
+  });
 
-  final HomeController controller;
+  final HomeController homeController;
+  final PortfolioController portfolioController; 
 
   @override
   State<PortfolioView> createState() => _PortfolioViewState();
 }
 
 class _PortfolioViewState extends State<PortfolioView> {
-  final FirebaseFunctions _functions = FirebaseFunctions.instanceFor(
-    region: 'southamerica-east1',
-  );
-
-  final List<_PortfolioPeriod> _periods = const [
-    _PortfolioPeriod('DIA', 'daily'),
-    _PortfolioPeriod('SEM', 'weekly'),
-    _PortfolioPeriod('MÊS', 'monthly'),
-    _PortfolioPeriod('6M', '6months'),
-    _PortfolioPeriod('YTD', 'ytd'),
-  ];
-
-  int _selectedPeriod = 2;
-  bool _isChartLoading = true;
-  String? _chartError;
-  List<_PortfolioPoint> _points = [];
-
   @override
   void initState() {
     super.initState();
-    _loadPortfolioHistory();
-  }
-
-  Future<void> _loadPortfolioHistory() async {
-    setState(() {
-      _isChartLoading = true;
-      _chartError = null;
-    });
-
-    try {
-      final result = await _functions.httpsCallable('getPortfolioHistory').call(
-        {'period': _periods[_selectedPeriod].value},
-      );
-      final raw = result.data;
-      final data = raw is Map && raw['data'] is List
-          ? raw['data'] as List
-          : <dynamic>[];
-      final points = data
-          .whereType<Map>()
-          .map(
-            (item) => _PortfolioPoint.fromMap(Map<String, dynamic>.from(item)),
-          )
-          .where((point) => point.totalValue >= 0)
-          .toList();
-
-      if (!mounted) return;
-      setState(() {
-        _points = points;
-        _isChartLoading = false;
-      });
-    } on FirebaseFunctionsException catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _chartError = e.code == 'internal'
-            ? 'Não foi possível carregar o gráfico agora.'
-            : e.message ?? 'Não foi possível carregar o gráfico.';
-        _isChartLoading = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _chartError = 'Erro inesperado ao carregar o gráfico.';
-        _isChartLoading = false;
-      });
-    }
+    widget.portfolioController.loadPortfolioHistory();
   }
 
   @override
@@ -103,11 +48,11 @@ class _PortfolioViewState extends State<PortfolioView> {
   }
 
   Widget _buildPatrimonioHero() {
-    final wallet = widget.controller.wallet ?? {};
+    final wallet = widget.homeController.wallet ?? {};
     final total = _asDouble(wallet['portfolioTotal']) > 0
         ? _asDouble(wallet['portfolioTotal'])
-        : widget.controller.availableBalance +
-              _asDouble(wallet['totalCurrentValue']);
+        : widget.homeController.availableBalance +
+            _asDouble(wallet['totalCurrentValue']);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -126,8 +71,8 @@ class _PortfolioViewState extends State<PortfolioView> {
           children: [
             Expanded(
               child: Text(
-                widget.controller.isBalanceVisible
-                    ? widget.controller.formatCurrencyAmount(total)
+                widget.homeController.isBalanceVisible
+                    ? widget.homeController.formatCurrencyAmount(total)
                     : 'R\$ ******',
                 style: const TextStyle(
                   color: HomePalette.deepText,
@@ -138,12 +83,12 @@ class _PortfolioViewState extends State<PortfolioView> {
             ),
             IconButton(
               icon: Icon(
-                widget.controller.isBalanceVisible
+                widget.homeController.isBalanceVisible
                     ? Icons.remove_red_eye_outlined
                     : Icons.visibility_off_outlined,
                 color: HomePalette.deepText,
               ),
-              onPressed: widget.controller.toggleBalanceVisibility,
+              onPressed: widget.homeController.toggleBalanceVisibility,
             ),
           ],
         ),
@@ -183,24 +128,40 @@ class _PortfolioViewState extends State<PortfolioView> {
             ],
           ),
           const SizedBox(height: 18),
-          SizedBox(height: 178, child: _buildChartBody()),
+          
+          // GRÁFICO REATIVO AQUI
+          SizedBox(
+            height: 178, 
+            child: Observer(
+              builder: (_) => _buildChartBody(),
+            ),
+          ),
+          
           const SizedBox(height: 14),
-          Row(
-            children: List.generate(_periods.length, (index) {
-              return Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 3),
-                  child: _PeriodChip(
-                    label: _periods[index].label,
-                    selected: _selectedPeriod == index,
-                    onTap: () {
-                      setState(() => _selectedPeriod = index);
-                      _loadPortfolioHistory();
-                    },
-                  ),
+          
+          // BOTÕES DE PERÍODO REATIVOS AQUI
+          Observer(
+            builder: (_) {
+              return Row(
+                children: List.generate(
+                  widget.portfolioController.periods.length, 
+                  (index) {
+                    return Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 3),
+                        child: _PeriodChip(
+                          label: widget.portfolioController.periods[index].label,
+                          selected: widget.portfolioController.selectedPeriod == index,
+                          onTap: () {
+                            widget.portfolioController.setPeriod(index);
+                          },
+                        ),
+                      ),
+                    );
+                  }
                 ),
               );
-            }),
+            }
           ),
         ],
       ),
@@ -208,16 +169,18 @@ class _PortfolioViewState extends State<PortfolioView> {
   }
 
   Widget _buildChartBody() {
-    if (_isChartLoading) {
+    final controller = widget.portfolioController;
+
+    if (controller.isChartLoading) {
       return const Center(
         child: CircularProgressIndicator(color: HomePalette.brandPink),
       );
     }
 
-    if (_chartError != null) {
+    if (controller.chartError != null) {
       return Center(
         child: Text(
-          _chartError!,
+          controller.chartError!,
           textAlign: TextAlign.center,
           style: const TextStyle(
             color: HomePalette.mutedText,
@@ -228,7 +191,7 @@ class _PortfolioViewState extends State<PortfolioView> {
       );
     }
 
-    if (_points.isEmpty) {
+    if (controller.points.isEmpty) {
       return const Center(
         child: Text(
           'Ainda não há dados suficientes para exibir o gráfico.',
@@ -243,10 +206,10 @@ class _PortfolioViewState extends State<PortfolioView> {
     }
 
     final spots = List.generate(
-      _points.length,
-      (index) => FlSpot(index.toDouble(), _points[index].totalValue),
+      controller.points.length,
+      (index) => FlSpot(index.toDouble(), controller.points[index].totalValue),
     );
-    final values = _points.map((point) => point.totalValue).toList();
+    final values = controller.points.map((point) => point.totalValue).toList();
     final minValue = values.reduce((a, b) => a < b ? a : b);
     final maxValue = values.reduce((a, b) => a > b ? a : b);
     final verticalPadding = (maxValue - minValue).abs() < 1
@@ -257,7 +220,7 @@ class _PortfolioViewState extends State<PortfolioView> {
       LineChartData(
         minX: 0,
         maxX: (spots.length - 1).toDouble(),
-        minY: (minValue - verticalPadding).clamp(0, double.infinity).toDouble(),
+        minY: minValue - verticalPadding,
         maxY: maxValue + verticalPadding,
         gridData: FlGridData(
           show: true,
@@ -276,9 +239,9 @@ class _PortfolioViewState extends State<PortfolioView> {
             tooltipBorderRadius: BorderRadius.circular(12),
             getTooltipItems: (touchedSpots) {
               return touchedSpots.map((spot) {
-                final point = _points[spot.x.toInt()];
+                final point = controller.points[spot.x.toInt()];
                 return LineTooltipItem(
-                  '${widget.controller.formatCurrencyAmount(point.totalValue)}\n',
+                  '${widget.homeController.formatCurrencyAmount(point.totalValue)}\n',
                   const TextStyle(
                     color: Colors.white,
                     fontSize: 12,
@@ -317,7 +280,7 @@ class _PortfolioViewState extends State<PortfolioView> {
   }
 
   Widget _buildMetricasRow() {
-    final wallet = widget.controller.wallet ?? {};
+    final wallet = widget.homeController.wallet ?? {};
 
     return Row(
       children: [
@@ -334,7 +297,7 @@ class _PortfolioViewState extends State<PortfolioView> {
           child: _MetricaCard(
             icon: Icons.savings_outlined,
             title: 'INVESTIDO',
-            value: widget.controller.formatCurrencyAmount(
+            value: widget.homeController.formatCurrencyAmount(
               _asDouble(wallet['totalInvested']),
             ),
             iconColor: HomePalette.deepText,
@@ -345,7 +308,7 @@ class _PortfolioViewState extends State<PortfolioView> {
   }
 
   Widget _buildListaInvestimentos() {
-    final tokens = widget.controller.walletTokens;
+    final tokens = widget.homeController.walletTokens;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -375,7 +338,7 @@ class _PortfolioViewState extends State<PortfolioView> {
           ],
         ),
         const SizedBox(height: 16),
-        if (widget.controller.isWalletLoading && tokens.isEmpty)
+        if (widget.homeController.isWalletLoading && tokens.isEmpty)
           const Center(
             child: Padding(
               padding: EdgeInsets.symmetric(vertical: 24),
@@ -404,8 +367,7 @@ class _PortfolioViewState extends State<PortfolioView> {
     final startupId = (token['startupId'] ?? '').toString().trim();
     final startup = _findStartupById(startupId);
     final sector = (startup?['sector'] ?? '').toString();
-    final name = (token['startupName'] ?? startup?['name'] ?? startupId)
-        .toString();
+    final name = (token['startupName'] ?? startup?['name'] ?? startupId).toString();
     final quantity = _asInt(token['quantity']);
     final currentValue = _asDouble(token['currentValue']) > 0
         ? _asDouble(token['currentValue'])
@@ -484,7 +446,7 @@ class _PortfolioViewState extends State<PortfolioView> {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text(
-                          widget.controller.formatCurrencyAmount(currentValue),
+                          widget.homeController.formatCurrencyAmount(currentValue),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
@@ -568,7 +530,7 @@ class _PortfolioViewState extends State<PortfolioView> {
   }
 
   Map<String, dynamic>? _findStartupById(String startupId) {
-    for (final startup in widget.controller.allStartups) {
+    for (final startup in widget.homeController.allStartups) {
       if ((startup['id'] ?? '').toString() == startupId) return startup;
     }
     return null;
@@ -621,34 +583,6 @@ class _PortfolioViewState extends State<PortfolioView> {
 
     final normalized = value.toStringAsFixed(2).replaceAll('.', ',');
     return '${value >= 0 ? '+' : ''}$normalized%';
-  }
-}
-
-class _PortfolioPeriod {
-  const _PortfolioPeriod(this.label, this.value);
-
-  final String label;
-  final String value;
-}
-
-class _PortfolioPoint {
-  const _PortfolioPoint({required this.timestamp, required this.totalValue});
-
-  final DateTime timestamp;
-  final double totalValue;
-
-  String get shortDate =>
-      '${timestamp.day.toString().padLeft(2, '0')}/${timestamp.month.toString().padLeft(2, '0')}';
-
-  factory _PortfolioPoint.fromMap(Map<String, dynamic> map) {
-    return _PortfolioPoint(
-      timestamp:
-          DateTime.tryParse((map['timestamp'] ?? '').toString()) ??
-          DateTime.now(),
-      totalValue: map['totalValue'] is num
-          ? (map['totalValue'] as num).toDouble()
-          : double.tryParse(map['totalValue']?.toString() ?? '') ?? 0,
-    );
   }
 }
 
