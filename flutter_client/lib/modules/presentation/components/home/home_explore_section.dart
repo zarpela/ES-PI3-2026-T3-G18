@@ -1,3 +1,4 @@
+//feito por Abdallah
 import 'package:flutter/material.dart';
 import 'package:flutter_client/modules/presentation/components/home/home_header.dart';
 import 'package:flutter_client/modules/presentation/components/home/home_palette.dart';
@@ -82,7 +83,6 @@ class HomeExploreSection extends StatelessWidget {
               startup: startup,
               onTapStartup: () => onStartupTap(startup),
               onInvestTap: () {
-                // Abdallah El-Khatib
                 final startupId = (startup['id'] ?? startup['startupId'] ?? '')
                     .toString();
 
@@ -898,7 +898,6 @@ String startupRoiLabel(Map<String, dynamic> startup) {
   return roi;
 }
 
-// Abdallah El-Khatib
 double _tokenPriceFromStartup(Map<String, dynamic> startup) {
   final raw = startup['raw'];
   final data = raw is Map ? Map<String, dynamic>.from(raw) : startup;
@@ -923,7 +922,6 @@ double _tokenPriceFromStartup(Map<String, dynamic> startup) {
   return 1.0;
 }
 
-// Abdallah El-Khatib
 int _availableTokensFromStartup(Map<String, dynamic> startup) {
   final raw = startup['raw'];
   final data = raw is Map ? Map<String, dynamic>.from(raw) : startup;

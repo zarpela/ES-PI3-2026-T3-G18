@@ -1,7 +1,5 @@
-// Desenvolvido por Abdallah
+//feito por Abdallah
 // Revisado com base na implementacao de Miguel Castro
-// Abdallah El-Khatib
-
 import {Timestamp} from "firebase-admin/firestore";
 import {HttpsError, onCall} from "firebase-functions/v2/https";
 
@@ -63,4 +61,3 @@ export const getStartupById = onCall(
     };
   },
 );
-

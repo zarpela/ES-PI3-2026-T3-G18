@@ -30,7 +30,7 @@ service cloud.firestore {
       allow read, write: if isOwner(userId);
     }
 
-    // Abdallah El-Khatib
+    //feito por Abdallah
     match /wallets/{userId} {
       allow read: if isOwner(userId);
       allow write: if false;

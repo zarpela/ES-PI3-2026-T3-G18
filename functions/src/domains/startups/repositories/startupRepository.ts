@@ -152,7 +152,7 @@ export async function userIsInvestor(
     }
 }
 
-// Abdallah El-Khatib
+//feito por Abdallah
 export async function userCanReadAllPrivateQuestions(
     startupId: string,
     uid: string
@@ -186,12 +186,12 @@ export async function userCanReadAllPrivateQuestions(
 // Questions
 // ---------------------------------------------------------------------------
 
+//feito por Abdallah
 export async function createQuestion(
     startupId: string,
     question: StartupQuestionDocument
 ): Promise<string> {
     try {
-        // Abdallah El-Khatib
         const targetCollection = question.visibility === "privada" ?
             privateQuestionsCol(startupId) :
             publicQuestionsCol(startupId);
@@ -203,6 +203,7 @@ export async function createQuestion(
     }
 }
 
+//feito por Abdallah
 export async function getPublicQuestions(
     startupId: string
 ): Promise<
@@ -212,7 +213,6 @@ export async function getPublicQuestions(
     }[]
 > {
     try {
-        // Abdallah El-Khatib
         const [publicSnapshot, legacySnapshot] = await Promise.all([
             publicQuestionsCol(startupId)
                 .orderBy("createdAt", "asc")
@@ -232,13 +232,13 @@ export async function getPublicQuestions(
     }
 }
 
+//feito por Abdallah
 export async function getPrivateQuestions(
     startupId: string,
     uid: string,
     canReadAll = false
 ): Promise<{ id: string; data: StartupQuestionDocument }[]> {
     try {
-        // Abdallah El-Khatib
         const [privateSnapshot, legacySnapshot] = await Promise.all([
             privateQuestionsCol(startupId)
                 .orderBy("createdAt", "asc")
@@ -267,7 +267,7 @@ export async function getPrivateQuestions(
     }
 }
 
-// Abdallah El-Khatib
+//feito por Abdallah
 export async function getTokenPriceHistory(
     startupId: string,
     startDate: Date

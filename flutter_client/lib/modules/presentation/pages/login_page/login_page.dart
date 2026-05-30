@@ -1,4 +1,5 @@
-//feito por abdallah, gabriel e marcelo
+//feito por Abdallah
+// feito por gabriel e marcelo
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_client/core/app_session.dart';

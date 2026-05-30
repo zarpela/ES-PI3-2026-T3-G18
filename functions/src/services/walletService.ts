@@ -1,10 +1,4 @@
-/*
-Autor: Abdallah
-RA: [COLOQUE SEU RA]
-*/
-
-// Abdallah El-Khatib
-
+//feito por Abdallah
 import {FieldValue, Timestamp} from "firebase-admin/firestore";
 import {db} from "../shared/firebase";
 

@@ -58,9 +58,9 @@ class _BuyBottomSheetContentState extends State<_BuyBottomSheetContent> {
     }
   }
 
+  //feito por Abdallah
   Future<void> _handleBuy() async {
     try {
-      // Abdallah El-Khatib
       await _controller.buyOffer(offerId: widget.offerId, quantity: _quantity);
 
       await Modular.get<HomeController>().refreshWallet();

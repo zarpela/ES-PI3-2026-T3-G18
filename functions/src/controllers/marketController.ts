@@ -1,8 +1,4 @@
-/*
-Autor: Abdallah
-RA: [SEU RA]
-*/
-
+//feito por Abdallah
 import {Request, Response} from "express";
 import {
   buyOffer,
@@ -87,7 +83,6 @@ export const sellTokensHandler = async (req: Request, res: Response) => {
   }
 };
 
-// Abdallah El-Khatib
 export const listMarketplaceOffersHandler = async (req: Request, res: Response) => {
   try {
     const offers = await getMarketplaceOffers({
@@ -112,7 +107,6 @@ export const listMarketplaceOffersHandler = async (req: Request, res: Response) 
   }
 };
 
-// Abdallah El-Khatib
 export const buyMarketplaceOfferHandler = async (req: Request, res: Response) => {
   try {
     const overview = await buyOffer({
@@ -139,7 +133,6 @@ export const buyMarketplaceOfferHandler = async (req: Request, res: Response) =>
   }
 };
 
-// Abdallah El-Khatib
 export const cancelMarketplaceOfferHandler = async (
   req: Request,
   res: Response,
@@ -169,7 +162,6 @@ export const cancelMarketplaceOfferHandler = async (
   }
 };
 
-// Abdallah El-Khatib
 export const updateMarketplaceOfferHandler = async (
   req: Request,
   res: Response,

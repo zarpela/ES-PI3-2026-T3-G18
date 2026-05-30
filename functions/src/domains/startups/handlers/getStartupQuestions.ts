@@ -19,7 +19,7 @@ import { StartupQuestionResponse } from "../types";
 export const getStartupQuestions = onCall(
     { region: "southamerica-east1" },
     async (request) => {
-        // Abdallah El-Khatib
+        //feito por Abdallah
         requireAuthenticatedUser(request);
         const startupId = normalizeString(request.data?.startupId);
 

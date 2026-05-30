@@ -1,4 +1,5 @@
-// feito por abdallah, marcelo, pedro
+//feito por Abdallah
+// feito por marcelo, pedro
 
 import 'package:dio/dio.dart';
 import 'package:flutter_client/core/app_settings.dart';
@@ -60,7 +61,6 @@ class AppModule extends Module {
         final payload = Modular.args.data as Map<String, dynamic>;
         final TransactionType type = payload['type'];
         final String id = payload['id'];
-        // Abdallah El-Khatib
         return TokenTransactionPage(
           type: type,
           id: id,

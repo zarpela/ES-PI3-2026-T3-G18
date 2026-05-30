@@ -1,10 +1,4 @@
-/*
-Autor: Abdallah
-RA: [SEU RA]
-*/
-
-// Abdallah El-Khatib
-
+//feito por Abdallah
 import {
   buyMarketplaceOffer,
   buyStartupTokens,
