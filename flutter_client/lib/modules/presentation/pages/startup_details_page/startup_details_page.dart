@@ -1255,7 +1255,21 @@ class _StartupDetailsPageState extends State<StartupDetailsPage> {
       ],
     );
   }
-
+  // Gabriel Scolfaro de Azeredo
+  String _formatQuestionDate(String? isoString) {
+    if (isoString == null || isoString.isEmpty) return 'Horário indisponível';
+    try {
+      final dateTime = DateTime.parse(isoString).toLocal();
+      final day = dateTime.day.toString().padLeft(2, '0');
+      final month = dateTime.month.toString().padLeft(2, '0');
+      final year = dateTime.year;
+      final hour = dateTime.hour.toString().padLeft(2, '0');
+      final minute = dateTime.minute.toString().padLeft(2, '0');
+      return '$day/$month/$year às $hour:$minute';
+    } catch (_) {
+      return 'Horário indisponível';
+    }
+  }
   Widget buildQuestionsSection() {
     if (isQuestionsLoading) {
       return const Padding(
@@ -1293,7 +1307,7 @@ class _StartupDetailsPageState extends State<StartupDetailsPage> {
         (item['authorName'] ?? item['authorUid'] ?? item['authorId'])
             ?.toString() ??
         'Usuário não informado';
-    final date = item['createdAt']?.toString() ?? '--/--/----';
+    final date = _formatQuestionDate(item['createdAt']?.toString());
 
     final answerMap = item['answer'];
     final answer = answerMap is Map ? answerMap['text']?.toString() : null;
