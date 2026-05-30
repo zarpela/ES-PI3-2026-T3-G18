@@ -76,6 +76,7 @@ export type StartupCatalog = {
 export type AuthenticatedUser = {
     uid: string;
     email: string | undefined;
+    name?: string;
 }
 
 /**
