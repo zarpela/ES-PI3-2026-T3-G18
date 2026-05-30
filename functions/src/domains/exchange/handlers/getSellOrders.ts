@@ -4,21 +4,33 @@ import { onCall } from "firebase-functions/v2/https";
 import { getSellOrders } from "../repositories/exchangeRepository";
 
 /**
- * Função callable para buscar todas as ordens de venda abertas.
+ * Callable responsável por listar as ordens de venda abertas no balcão.
  *
- * @returns Retorna o contador e a lista de ordens abertas.
- *   - count: total de ordens retornadas.
- *   - data: array de ordens abertas.
- *     Cada objeto de ordem contém:
- *       - id: ID da ordem.
- *       - ownerId: ID do usuário vendedor.
- *       - startupId: ID da startup cujos tokens estão à venda.
- *       - startupName: nome da startup exibido no pedido.
- *       - amount: quantidade de tokens à venda.
- *       - pricePerToken: preço pedido por token.
- *       - averagePrice: preço médio de aquisição do token pelo vendedor.
- *       - createdAt: timestamp de criação da ordem.
- *       - status: status atual da ordem (deve ser "open").
+ * Fluxo principal:
+ * - não exige dados em `request.data`;
+ * - consulta as ordens com status `"open"`;
+ * - retorna a quantidade encontrada e a lista completa para exibição no balcão.
+ *
+ * @returns Objeto com contador e lista de ordens abertas:
+ * {
+ *   count: number,
+ *   data: [
+ *     {
+ *       id: string,
+ *       ownerId: string,
+ *       startupId: string,
+ *       startupName: string,
+ *       amount: number,
+ *       pricePerToken: number,
+ *       averagePrice: number,
+ *       createdAt: Timestamp,
+ *       status: "open"
+ *     }
+ *   ]
+ * }
+ *
+ * `averagePrice` é o preço médio pago pelo vendedor quando adquiriu os tokens;
+ * `pricePerToken` é o preço pedido na ordem de venda.
  */
 export const getSellOrdersHandler = onCall(
     { region: "southamerica-east1" },

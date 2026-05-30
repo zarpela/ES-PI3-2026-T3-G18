@@ -17,7 +17,7 @@ import { StartupQuestionResponse } from "../types";
  * Retorna as perguntas privadas de uma startup.
  *
  * Parâmetros esperados no request.data:
- *   - startupId: identificador da startup
+ * - startupId: identificador da startup
  *
  * Requer autenticação e que o usuário seja investidor da startup.
  */
@@ -56,30 +56,48 @@ export const getStartupPrivateQuestions = onCall(
 
         const questions = await getPrivateQuestions(startupId, user.uid, canReadAll);
 
-        const data: StartupQuestionResponse[] = questions.map(({ id, data: q }) => ({
-            id,
-            authorId: q.authorId ?? q.authorUid,
-            authorName: q.authorName,
-            authorUid: q.authorUid,
-            isAnswered: q.isAnswered ?? Boolean(q.answer),
-            question: q.question ?? q.text,
-            startupId: q.startupId ?? startupId,
-            status: q.status ?? "open",
-            text: q.text,
-            visibility: q.visibility,
-            createdAt: q.createdAt instanceof Timestamp
-                ? q.createdAt.toDate().toISOString()
-                : null,
-            answer: q.answer
-                ? {
-                    text: q.answer.text,
-                    answeredByUid: q.answer.answeredByUid,
-                    answeredAt: q.answer.answeredAt instanceof Timestamp
-                        ? q.answer.answeredAt.toDate().toISOString()
-                        : null,
+        const data: StartupQuestionResponse[] = questions.map(({ id, data: q }) => {
+            // Lógica segura para lidar com Timestamp, FieldValue ou Data nula
+            let createdAtString = new Date().toISOString();
+            if (q.createdAt) {
+                if (q.createdAt instanceof Timestamp) {
+                    createdAtString = q.createdAt.toDate().toISOString();
+                } else if ((q.createdAt as any)._seconds) {
+                    // Trata caso o timestamp chegue desserializado
+                    createdAtString = new Date((q.createdAt as any)._seconds * 1000).toISOString();
+                } else {
+                    // Força a conversão bypassando o erro do TypeScript de FieldValue
+                    try {
+                        createdAtString = new Date(q.createdAt as any).toISOString();
+                    } catch (e) {
+                        // Mantém a data atual como fallback se der falha no parse
+                    }
                 }
-                : undefined,
-        }));
+            }
+
+            return {
+                id,
+                authorId: q.authorId ?? q.authorUid,
+                authorName: q.authorName ?? "Usuário",
+                authorUid: q.authorUid,
+                isAnswered: q.isAnswered ?? Boolean(q.answer),
+                question: q.question ?? q.text,
+                startupId: q.startupId ?? startupId,
+                status: q.status ?? "open",
+                text: q.text,
+                visibility: q.visibility,
+                createdAt: createdAtString,
+                answer: q.answer
+                    ? {
+                        text: q.answer.text,
+                        answeredByUid: q.answer.answeredByUid,
+                        answeredAt: q.answer.answeredAt instanceof Timestamp
+                            ? q.answer.answeredAt.toDate().toISOString()
+                            : null,
+                    }
+                    : undefined,
+            };
+        });
 
         return {
             count: data.length,

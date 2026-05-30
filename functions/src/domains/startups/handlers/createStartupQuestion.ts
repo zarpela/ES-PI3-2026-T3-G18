@@ -70,7 +70,7 @@ export const createStartupQuestion = onCall(
 
         const question: StartupQuestionDocument = {
             authorId: user.uid,
-            authorName: user.email?.split("@")[0] ?? "Investidor",
+            authorName: user.name ?? user.email?.split("@")[0] ?? "Usuário",
             authorUid: user.uid,
             isAnswered: false,
             question: text,

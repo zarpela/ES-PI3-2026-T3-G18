@@ -1,6 +1,7 @@
 //feito por Abdallah
 import {FieldValue, Timestamp} from "firebase-admin/firestore";
 import {db} from "../shared/firebase";
+import { StartupDoc } from "../domains/startups/types";
 
 type WalletAccessInput = {
   authenticatedUserId?: string;
@@ -1486,13 +1487,15 @@ export const buyStartupTokens = async (data: BuyTokenInput) => {
     data.startupSymbol,
     startupData,
   );
-  const unitPrice = resolveStartupUnitPrice(
+
+  const currentTokenPrice = resolveStartupUnitPrice(
     startupData,
     data.unitPrice ?? data.price,
   );
+
   const availableQuantity = resolvePrimaryAvailableQuantity(
     startupData,
-    unitPrice,
+    currentTokenPrice,
   );
 
   if (availableQuantity !== null && quantity > availableQuantity) {
@@ -1506,20 +1509,27 @@ export const buyStartupTokens = async (data: BuyTokenInput) => {
   const investorRef = getInvestorRef(canonicalStartupId, userId);
 
   await db.runTransaction(async (transaction) => {
-    const [walletSnapshot, holdingSnapshot] = await Promise.all([
+    const [walletSnapshot, holdingSnapshot, startupSnapshot] = await Promise.all([
       transaction.get(walletRef),
       transaction.get(holdingRef),
+      transaction.get(startupRef),
     ]);
 
     if (!walletSnapshot.exists) {
       throw createServiceError(404, "Carteira nao encontrada para o usuario informado.");
     }
 
+    if (!startupSnapshot.exists) {
+      throw createServiceError(404, "Startup nao encontrada.");
+    }
+
+    const startup = startupSnapshot.data() as StartupDoc;
+
     const wallet = normalizeWalletDocument(
       userId,
       walletSnapshot.data() as Partial<WalletDocument>,
     );
-    const totalValue = roundCurrency(quantity * unitPrice);
+    const totalValue = roundCurrency(quantity * currentTokenPrice);
 
     if (wallet.balance < totalValue) {
       throw createServiceError(400, "Saldo insuficiente");
@@ -1537,12 +1547,32 @@ export const buyStartupTokens = async (data: BuyTokenInput) => {
     const updatedQuantity = tokensBefore + quantity;
     const updatedAveragePrice = updatedQuantity > 0 ?
       roundCurrency(
-        ((tokensBefore * existingAveragePrice) + (quantity * unitPrice)) /
+        ((tokensBefore * existingAveragePrice) + (quantity * currentTokenPrice)) /
           updatedQuantity,
       ) :
       0;
     const balanceBefore = wallet.balance;
     const balanceAfter = roundCurrency(balanceBefore - totalValue);
+
+    // valorizção
+
+    const raisedCapital = startup.raisedCapital ?? 0;
+
+    // evita impacto absurdo em startups novas
+    const liquidity = Math.max(raisedCapital, 1000);
+
+    // impacto proporcional ao tamanho da compra
+    const impact = totalValue / liquidity;
+
+    // limita valorizacao maxima por compra
+    const maxImpact = 0.05;
+
+    const clampedImpact = Math.min(impact, maxImpact);
+
+    // novo preco do token
+    const newTokenPrice = roundCurrency(
+      currentTokenPrice * (1 + clampedImpact),
+    );
 
     transaction.set(walletRef, {
       balance: balanceAfter,
@@ -1556,11 +1586,12 @@ export const buyStartupTokens = async (data: BuyTokenInput) => {
       quantity: updatedQuantity,
       reservedQuantity: existingHolding?.reservedQuantity ?? 0,
       averagePrice: updatedAveragePrice,
-      currentPrice: unitPrice,
+      currentPrice: newTokenPrice,
     }));
     transaction.set(startupRef, {
       raisedCapital: FieldValue.increment(totalValue),
       soldTokens: FieldValue.increment(quantity),
+      tokenPrice: newTokenPrice,
       updatedAt: FieldValue.serverTimestamp(),
     }, {merge: true});
     transaction.set(investorRef, {
@@ -1576,7 +1607,7 @@ export const buyStartupTokens = async (data: BuyTokenInput) => {
       startupName,
       startupSymbol,
       quantity,
-      unitPrice,
+      unitPrice: currentTokenPrice,
       totalValue,
       balanceBefore,
       balanceAfter,
@@ -1623,17 +1654,19 @@ export const createSellOffer = async (data: SellOfferInput) => {
     data.startupSymbol,
     startupData,
   );
-  const officialUnitPrice = resolveOfficialStartupUnitPrice(startupData);
+  const currentTokenPrice = resolveOfficialStartupUnitPrice(startupData);
   const sellerName = await resolveUserName(userId);
   const walletRef = getWalletRef(userId);
   const holdingRef = getWalletHoldingRef(userId, canonicalStartupId);
   const offerRef = getMarketplaceOffersRef().doc();
   const transactionRef = getWalletTransactionsRef(userId).doc();
+  const startupRef = db.collection(startupsCollection).doc(canonicalStartupId);
 
   await db.runTransaction(async (transaction) => {
-    const [walletSnapshot, holdingSnapshot] = await Promise.all([
+    const [walletSnapshot, holdingSnapshot, startupSnapshot] = await Promise.all([
       transaction.get(walletRef),
       transaction.get(holdingRef),
+      transaction.get(startupRef),
     ]);
 
     if (!walletSnapshot.exists) {
@@ -1643,6 +1676,12 @@ export const createSellOffer = async (data: SellOfferInput) => {
     if (!holdingSnapshot.exists) {
       throw createServiceError(400, "Quantidade de tokens insuficiente");
     }
+
+    if (!startupSnapshot.exists) {
+    throw createServiceError(404, "Startup nao encontrada.");
+  }
+
+  const startup = startupSnapshot.data() as StartupDoc;
 
     const wallet = normalizeWalletDocument(
       userId,
@@ -1662,6 +1701,27 @@ export const createSellOffer = async (data: SellOfferInput) => {
     const reservedQuantity = holding.reservedQuantity + quantity;
     const totalValue = roundCurrency(quantity * unitPrice);
 
+    // desvalorização
+
+    const raisedCapital = startup.raisedCapital ?? 0;
+
+    // evita impacto absurdo
+    const liquidity = Math.max(raisedCapital, 1000);
+
+    // impacto proporcional
+    const impact = totalValue / liquidity;
+
+    // limita queda maxima
+    const maxImpact = 0.05;
+
+    const clampedImpact = Math.min(impact, maxImpact);
+
+    // novo preco do token
+    const newTokenPrice = roundCurrency(currentTokenPrice * (1 - clampedImpact),);
+
+    // impede preco negativo/zerado
+    const safeTokenPrice = Math.max(newTokenPrice, 0.01);
+
     transaction.set(holdingRef, buildHoldingDocument({
       userId,
       startupId: holding.startupId,
@@ -1670,7 +1730,7 @@ export const createSellOffer = async (data: SellOfferInput) => {
       quantity: holding.quantity,
       reservedQuantity,
       averagePrice: holding.averagePrice,
-      currentPrice: officialUnitPrice,
+      currentPrice: safeTokenPrice,
     }));
     transaction.set(offerRef, buildOfferDocument({
       offerId: offerRef.id,
@@ -1699,6 +1759,14 @@ export const createSellOffer = async (data: SellOfferInput) => {
       status: "open",
       description: `Oferta publica de venda criada para ${startupName}`,
     }));
+    transaction.set(
+      startupRef,
+      {
+        tokenPrice: safeTokenPrice,
+        updatedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true },
+    );
   });
 
   await syncWalletSummary(userId);

@@ -4,7 +4,7 @@ import { HttpsError, onCall } from "firebase-functions/v2/https";
 import { buySellOrder } from "../repositories/exchangeRepository";
 
 /**
- * Padronização do request
+ * Corpo esperado em request.data para comprar uma ordem de venda aberta.
  */
 type BuySellOrderRequest = {
     amount?: number;
@@ -13,17 +13,30 @@ type BuySellOrderRequest = {
 }
 
 /**
- * Compra de ordem de venda existente. O comprador paga o preço por token 
- * definido na ordem e recebe os tokens comprados, enquanto o vendedor 
- * recebe o dinheiro da venda. A ordem é removida do sistema.
- * As ordens de vendas são vistas no balcão
- */
-/**
- * Função callable para comprar uma ordem de venda aberta.
+ * Callable responsável por comprar uma ordem de venda aberta no balcão.
  *
- * @param request - Solicitação do cliente contendo o ID da ordem.
- *   - data.orderId: ID da ordem de venda a ser comprada.
- * @returns Retorna mensagem de sucesso e o ID da ordem comprada.
+ * Fluxo principal:
+ * - exige usuário autenticado, usado como comprador da ordem;
+ * - recebe o ID de uma ordem aberta em `request.data.orderId`;
+ * - valida se o ID foi enviado como string;
+ * - executa a compra no repositório, transferindo saldo do comprador para
+ *   o vendedor, adicionando os tokens na carteira do comprador e marcando a
+ *   ordem como concluída.
+ *
+ * @param request - Solicitação callable do Firebase.
+ * @param request.auth.uid - ID do usuário autenticado que compra a ordem.
+ * @param request.data.orderId - ID da ordem de venda que será comprada.
+ *
+ * @returns Objeto confirmado para o cliente após a compra:
+ * {
+ *   message: "Ordem comprada com sucesso.",
+ *   data: {
+ *     orderId: string
+ *   }
+ * }
+ *
+ * @throws HttpsError("unauthenticated") quando não houver usuário autenticado.
+ * @throws HttpsError("invalid-argument") quando `orderId` não for uma string válida.
  */
 export const buySellOrderHandler = onCall(
     { region: "southamerica-east1" },

@@ -1,5 +1,5 @@
 // Desenvolvido por Miguel Castro
-
+// e Gabriel Scolfaro de Azeredo
 import { Timestamp } from "firebase-admin/firestore";
 import { HttpsError } from "firebase-functions/v2/https";
 import { db } from "../../../shared/firebase";
@@ -9,6 +9,7 @@ import {
     StartupQuestionDocument,
     TokenPriceHistory,
 } from "../types";
+import * as admin from "firebase-admin"; // só pra schedule
 
 // ---------------------------------------------------------------------------
 // Collections
@@ -75,6 +76,7 @@ export async function fetchAllStartups(): Promise<
             ...(doc.data() as StartupDoc),
         }));
     } catch (e) {
+        console.error("Erro em fetchAllStartups:", e);
         throw new HttpsError("internal", "Erro ao buscar startups.");
     }
 }
@@ -90,6 +92,7 @@ export async function getStartupsCatalogs(): Promise<StartupCatalog[]> {
             toCatalog(doc.id, doc.data() as StartupDoc)
         );
     } catch (e) {
+        console.error("Erro em getStartupsCatalogs:", e);
         throw new HttpsError("internal", "Erro ao buscar startups.");
     }
 }
@@ -107,6 +110,7 @@ export async function getStartupDocById(
 
         return doc.data() as StartupDoc;
     } catch (e) {
+        console.error("Erro em getStartupDocById:", e);
         throw new HttpsError("internal", "Erro ao buscar startup.");
     }
 }
@@ -148,6 +152,7 @@ export async function userIsInvestor(
 
         return quantity > 0;
     } catch (e) {
+        console.error("Erro em userIsInvestor:", e);
         throw new HttpsError("internal", "Erro ao verificar investidor.");
     }
 }
@@ -178,6 +183,7 @@ export async function userCanReadAllPrivateQuestions(
 
         return responsibleId === uid;
     } catch (e) {
+        console.error("Erro em userCanReadAllPrivateQuestions:", e);
         throw new HttpsError("internal", "Erro ao validar permissoes.");
     }
 }
@@ -199,6 +205,7 @@ export async function createQuestion(
 
         return ref.id;
     } catch (e) {
+        console.error("Erro em createQuestion:", e);
         throw new HttpsError("internal", "Erro ao criar pergunta.");
     }
 }
@@ -215,19 +222,26 @@ export async function getPublicQuestions(
     try {
         const [publicSnapshot, legacySnapshot] = await Promise.all([
             publicQuestionsCol(startupId)
-                .orderBy("createdAt", "asc")
                 .get(),
             legacyQuestionsCol(startupId)
                 .where("visibility", "==", "publica")
-                .orderBy("createdAt", "asc")
-                .get(),
+                .get(), // Removido orderBy para evitar erro de Index no Firestore
         ]);
 
-        return [...publicSnapshot.docs, ...legacySnapshot.docs].map((doc) => ({
+        const allDocs = [...publicSnapshot.docs, ...legacySnapshot.docs].map((doc) => ({
             id: doc.id,
             data: doc.data() as StartupQuestionDocument,
         }));
+
+        // Ordenação em memória para não depender de índices complexos
+        return allDocs.sort((a, b) => {
+            const timeA = a.data.createdAt instanceof Timestamp ? a.data.createdAt.toMillis() : 0;
+            const timeB = b.data.createdAt instanceof Timestamp ? b.data.createdAt.toMillis() : 0;
+            return timeA - timeB;
+        });
+
     } catch (e) {
+        console.error("Erro em getPublicQuestions:", e);
         throw new HttpsError("internal", "Erro ao buscar perguntas.");
     }
 }
@@ -241,29 +255,62 @@ export async function getPrivateQuestions(
     try {
         const [privateSnapshot, legacySnapshot] = await Promise.all([
             privateQuestionsCol(startupId)
-                .orderBy("createdAt", "asc")
                 .get(),
             legacyQuestionsCol(startupId)
                 .where("visibility", "==", "privada")
-                .orderBy("createdAt", "asc")
-                .get(),
+                .get(), // Removido orderBy para evitar erro de Index no Firestore
         ]);
-        const docs = [...privateSnapshot.docs, ...legacySnapshot.docs];
 
-        return docs
+        let docs = [...privateSnapshot.docs, ...legacySnapshot.docs]
             .map((doc) => ({
-            id: doc.id,
-            data: doc.data() as StartupQuestionDocument,
+                id: doc.id,
+                data: doc.data() as StartupQuestionDocument,
             }))
             .filter(({ data }) => {
                 if (canReadAll) {
                     return true;
                 }
-
                 return data.authorId === uid || data.authorUid === uid;
             });
+
+        // Ordenação em memória para não depender de índices complexos
+        return docs.sort((a, b) => {
+            const timeA = a.data.createdAt instanceof Timestamp ? a.data.createdAt.toMillis() : 0;
+            const timeB = b.data.createdAt instanceof Timestamp ? b.data.createdAt.toMillis() : 0;
+            return timeA - timeB;
+        });
+
     } catch (e) {
+        console.error("Erro em getPrivateQuestions:", e);
         throw new HttpsError("internal", "Erro ao buscar perguntas privadas.");
+    }
+}
+
+/**
+ * Salva o histórico ed valorização do token
+ * vai ser chamado em /schedule a cada 4h, começando 00:00
+ */
+export async function saveAllPriceSnapshots() {
+    try {
+        const snapshot = await db.collection("startups").get();
+
+        const promises = snapshot.docs.map(async (startupDoc) => {
+            const startup = startupDoc.data() as StartupDoc;
+            const history: TokenPriceHistory = {
+                price: startup.tokenPrice,
+                createdAt: admin.firestore.Timestamp.now(),
+            };
+
+            return db
+                .collection("startups")
+                .doc(startupDoc.id)
+                .collection("tokenPriceHistory")
+                .add(history);
+        });
+
+        await Promise.all(promises);
+    } catch(e) {
+        console.error("Erro em saveAllPriceSnapshots:", e);
     }
 }
 
@@ -281,6 +328,7 @@ export async function getTokenPriceHistory(
 
         return snapshot.docs.map((doc) => doc.data() as TokenPriceHistory);
     } catch (e) {
+        console.error("Erro em getTokenPriceHistory:", e);
         throw new HttpsError("internal", "Erro ao buscar histórico de preços.");
     }
 }
