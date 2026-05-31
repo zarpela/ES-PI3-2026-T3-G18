@@ -1,4 +1,4 @@
-// feito por marcelo
+// feito por Marcelo Zarpelon - RA: 25015323
 import 'package:flutter/material.dart';
 import 'package:flutter_client/modules/presentation/components/home/home_palette.dart';
 

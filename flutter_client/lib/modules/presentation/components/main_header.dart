@@ -1,4 +1,4 @@
-//feito por marcelo, Abdallah Ali Borges El-Khatib - RA: 25018711 e Gabriel Scolfaro de Azeredo - RA: 25006194
+//feito por Marcelo Zarpelon - RA: 25015323 , Abdallah Ali Borges El-Khatib - RA: 25018711 e Gabriel Scolfaro de Azeredo - RA: 25006194
 import 'package:flutter/material.dart';
 import 'package:flutter_client/modules/presentation/components/home/home_palette.dart';
 import 'package:flutter_client/modules/presentation/pages/home_page/home_controller.dart';

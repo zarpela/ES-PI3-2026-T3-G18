@@ -1,4 +1,4 @@
-// feito por marcelo
+// feito por Marcelo Zarpelon - RA: 25015323
 class AppSettings {
   static const String _defaultBaseUrl =
       "https://southamerica-east1-projetointegrador3-grupo18.cloudfunctions.net/api/";

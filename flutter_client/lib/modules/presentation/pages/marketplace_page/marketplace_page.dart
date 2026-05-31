@@ -1,4 +1,4 @@
-//feito por marcelo
+//feito por Marcelo Zarpelon - RA: 25015323
 //feito por Abdallah Ali Borges El-Khatib - RA: 25018711
 import 'package:flutter/material.dart';
 import 'package:flutter_client/modules/presentation/components/filter_chip.dart';

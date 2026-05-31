@@ -1,5 +1,5 @@
 //feito por Abdallah Ali Borges El-Khatib - RA: 25018711
-// feito por marcelo, pedro
+// feito por Marcelo Zarpelon - RA: 25015323 , pedro
 
 import 'package:dio/dio.dart';
 import 'package:flutter_client/core/app_settings.dart';
