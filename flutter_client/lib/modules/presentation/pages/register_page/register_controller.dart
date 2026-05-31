@@ -81,12 +81,72 @@ abstract class _RegisterControllerBase with Store {
   @computed
   bool get isFormValid =>
       fullName.isNotEmpty &&
-      phone.isNotEmpty &&
+      isPhoneValid &&
       email.isNotEmpty &&
-      document.isNotEmpty &&
+      isDocumentValid &&
       hasMinLength &&
       hasUpperAndLower &&
       hasNumberOrSymbol;
+
+  @computed
+  bool get isPhoneValid {
+    if (phone.isEmpty) return false;
+
+    String numbers = phone.replaceAll(RegExp(r'[^0-9]'), '');
+
+    if (numbers.startsWith('55') && (numbers.length == 12 || numbers.length == 13)) {
+      numbers = numbers.substring(2);
+    }
+
+    if (numbers.length != 10 && numbers.length != 11) {
+      return false;
+    }
+
+    int? ddd = int.tryParse(numbers.substring(0, 2));
+    if (ddd == null || ddd < 11) return false;
+
+    if (numbers.length == 11) {
+      if (numbers[2] != '9') return false;
+    } else {
+      if (!['2', '3', '4', '5'].contains(numbers[2])) return false;
+    }
+
+    if (RegExp(r'^(\d)\1*$').hasMatch(numbers)) return false;
+
+    return true;
+  }
+
+  @computed
+  bool get isDocumentValid {
+    if (document.isEmpty) return false;
+    String numbers = document.replaceAll(RegExp(r'[^0-9]'), '');
+
+    if (numbers.length != 11) return false;
+
+    if (RegExp(r'^(\d)\1*$').hasMatch(numbers)) return false;
+
+    List<int> digits = numbers.split('').map(int.parse).toList();
+
+    int sum1 = 0;
+    for (int i = 0; i < 9; i++) {
+      sum1 += digits[i] * (10 - i);
+    }
+    int calc1 = (sum1 * 10) % 11;
+    if (calc1 == 10) calc1 = 0;
+
+    if (calc1 != digits[9]) return false;
+
+    int sum2 = 0;
+    for (int i = 0; i < 10; i++) {
+      sum2 += digits[i] * (11 - i);
+    }
+    int calc2 = (sum2 * 10) % 11;
+    if (calc2 == 10) calc2 = 0;
+
+    if (calc2 != digits[10]) return false;
+
+    return true;
+  }
 
   @action
   Future<bool> register() async {
