@@ -1,3 +1,6 @@
+// Desenvolvido por Gabriel Scolfaro de Azeredo - RA: 25006194
+// E ???
+
 import type {Request, Response} from "express";
 import * as logger from "firebase-functions/logger";
 import {getErrorMessage, getErrorStatus} from "../../../shared/errors";

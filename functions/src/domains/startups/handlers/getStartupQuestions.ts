@@ -1,4 +1,4 @@
-// Desenvolvido por Gabriel Scolfaro
+// Desenvolvido por Gabriel Scolfaro de Azeredo - RA: 25006194
 
 import { HttpsError, onCall } from "firebase-functions/v2/https";
 import { Timestamp } from "firebase-admin/firestore";
@@ -19,7 +19,7 @@ import { StartupQuestionResponse } from "../types";
 export const getStartupQuestions = onCall(
     { region: "southamerica-east1" },
     async (request) => {
-        //feito por Abdallah
+        //feito por Abdallah Ali Borges El-Khatib - RA: 25018711
         requireAuthenticatedUser(request);
         const startupId = normalizeString(request.data?.startupId);
 

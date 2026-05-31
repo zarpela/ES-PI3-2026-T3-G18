@@ -1,4 +1,4 @@
-//feito por Abdallah
+//feito por Abdallah Ali Borges El-Khatib - RA: 25018711
 // feito por pedro, marcelo
 import 'package:flutter/material.dart';
 import 'package:flutter_client/core/app_session.dart';

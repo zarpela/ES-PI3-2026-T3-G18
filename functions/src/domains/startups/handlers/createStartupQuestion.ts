@@ -1,4 +1,4 @@
-// Desenvolvido por Gabriel Scolfaro
+// Desenvolvido por Gabriel Scolfaro de Azeredo - RA: 25006194
 
 import { FieldValue } from "firebase-admin/firestore";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
@@ -100,7 +100,7 @@ export const createStartupQuestion = onCall(
     }
 );
 
-//feito por Abdallah
+//feito por Abdallah Ali Borges El-Khatib - RA: 25018711
 function normalizeVisibility(value: string): QuestionVisibility {
     const normalized = value.trim().toLowerCase();
 

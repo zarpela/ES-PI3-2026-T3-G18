@@ -1,3 +1,6 @@
+// Desenvolvido por Gabriel Scolfaro de Azeredo - RA: 25006194
+// E ???
+
 import type {UserRecord} from "firebase-admin/auth";
 import {createAppError} from "../../../shared/errors";
 import type {CreateUserInput} from "../../../shared/types";

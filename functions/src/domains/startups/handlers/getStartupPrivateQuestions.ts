@@ -1,4 +1,4 @@
-// Desenvolvido por Gabriel Scolfaro
+// Desenvolvido por Gabriel Scolfaro de Azeredo - RA: 25006194
 
 import { HttpsError, onCall } from "firebase-functions/v2/https";
 import { Timestamp } from "firebase-admin/firestore";
@@ -41,7 +41,7 @@ export const getStartupPrivateQuestions = onCall(
             throw new HttpsError("not-found", "Startup não encontrada.");
         }
 
-        //feito por Abdallah
+        //feito por Abdallah Ali Borges El-Khatib - RA: 25018711
         const [isInvestor, canReadAll] = await Promise.all([
             userIsInvestor(startupId, user.uid),
             userCanReadAllPrivateQuestions(startupId, user.uid),

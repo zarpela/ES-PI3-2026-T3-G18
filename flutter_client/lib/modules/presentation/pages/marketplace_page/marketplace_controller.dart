@@ -1,5 +1,5 @@
 //feito por marcelo
-//feito por Abdallah
+//feito por Abdallah Ali Borges El-Khatib - RA: 25018711
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';

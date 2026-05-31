@@ -50,7 +50,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
       return;
     }
 
-    //feito por Abdallah
+    //feito por Abdallah Ali Borges El-Khatib - RA: 25018711
     final currentUser = FirebaseAuth.instance.currentUser;
     final isLoggedIn = currentUser != null;
 

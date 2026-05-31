@@ -1,5 +1,5 @@
 // Desenvolvido por Miguel Castro
-//feito por Abdallah
+//feito por Abdallah Ali Borges El-Khatib - RA: 25018711
 import {HttpsError} from "firebase-functions/v2/https";
 import {
   buyMarketplaceOffer,

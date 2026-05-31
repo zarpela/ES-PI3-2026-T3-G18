@@ -1,4 +1,4 @@
-//feito por Abdallah
+//feito por Abdallah Ali Borges El-Khatib - RA: 25018711
 import 'package:flutter/material.dart';
 import 'package:flutter_client/modules/presentation/components/filter_chip.dart';
 import 'package:flutter_client/modules/presentation/components/home/home_palette.dart';

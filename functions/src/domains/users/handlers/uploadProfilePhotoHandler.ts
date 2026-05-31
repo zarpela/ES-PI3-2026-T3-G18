@@ -1,4 +1,4 @@
-// feito por Gabriel Scolfaro
+// Desenvolvido por Gabriel Scolfaro de Azeredo - RA: 25006194
 
 import type { Request, Response } from "express";
 import * as logger from "firebase-functions/logger";

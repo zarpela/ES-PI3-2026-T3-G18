@@ -1,5 +1,5 @@
-//feito por Abdallah
-// feito por gabriel e marcelo
+//feito por Abdallah Ali Borges El-Khatib - RA: 25018711
+// feito por Gabriel Scolfaro de Azeredo - RA: 25006194 e marcelo
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_client/core/app_session.dart';

@@ -1,4 +1,4 @@
-// Feito por Marcelo, Abdallah 
+// Feito por Marcelo, Abdallah Ali Borges El-Khatib - RA: 25018711 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_mobx/flutter_mobx.dart';

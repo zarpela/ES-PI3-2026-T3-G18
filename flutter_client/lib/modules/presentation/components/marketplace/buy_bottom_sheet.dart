@@ -58,7 +58,7 @@ class _BuyBottomSheetContentState extends State<_BuyBottomSheetContent> {
     }
   }
 
-  //feito por Abdallah
+  //feito por Abdallah Ali Borges El-Khatib - RA: 25018711
   Future<void> _handleBuy() async {
     try {
       await _controller.buyOffer(offerId: widget.offerId, quantity: _quantity);

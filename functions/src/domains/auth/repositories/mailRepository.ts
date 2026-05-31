@@ -1,4 +1,4 @@
-//feito por Abdallah
+//feito por Abdallah Ali Borges El-Khatib - RA: 25018711
 import * as logger from "firebase-functions/logger";
 import nodemailer from "nodemailer";
 import type {LocalMailConfig} from "../../../shared/types";

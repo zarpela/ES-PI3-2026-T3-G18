@@ -13,7 +13,7 @@ export type Wallet = {
     totalProfitLossPercent: number;
 
     // Miguel iniciou esta tipagem
-    // Abdallah ajustou a estrutura para wallet/{userId}
+    // Abdallah Ali Borges El-Khatib - RA: 25018711 ajustou a estrutura para wallet/{userId}
     createdAt: Timestamp | FieldValue;
     updatedAt: Timestamp | FieldValue;
 };

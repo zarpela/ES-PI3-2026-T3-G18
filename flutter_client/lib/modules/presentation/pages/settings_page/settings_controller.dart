@@ -1,4 +1,4 @@
-// feito por Gabriel Scolfaro
+// Desenvolvido por Gabriel Scolfaro de Azeredo - RA: 25006194
 
 import 'dart:convert';
 

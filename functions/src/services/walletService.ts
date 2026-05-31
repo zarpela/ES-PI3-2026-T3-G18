@@ -1,4 +1,4 @@
-//feito por Abdallah
+//feito por Abdallah Ali Borges El-Khatib - RA: 25018711
 import {FieldValue, Timestamp} from "firebase-admin/firestore";
 import {db} from "../shared/firebase";
 import { StartupDoc } from "../domains/startups/types";

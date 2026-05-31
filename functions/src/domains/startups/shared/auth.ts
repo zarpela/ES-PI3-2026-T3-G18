@@ -1,4 +1,4 @@
-// Desenvolvido por Gabriel Scolfaro
+// Desenvolvido por Gabriel Scolfaro de Azeredo - RA: 25006194
 
 import { CallableRequest, HttpsError } from "firebase-functions/v2/https";
 import { AuthenticatedUser } from "../types";

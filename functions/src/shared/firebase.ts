@@ -1,3 +1,6 @@
+// Desenvolvido por Gabriel Scolfaro de Azeredo - RA: 25006194
+// E ???
+
 import admin from "firebase-admin";
 import fs from "fs";
 import { resolveFunctionsPath } from "./utils";

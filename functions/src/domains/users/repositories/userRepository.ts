@@ -62,7 +62,7 @@ export async function createWallet(uid: string): Promise<Wallet> {
     };
 
     // Miguel iniciou esta criacao automatica
-    // Abdallah ajustou o documento para a colecao wallet
+    // Abdallah Ali Borges El-Khatib - RA: 25018711 ajustou o documento para a colecao wallet
     await walletCol.doc(uid).set(wallet, {merge: true});
     return wallet;
   } catch (e) {
