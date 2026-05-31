@@ -13,6 +13,7 @@ import 'package:flutter_client/modules/presentation/components/main_header.dart'
 import 'package:flutter_client/modules/presentation/pages/home_page/home_controller.dart';
 import 'package:flutter_client/modules/presentation/pages/home_page/wallet_amount_page.dart';
 import 'package:flutter_client/modules/presentation/pages/portfolio_page/portfolio_page.dart';
+import 'package:flutter_client/modules/presentation/pages/portfolio_page/portfolio_controller.dart';
 import 'package:flutter_client/shared/app_routes.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 
@@ -182,7 +183,7 @@ class _HomePageState extends State<HomePage> {
         );
 
       case HomeSection.portfolio:
-        return PortfolioView(controller: controller);
+        return PortfolioView(homeController: controller, portfolioController: Modular.get<PortfolioController>(),);
     }
   }
 
