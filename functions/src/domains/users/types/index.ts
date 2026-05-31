@@ -1,4 +1,4 @@
-// Desenvolvido por Miguel Castro
+// Desenvolvido por Miguel Afonso Castro de Almeida - RA: 25016044
 import {FieldValue, Timestamp} from "firebase-admin/firestore";
 
 /**
@@ -12,7 +12,7 @@ export type Wallet = {
     totalProfitLoss: number;
     totalProfitLossPercent: number;
 
-    // Miguel iniciou esta tipagem
+    // Miguel Afonso Castro de Almeida - RA: 25016044 iniciou esta tipagem
     // Abdallah Ali Borges El-Khatib - RA: 25018711 ajustou a estrutura para wallet/{userId}
     createdAt: Timestamp | FieldValue;
     updatedAt: Timestamp | FieldValue;

@@ -1,4 +1,4 @@
-// Desenvolvido por Miguel Castro
+// Desenvolvido por Miguel Afonso Castro de Almeida - RA: 25016044
 
 export * from "./handlers/buyToken";
 export * from "./handlers/buySellOrder";

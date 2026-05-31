@@ -1,5 +1,5 @@
 //feito por Abdallah Ali Borges El-Khatib - RA: 25018711
-// Revisado com base na implementacao de Miguel Castro
+// Revisado com base na implementacao de Miguel Afonso Castro de Almeida - RA: 25016044
 import {Timestamp} from "firebase-admin/firestore";
 import {HttpsError, onCall} from "firebase-functions/v2/https";
 

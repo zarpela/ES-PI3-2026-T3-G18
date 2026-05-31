@@ -1,4 +1,4 @@
-// Desenvolvido por Miguel Castro
+// Desenvolvido por Miguel Afonso Castro de Almeida - RA: 25016044
 
 import { getApps, initializeApp } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";

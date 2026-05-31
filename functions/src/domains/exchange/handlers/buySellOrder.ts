@@ -1,4 +1,4 @@
-// Desenvolvido por Miguel Castro
+// Desenvolvido por Miguel Afonso Castro de Almeida - RA: 25016044
 
 import { HttpsError, onCall } from "firebase-functions/v2/https";
 import { buySellOrder } from "../repositories/exchangeRepository";

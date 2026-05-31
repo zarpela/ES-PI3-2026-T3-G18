@@ -1,4 +1,4 @@
-// Desenvolvido por Miguel Castro
+// Desenvolvido por Miguel Afonso Castro de Almeida - RA: 25016044
 //feito por Abdallah Ali Borges El-Khatib - RA: 25018711
 import {HttpsError} from "firebase-functions/v2/https";
 import {
