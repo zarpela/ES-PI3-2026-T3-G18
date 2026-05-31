@@ -1,4 +1,4 @@
-// feito por ???
+//feito por Abdallah Ali Borges El-Khatib - RA: 25018711
 
 export function onlyNumbers(value: string): string {
   return value.replace(/\D+/g, "");

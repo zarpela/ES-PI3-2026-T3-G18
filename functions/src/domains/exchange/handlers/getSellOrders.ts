@@ -1,4 +1,5 @@
 // Desenvolvido por Miguel Afonso Castro de Almeida - RA: 25016044
+//feito por Abdallah Ali Borges El-Khatib - RA: 25018711
 
 import { onCall } from "firebase-functions/v2/https";
 import { getSellOrders } from "../repositories/exchangeRepository";

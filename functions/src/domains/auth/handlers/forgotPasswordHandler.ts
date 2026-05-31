@@ -1,4 +1,4 @@
-// feito por ???
+//feito por Abdallah Ali Borges El-Khatib - RA: 25018711
 
 import type {Request, Response} from "express";
 import * as logger from "firebase-functions/logger";
