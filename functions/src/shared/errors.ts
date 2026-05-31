@@ -1,3 +1,5 @@
+// feito por ???
+
 type ErrorLike = {
   code?: unknown;
   status?: unknown;

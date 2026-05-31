@@ -1,5 +1,4 @@
 // Desenvolvido por Gabriel Scolfaro de Azeredo - RA: 25006194
-// E ???
 
 import cors from "cors";
 import express from "express";

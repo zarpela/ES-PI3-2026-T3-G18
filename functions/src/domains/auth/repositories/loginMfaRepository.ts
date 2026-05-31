@@ -1,3 +1,5 @@
+// feito por ???
+
 import {db} from "../../../shared/firebase";
 import type {StoredLoginMfaCode} from "../../../shared/types";
 

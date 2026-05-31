@@ -1,3 +1,5 @@
+// feito por ???
+
 import {db} from "../../../shared/firebase";
 import type {StoredResetCode} from "../../../shared/types";
 import {normalizeEmail} from "../../../shared/utils";

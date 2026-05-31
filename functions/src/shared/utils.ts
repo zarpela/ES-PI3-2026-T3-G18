@@ -1,3 +1,5 @@
+// feito por ???
+
 import {randomInt} from "crypto";
 import * as logger from "firebase-functions/logger";
 import fs from "fs";

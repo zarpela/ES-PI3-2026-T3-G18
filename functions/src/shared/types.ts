@@ -1,3 +1,5 @@
+// feito por ???
+
 export type LocalMailConfig = {
   mailUser?: string;
   mailPass?: string;

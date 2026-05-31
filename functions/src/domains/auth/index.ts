@@ -1,3 +1,5 @@
+// feito por ???
+
 import express from "express";
 import {requireAuthenticatedUser} from "../../middlewares/authMiddleware";
 import {forgotPasswordHandler} from "./handlers/forgotPasswordHandler";
