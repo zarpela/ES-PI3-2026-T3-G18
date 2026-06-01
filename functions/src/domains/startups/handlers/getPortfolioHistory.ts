@@ -1,5 +1,5 @@
-// Desenvolvido por Gabriel Scolfaro
-//feito por Abdallah
+// Desenvolvido por Gabriel Scolfaro de Azeredo - RA: 25006194
+//feito por Abdallah Ali Borges El-Khatib - RA: 25018711
 import {Timestamp} from "firebase-admin/firestore";
 import {HttpsError, onCall} from "firebase-functions/v2/https";
 import {db} from "../../../shared/firebase";

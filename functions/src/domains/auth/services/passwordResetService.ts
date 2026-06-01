@@ -1,4 +1,4 @@
-//feito por Abdallah
+//feito por Abdallah Ali Borges El-Khatib - RA: 25018711
 import {createAppError} from "../../../shared/errors";
 import type {StoredResetCode} from "../../../shared/types";
 import {

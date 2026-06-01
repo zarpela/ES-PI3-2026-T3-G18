@@ -1,4 +1,4 @@
-//feito por marcelo
+//feito por Marcelo Zarpelon - RA: 25015323
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mobx/mobx.dart';
@@ -116,7 +116,7 @@ abstract class _ChangePasswordControllerBase with Store {
     }
   }
 
-  //feito por Abdallah
+  //feito por Abdallah Ali Borges El-Khatib - RA: 25018711
   Future<String?> changePasswordLoggedIn() async {
     try {
       final user = FirebaseAuth.instance.currentUser;

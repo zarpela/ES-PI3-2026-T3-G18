@@ -1,5 +1,5 @@
-// feito por pedro henrique bonetto
-//feito por Abdallah
+// feito por Pedro Henrique Bonetto da Costa - RA: 25018203
+//feito por Abdallah Ali Borges El-Khatib - RA: 25018711
 
 import 'dart:async';
 import 'dart:typed_data';

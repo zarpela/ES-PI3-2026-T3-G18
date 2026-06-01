@@ -1,5 +1,5 @@
-// Desenvolvido por ???
-//                e Miguel Castro
+// Desenvolvido por Gabriel Scolfaro de Azeredo - RA: 25006194
+//                e Miguel Afonso Castro de Almeida - RA: 25016044
 
 import type {UserRecord} from "firebase-admin/auth";
 import {FieldValue} from "firebase-admin/firestore";
@@ -61,8 +61,8 @@ export async function createWallet(uid: string): Promise<Wallet> {
       updatedAt: FieldValue.serverTimestamp(),
     };
 
-    // Miguel iniciou esta criacao automatica
-    // Abdallah ajustou o documento para a colecao wallet
+    // Miguel Afonso Castro de Almeida - RA: 25016044 iniciou esta criacao automatica
+    // Abdallah Ali Borges El-Khatib - RA: 25018711 ajustou o documento para a colecao wallet
     await walletCol.doc(uid).set(wallet, {merge: true});
     return wallet;
   } catch (e) {

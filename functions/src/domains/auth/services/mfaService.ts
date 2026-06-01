@@ -1,4 +1,4 @@
-//feito por Abdallah
+//feito por Abdallah Ali Borges El-Khatib - RA: 25018711
 import {createAppError} from "../../../shared/errors";
 import {auth} from "../../../shared/firebase";
 import type {StoredMfaCode} from "../../../shared/types";

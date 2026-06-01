@@ -1,3 +1,5 @@
+// Desenvolvido por Gabriel Scolfaro de Azeredo - RA: 25006194
+
 import cors from "cors";
 import express from "express";
 import {onRequest} from "firebase-functions/v2/https";

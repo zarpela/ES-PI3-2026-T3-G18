@@ -1,3 +1,5 @@
+// feito por Pedro Henrique Bonetto da Costa - RA:25018203
+
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
@@ -175,7 +177,7 @@ class _StartupDetailsPageState extends State<StartupDetailsPage> {
     }
   }
 
-  //feito por Abdallah
+  //feito por Abdallah Ali Borges El-Khatib - RA: 25018711
   Future<void> submitQuestion() async {
     final text = questionController.text.trim();
     final startupId =
@@ -210,7 +212,7 @@ class _StartupDetailsPageState extends State<StartupDetailsPage> {
     }
   }
 
-  //feito por Abdallah
+  //feito por Abdallah Ali Borges El-Khatib - RA: 25018711
   Future<void> loadQuestions() async {
     try {
       setState(() => isQuestionsLoading = true);
@@ -1136,7 +1138,7 @@ class _StartupDetailsPageState extends State<StartupDetailsPage> {
     );
   }
 
-  //feito por Abdallah
+  //feito por Abdallah Ali Borges El-Khatib - RA: 25018711
   Widget buildQuestionsHeader() {
     return Row(
       children: [
@@ -1255,7 +1257,7 @@ class _StartupDetailsPageState extends State<StartupDetailsPage> {
       ],
     );
   }
-  // Gabriel Scolfaro de Azeredo
+  // (_formatQuestionDate) feito por Gabriel Scolfaro de Azeredo - RA: 25006194
   String _formatQuestionDate(String? isoString) {
     if (isoString == null || isoString.isEmpty) return 'Horário indisponível';
     try {
@@ -1294,7 +1296,7 @@ class _StartupDetailsPageState extends State<StartupDetailsPage> {
     );
   }
 
-  //feito por Abdallah
+  //feito por Abdallah Ali Borges El-Khatib - RA: 25018711
   Widget buildDynamicQuestionCard(Map<String, dynamic> item) {
     final isPrivate = '${item['visibility'] ?? ''}'.toLowerCase().contains(
       'priv',

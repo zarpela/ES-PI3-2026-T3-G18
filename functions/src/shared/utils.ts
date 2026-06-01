@@ -1,3 +1,5 @@
+//feito por Abdallah Ali Borges El-Khatib - RA: 25018711
+
 import {randomInt} from "crypto";
 import * as logger from "firebase-functions/logger";
 import fs from "fs";

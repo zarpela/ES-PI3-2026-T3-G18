@@ -1,3 +1,5 @@
+//feito por Abdallah Ali Borges El-Khatib - RA: 25018711
+
 export type LocalMailConfig = {
   mailUser?: string;
   mailPass?: string;

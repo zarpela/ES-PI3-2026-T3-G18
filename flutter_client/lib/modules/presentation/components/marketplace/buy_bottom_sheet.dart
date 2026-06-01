@@ -1,4 +1,4 @@
-//feito por marcelo
+//feito por Marcelo Zarpelon - RA: 25015323
 import 'package:flutter/material.dart';
 import 'package:flutter_client/modules/presentation/pages/marketplace_page/marketplace_controller.dart';
 import 'package:flutter_client/modules/presentation/pages/home_page/home_controller.dart';
@@ -58,7 +58,7 @@ class _BuyBottomSheetContentState extends State<_BuyBottomSheetContent> {
     }
   }
 
-  //feito por Abdallah
+  //feito por Abdallah Ali Borges El-Khatib - RA: 25018711
   Future<void> _handleBuy() async {
     try {
       await _controller.buyOffer(offerId: widget.offerId, quantity: _quantity);

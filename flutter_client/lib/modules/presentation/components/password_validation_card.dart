@@ -1,4 +1,4 @@
-//feito por Marcelo
+//feito por Marcelo Zarpelon - RA: 25015323
 import 'package:flutter/material.dart';
 
 class PasswordValidationCard extends StatelessWidget {

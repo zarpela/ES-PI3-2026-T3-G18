@@ -1,4 +1,4 @@
-//feito por abdallah e marcelo
+//feito por Abdallah Ali Borges El-Khatib - RA: 25018711 e Marcelo Zarpelon - RA: 25015323
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:mobx/mobx.dart';
 

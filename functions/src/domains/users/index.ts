@@ -1,3 +1,5 @@
+// Desenvolvido por Gabriel Scolfaro de Azeredo - RA: 25006194
+
 import express from "express";
 import { createAccountHandler } from "./handlers/createAccountHandler";
 import { testFirestoreHandler } from "./handlers/testFirestoreHandler";

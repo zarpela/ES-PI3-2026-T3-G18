@@ -1,4 +1,4 @@
-// Desenvolvido por Gabriel Scolfaro
+// Desenvolvido por Gabriel Scolfaro de Azeredo - RA: 25006194
 
 export function normalizeString(value: unknown): string | undefined {
     if (typeof value !== "string") {

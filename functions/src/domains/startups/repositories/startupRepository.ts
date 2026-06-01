@@ -1,5 +1,6 @@
-// Desenvolvido por Miguel Castro
-// e Gabriel Scolfaro de Azeredo
+// Desenvolvido por Miguel Afonso Castro de Almeida - RA: 25016044
+// e Gabriel Scolfaro de Azeredo - RA: 25006194
+
 import { Timestamp } from "firebase-admin/firestore";
 import { HttpsError } from "firebase-functions/v2/https";
 import { db } from "../../../shared/firebase";
@@ -157,7 +158,7 @@ export async function userIsInvestor(
     }
 }
 
-//feito por Abdallah
+//feito por Abdallah Ali Borges El-Khatib - RA: 25018711
 export async function userCanReadAllPrivateQuestions(
     startupId: string,
     uid: string
@@ -192,7 +193,7 @@ export async function userCanReadAllPrivateQuestions(
 // Questions
 // ---------------------------------------------------------------------------
 
-//feito por Abdallah
+//feito por Abdallah Ali Borges El-Khatib - RA: 25018711
 export async function createQuestion(
     startupId: string,
     question: StartupQuestionDocument
@@ -210,7 +211,7 @@ export async function createQuestion(
     }
 }
 
-//feito por Abdallah
+//feito por Abdallah Ali Borges El-Khatib - RA: 25018711
 export async function getPublicQuestions(
     startupId: string
 ): Promise<
@@ -246,7 +247,7 @@ export async function getPublicQuestions(
     }
 }
 
-//feito por Abdallah
+//feito por Abdallah Ali Borges El-Khatib - RA: 25018711
 export async function getPrivateQuestions(
     startupId: string,
     uid: string,
@@ -314,7 +315,7 @@ export async function saveAllPriceSnapshots() {
     }
 }
 
-//feito por Abdallah
+//feito por Abdallah Ali Borges El-Khatib - RA: 25018711
 export async function getTokenPriceHistory(
     startupId: string,
     startDate: Date

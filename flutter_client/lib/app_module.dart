@@ -1,5 +1,5 @@
-//feito por Abdallah
-// feito por marcelo, pedro
+//feito por Abdallah Ali Borges El-Khatib - RA: 25018711
+// feito por Marcelo Zarpelon - RA: 25015323 , Pedro Henrique Bonetto da Costa - RA: 25018203
 
 import 'package:dio/dio.dart';
 import 'package:flutter_client/core/app_settings.dart';

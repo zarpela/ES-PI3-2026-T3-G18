@@ -1,4 +1,4 @@
-//feito por Abdallah
+//feito por Abdallah Ali Borges El-Khatib - RA: 25018711
 import {NextFunction, Request, Response} from "express";
 import {auth} from "../shared/firebase";
 
