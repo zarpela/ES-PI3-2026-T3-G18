@@ -1,0 +1,308 @@
+//feito por Abdallah Ali Borges El-Khatib - RA: 25018711
+import 'dart:async';
+
+import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_client/modules/presentation/components/auth/auth_action_button.dart';
+import 'package:flutter_client/modules/presentation/components/auth/auth_input_field.dart';
+import 'package:flutter_client/modules/presentation/components/auth/auth_page_scaffold.dart';
+import 'package:flutter_client/modules/presentation/components/auth/auth_section_header.dart';
+import 'package:flutter_client/modules/presentation/components/password_recovery/password_recovery_verification_dialog.dart';
+import 'package:flutter_modular/flutter_modular.dart';
+
+class ForgotPasswordPage extends StatefulWidget {
+  const ForgotPasswordPage({super.key});
+
+  @override
+  State<ForgotPasswordPage> createState() => _ForgotPasswordPageState();
+}
+
+class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
+  final Dio dio = Modular.get<Dio>();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController codeController = TextEditingController();
+  final ValueNotifier<int> resendCountdown = ValueNotifier<int>(0);
+  final ValueNotifier<int> resendAttempts = ValueNotifier<int>(0);
+
+  bool isSending = false;
+  String? lastRequestedEmail;
+  String? statusMessage;
+  bool isStatusError = false;
+  Timer? resendTimer;
+
+  @override
+  void dispose() {
+    resendTimer?.cancel();
+    resendCountdown.dispose();
+    resendAttempts.dispose();
+    emailController.dispose();
+    codeController.dispose();
+    super.dispose();
+  }
+
+  void startResendCountdown() {
+    resendTimer?.cancel();
+    resendCountdown.value = 30;
+
+    resendTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (resendCountdown.value <= 1) {
+        resendCountdown.value = 0;
+        timer.cancel();
+        return;
+      }
+
+      resendCountdown.value -= 1;
+    });
+  }
+
+  Future<void> sendInstructions({
+    bool openDialog = true,
+    bool isResend = false,
+  }) async {
+    final typedEmail = emailController.text.trim();
+
+    if (typedEmail.isEmpty) {
+      setState(() {
+        statusMessage = 'Informe o e-mail cadastrado.';
+        isStatusError = true;
+      });
+      return;
+    }
+
+    if (!isResend) {
+      resendTimer?.cancel();
+      resendCountdown.value = 0;
+      resendAttempts.value = 0;
+    }
+
+    setState(() {
+      isSending = true;
+      statusMessage = null;
+      isStatusError = false;
+    });
+    lastRequestedEmail = typedEmail;
+
+    try {
+      final response = await dio.post(
+        'forgot-password',
+        data: {'identifier': typedEmail},
+        options: Options(headers: {'Content-Type': 'application/json'}),
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      final data = response.data is Map
+          ? Map<String, dynamic>.from(response.data as Map)
+          : <String, dynamic>{};
+
+      lastRequestedEmail = (data['email'] ?? typedEmail).toString();
+      if (isResend) {
+        resendAttempts.value += 1;
+      }
+      if (isResend && resendAttempts.value >= 2) {
+        startResendCountdown();
+      }
+
+      setState(() {
+        statusMessage = _buildApiMessage(data);
+        isStatusError = false;
+      });
+
+      if (openDialog) {
+        showVerificationDialog();
+      }
+    } on DioException catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      final data = error.response?.data;
+      if (data is Map) {
+        final map = Map<String, dynamic>.from(data);
+        setState(() {
+          statusMessage = _buildApiMessage(map);
+          isStatusError = true;
+        });
+      } else {
+        setState(() {
+          statusMessage = _extractErrorMessage(error);
+          isStatusError = true;
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() => isSending = false);
+      }
+    }
+  }
+
+  Future<String?> validateCode({
+    required String email,
+    required String code,
+  }) async {
+    try {
+      await dio.post(
+        'verify-reset-code',
+        data: {'email': email.trim(), 'code': code.trim()},
+        options: Options(headers: {'Content-Type': 'application/json'}),
+      );
+
+      return null;
+    } on DioException catch (error) {
+      return _extractErrorMessage(error);
+    } catch (_) {
+      return 'Não foi possível validar o código.';
+    }
+  }
+
+  String _extractErrorMessage(DioException error) {
+    final data = error.response?.data;
+
+    if (data is Map) {
+      final map = Map<String, dynamic>.from(data);
+      final message = map['message'] ?? map['error'];
+      if (message is String && message.isNotEmpty) {
+        return message;
+      }
+    }
+
+    if (data is String && data.isNotEmpty) {
+      return data;
+    }
+
+    if (error.type == DioExceptionType.connectionTimeout ||
+        error.type == DioExceptionType.receiveTimeout ||
+        error.type == DioExceptionType.sendTimeout) {
+      return 'A solicitação demorou demais. Tente novamente.';
+    }
+
+    if (error.type == DioExceptionType.connectionError ||
+        error.type == DioExceptionType.unknown) {
+      return 'Não foi possível conectar ao servidor. Verifique a API e tente novamente.';
+    }
+
+    return 'Não foi possível concluir a solicitação.';
+  }
+
+  String _buildApiMessage(Map<String, dynamic> data) {
+    return (data['message'] ?? data['error'] ?? 'Codigo enviado com sucesso.')
+        .toString();
+  }
+
+  void showVerificationDialog() {
+    codeController.clear();
+
+    showDialog<void>(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.6),
+      builder: (_) {
+        return PasswordRecoveryVerificationDialog(
+          codeController: codeController,
+          email: (lastRequestedEmail ?? emailController.text).trim(),
+          resendAttempts: resendAttempts,
+          resendCountdown: resendCountdown,
+          onValidateCode: (email, code) =>
+              validateCode(email: email, code: code),
+          onResendCode: () =>
+              sendInstructions(openDialog: false, isResend: true),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AuthPageScaffold(
+      backgroundColor: const Color(0xFFFCF8FF),
+      showDecorations: true,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Color(0xFFC71E74)),
+          onPressed: () => Modular.to.pop(),
+        ),
+        title: const Text(
+          'MesclaInvest',
+          style: TextStyle(
+            color: Color(0xFF170B58),
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: true,
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const AuthSectionHeader(
+            title: 'Recuperação de\nSenha',
+            subtitle:
+                'Enviaremos um código para o seu e-mail para redefinir sua senha',
+            titleFontSize: 32,
+            titleHeight: 1.2,
+            bottomSpacing: 48,
+          ),
+          AuthInputField(
+            label: 'E-MAIL CADASTRADO',
+            hint: 'seu@email.com',
+            controller: emailController,
+            keyboardType: TextInputType.emailAddress,
+            labelColor: const Color(0xFFC71E74),
+            labelFontSize: 10,
+            labelLetterSpacing: 0.8,
+          ),
+          if (statusMessage != null) ...[
+            const SizedBox(height: 8),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                color: isStatusError
+                    ? const Color(0xFFFFE7E7)
+                    : const Color(0xFFE9F7EE),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Text(
+                statusMessage!,
+                style: TextStyle(
+                  color: isStatusError
+                      ? const Color(0xFF9D1C1C)
+                      : const Color(0xFF1E6B3A),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+          const SizedBox(height: 16),
+          AuthActionButton(
+            label: 'Enviar instruções',
+            onPressed: () => sendInstructions(),
+            isEnabled: !isSending,
+            isLoading: isSending,
+            height: 64,
+            borderRadius: const BorderRadius.all(Radius.circular(32)),
+            backgroundColor: const Color(0xFFC71E74),
+            disabledBackgroundColor: const Color(0x4DC71E74),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFFC71E74).withValues(alpha: 0.2),
+                offset: const Offset(0, 8),
+                blurRadius: 20,
+              ),
+            ],
+            trailing: const Icon(
+              Icons.send_outlined,
+              color: Colors.white,
+              size: 18,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

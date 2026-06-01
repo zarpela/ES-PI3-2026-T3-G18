@@ -1,0 +1,141 @@
+// Desenvolvido por Miguel Afonso Castro de Almeida - RA: 25016044
+
+import { Timestamp, FieldValue } from "firebase-admin/firestore";
+
+/**
+ * Sócios de uma startup
+ */
+export type Shareholder = {
+    name: string;
+    equityInterest: number; // participação societária
+    role: string;
+    description: string;
+}
+
+/**
+ * Estágios da startup
+ */
+export type StartupStage = "nova" | "em_operacao" | "em_expansao";
+
+/**
+ * Membro externo
+ */
+export type ExternalMember = {
+    name: string;
+    role: string; // exemplo: mentor
+}
+
+/**
+ * Documento com todas as informações da Startup
+ */
+export type StartupDoc = {
+    name: string;
+    description: string; // descricão simples
+    executiveSummary: string;
+    stage: StartupStage;
+    sector: string;
+    shareholders: Shareholder[];
+    externalMembers: ExternalMember[];
+    tokenPrice: number; // preço de cada token
+
+    // apresentação visual
+    backgroundImage: string; // URL
+    logo: string; // URL
+    video: string; // URL
+
+    // dados para possíveis cálculos
+    totalEmittedTokens: number;
+    raisedCapital: number; // capital aportado
+    targetCapital: number; // meta de captação
+    createdAt?: Timestamp;
+}
+
+/**
+ * Versão resumida de Doc para apresentação no catálogo
+ */
+export type StartupCatalog = {
+    id: string;
+    name: string;
+    description: string; // descricão simples
+    stage: StartupStage;
+    sector: string;
+
+    // apresentação visual
+    backgroundImage: string; // URL
+    logo: string; // URL
+
+    // dados para possíveis cálculos
+    totalEmittedTokens: number;
+    raisedCapital: number; // capital aportado
+    targetCapital: number; // meta de captação
+}
+
+/**
+ * Usuário autenticado extraído do request
+ */
+export type AuthenticatedUser = {
+    uid: string;
+    email: string | undefined;
+    name?: string;
+}
+
+/**
+ * Visibilidade de uma pergunta
+ */
+export type QuestionVisibility = "publica" | "privada";
+
+/**
+ * Resposta de uma pergunta
+ */
+export type QuestionAnswer = {
+    text: string;
+    answeredByUid: string;
+    answeredAt: Timestamp | FieldValue;
+}
+
+/**
+ * Documento de uma pergunta armazenado no Firestore
+ * Subcoleção: startups/{startupId}/questions/{questionId}
+ */
+export type StartupQuestionDocument = {
+    authorId?: string;
+    authorName?: string;
+    authorUid: string;
+    isAnswered?: boolean;
+    question?: string;
+    startupId?: string;
+    status?: string;
+    text: string;
+    updatedAt?: Timestamp | FieldValue;
+    visibility: QuestionVisibility;
+    createdAt: Timestamp | FieldValue;
+    answer?: QuestionAnswer;
+}
+
+/**
+ * Versão serializada para retorno na API
+ */
+export type StartupQuestionResponse = {
+    id: string;
+    authorId?: string;
+    authorName?: string;
+    authorUid: string;
+    isAnswered?: boolean;
+    question?: string;
+    startupId?: string;
+    status?: string;
+    text: string;
+    visibility: QuestionVisibility;
+    createdAt: string | null;
+    answer?: {
+        text: string;
+        answeredByUid: string;
+        answeredAt: string | null;
+    };
+}
+
+// subcoleçao de histórico de preços do token para cada startup
+export type TokenPriceHistory = {
+    price: number;
+    createdAt: FirebaseFirestore.Timestamp;
+}
